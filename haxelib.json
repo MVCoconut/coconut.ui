@@ -1,0 +1,20 @@
+{
+  "name": "coconut",
+  "license": "MIT",
+  "tags": [
+    "ui",
+    "js"
+  ],
+  "classPath": "src",
+  "contributors": [
+    "back2dos"
+  ],
+  "releasenote": "initial release",
+  "version": "0.0.0",
+  "url": "https://github.com/back2dos/coconut/",
+  "dependencies": {
+    "tink_state": "",
+    "tink_hxx": "",
+    "js-virtual-dom": ""
+  }
+}
