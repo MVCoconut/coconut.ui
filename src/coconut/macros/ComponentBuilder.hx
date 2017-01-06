@@ -11,10 +11,9 @@ class ComponentBuilder {
         
         var ct = data.toComplex();
         
-        c.addMember(Member.method('render', false, {
-          args: [{ name: 'attributes', type: ct }],
-          ret: null,
-          expr: macro @:pos(v.pos) {
+        var fields = (macro class {
+          override function render(attributes:$ct) {
+            
             ${EVars([
               for (f in data.getFields().sure()) {
                 var name = f.name;
@@ -25,15 +24,16 @@ class ComponentBuilder {
                 }
               }
             ]).at(v.pos)}
-            return hxx($v);
+            return @:pos(v.pos) hxx($v);
           }
-        }));
+          
+          @:keep function toString()
+            return $v{c.target.name}+' '+this.key;
+        }).fields;        
         
-        //c.getConstructor().init(
-        //for (f in fields) {
-          //c.getConstructor().addArg(f.name, f.type.toComplex());
-        //}
-        //trace(TAnonymous([c.getConstructor().toHaxe()]).toString());
+        for (f in fields)
+          c.addMember(f);
+          
       default:
         throw 'invalid usage';
     }
