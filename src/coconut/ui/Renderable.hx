@@ -1,4 +1,5 @@
-package coconut;
+package coconut.ui;
+
 import haxe.Timer;
 import js.html.Element;
 import tink.CoreApi.CallbackLink;
@@ -7,12 +8,8 @@ import vdom.VDom.*;
 import vdom.*;
 
 
-@:autoBuild(coconut.macros.ComponentBuilder.build())
-class Component<T, Const> extends Widget {
+class Renderable extends Widget {
   
-  var cachedRepresentations:Map<{}, VNode> = new Map();
-  var cacheHits:Map<{}, VNode>;
-  var data:Observable<T>;
   var rendered:Observable<VNode>;
   var element:Element;
   var binding:CallbackLink;
@@ -21,55 +18,25 @@ class Component<T, Const> extends Widget {
   
   @:keep var key:Int = keyGen++;  
   
-  public function new(data) {
-    this.data = data;
-    this.rendered = Observable.auto(function () { 
+  public function new(rendered) {
+    this.rendered = rendered;
+  }
       
-      var ret = render(data); 
-      if (this.cacheHits != null) {
-        this.cachedRepresentations = this.cacheHits;//TODO: consider using a TTL rather than aggressively deleting
-      }
-      this.cacheHits = new Map();
-      return ret;
-    });
-  }
-  
-  function CACHED_RENDER<T:{}>(data:T, renderer:T->VNode) {
-        
-    var ret = switch cachedRepresentations[data] {
-      case null: 
-        var ret = renderer(data);
-        cachedRepresentations[data] = ret;
-        ret;
-      case v: v;
-    }
-    
-    if (cacheHits != null)
-      cacheHits[data] = ret;
-
-    return ret;
-  }
-    
   function SIDE_EFFECT<T>(v:T):VNode return null;
-  
-  function render(state:T):VNode
-    return throw 'abstract';
   
   override public function init():Element {
     
     var last = rendered.value;
-    
     this.element = create(last);
     
     this.binding = this.rendered.bind(function (next) {
+      if (next == last) return;//this happens only when the binding fires upon setup
       
-      var start = Timer.stamp();
       var changes = diff(last, next);
       beforeUpdate();
       this.element = patch(element, changes);
       last = next;
       afterUpdate();
-      trace('updating $this took ${Timer.stamp() - start}s');
     });
     
     return this.element;

@@ -4,23 +4,23 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 using tink.MacroApi;
 
-class ComponentBuilder { 
+class ViewBuilder { 
   static function process(c:ClassBuilder) {
     switch c.target.superClass.params {
       case [data, TInst(_.get() => { kind: KExpr(v) }, [] )]:
         
-        var ct = data.toComplex();
+        var ct = data.toComplex({ direct: true });
         
         var fields = (macro class {
-          override function render(attributes:$ct) {
+          override function render(__data__:$ct) {
             
             ${EVars([
-              for (f in data.getFields().sure()) {
+              for (f in data.getFields().orUse([])) if (f.isPublic) {
                 var name = f.name;
                 {
                   name: name,
                   type: null,
-                  expr: macro attributes.$name,
+                  expr: macro __data__.$name,
                 }
               }
             ]).at(v.pos)}
