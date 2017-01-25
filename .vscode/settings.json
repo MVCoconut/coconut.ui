@@ -6,5 +6,6 @@
     // such as -cp, -lib, target output settings and defines.
     "haxe.displayConfigurations": [
         ["dev.hxml"]
-    ]
+    ],
+    "haxe.displayPort": 2000
 }

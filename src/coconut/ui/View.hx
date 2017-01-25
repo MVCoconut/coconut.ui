@@ -8,7 +8,6 @@ import vdom.VNode;
 class View<Data, @:const Template> extends Renderable { 
   var cachedRepresentations:Map<{}, VNode> = new Map();
   var cacheHits:Map<{}, VNode>;
-
   public function new(data:Observable<Data>) {
     super(Observable.auto(function () { 
       return render(data); 

@@ -9,6 +9,18 @@ class ModelMacro {
     switch c.target.superClass.params {
       case [_.reduce() => TAnonymous(_.get().fields => fields)]:  
         
+        var isWritable:String->Bool =
+          switch c.target.meta.extract(':writable') {
+            case [{ params: [] }]: 
+              function (_) return true;
+            case [{ params: args }]:
+              [for (a in args) a.getName().sure() => true].get;
+            case []:
+              function (_) return false;
+            case v: 
+              v[1].pos.error('no more than one @:writable directive allowed');
+          }
+
         function add(td:TypeDefinition)
           for (f in td.fields)
             c.addMember(f);
@@ -30,19 +42,40 @@ class ModelMacro {
               
             default:
               
+              switch f.kind {
+                case FVar(_, AccNormal | AccCall):
+                  f.pos.error('Field must be readonly');
+                default:
+              }
+
               var name = f.name,
                   getter = 'get_' + f.name,
+                  setter = 'set_' + f.name,
                   ct = f.type.toComplex();
               
               nuFields.push({ field: f.name, expr: macro data.$name });
               
-              add(macro class {
-                public var $name(get, never):$ct;
-                inline function $getter() return this.__state__.value.$name;
-              });
+              add(
+                if (isWritable(name))
+                  macro class {
+                    public var $name(get, set):$ct;
+                    inline function $getter() return this.__state__.value.$name;
+                    inline function $setter(param:$ct) {
+                      modify($i{name} = param);
+                      return param;
+                    }
+                  }
+                else
+                  macro class {
+                    public var $name(get, never):$ct;
+                    inline function $getter() return this.__state__.value.$name;
+                  }
+              );
           }
         
-        c.getConstructor((macro function (data) super(data)).getFunction().sure()).onGenerate(function (f) {
+        var constr = c.getConstructor((macro function (data) super(data)).getFunction().sure());
+        constr.publish();
+        constr.onGenerate(function (f) {
           f.expr = macro {
             var data = ${EObjectDecl(nuFields).at()};
             ${f.expr};

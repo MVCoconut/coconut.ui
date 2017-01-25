@@ -4,6 +4,7 @@ import haxe.Timer;
 import js.html.Element;
 import tink.CoreApi.CallbackLink;
 import tink.state.Observable;
+import vdom.Attr.Key;
 import vdom.VDom.*;
 import vdom.*;
 
@@ -16,21 +17,14 @@ class Renderable extends Widget {
   var last:VNode;
   
   static var keygen = 0;
-  @:keep var key:Any;
+  @:keep var key:Key;
   
-  public function new(rendered, ?key:Any) {
+  public function new(rendered, ?key:Key) {
     this.rendered = rendered;
     if (key == null)
       key = rendered;
       
-    this.key = switch (untyped __js__("typeof(key)") : String) {
-      case "object":
-        var o: { __coconutKey__:Any } = key;
-        if (o.__coconutKey__ == null) o.__coconutKey__ = keygen++;
-        o.__coconutKey__;
-      default:
-        key;
-    }
+    this.key = key;
   }
       
   function SIDE_EFFECT<T>(v:T):VNode return null;
