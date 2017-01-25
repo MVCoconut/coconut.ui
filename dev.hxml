@@ -1,0 +1,2 @@
+-lib coconut
+-scoped-hxml examples/todomvc/todomvc.hxml

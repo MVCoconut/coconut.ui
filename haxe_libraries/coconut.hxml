@@ -1,0 +1,5 @@
+-D coconut
+-cp src
+-lib tink_hxx
+-lib tink_state
+-lib js-virtual-dom

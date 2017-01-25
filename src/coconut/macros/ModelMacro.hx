@@ -4,7 +4,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 using tink.MacroApi;
 
-class ModelBuilder { 
+class ModelMacro { 
   static function process(c:ClassBuilder) {
     switch c.target.superClass.params {
       case [_.reduce() => TAnonymous(_.get().fields => fields)]:  
@@ -41,8 +41,8 @@ class ModelBuilder {
                 inline function $getter() return this.__state__.value.$name;
               });
           }
-          
-        c.getConstructor().onGenerate(function (f) {
+        
+        c.getConstructor((macro function (data) super(data)).getFunction().sure()).onGenerate(function (f) {
           f.expr = macro {
             var data = ${EObjectDecl(nuFields).at()};
             ${f.expr};

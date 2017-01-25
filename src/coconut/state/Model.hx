@@ -10,7 +10,7 @@ import tink.state.State;
 
 using tink.CoreApi;
 
-@:autoBuild(coconut.macros.ModelBuilder.build())
+@:autoBuild(coconut.macros.ModelMacro.build())
 class Model<T> { 
   
   public inline function toObservable():Observable<T>
@@ -25,8 +25,9 @@ class Model<T> {
    */
   @:noCompletion var __state__:State<T>;
   
-  public function new(data:T) 
+  public function new(data:T) {
     this.__state__ = new State(data);
+  }
   
   function set(data:T)
     this.__state__.set(data);

@@ -1,0 +1,5 @@
+# @install: lix download https://github.com/haxetink/tink_parse/archive/d7e095f3a3dc553a7082b8a7d263954f6ecd4124.tar.gz as tink_parse#0.2.0/d7e095f3a3dc553a7082b8a7d263954f6ecd4124
+-D tink_parse=0.2.0
+-cp ${HAXESHIM_LIBCACHE}/tink_parse/0.2.0/d7e095f3a3dc553a7082b8a7d263954f6ecd4124/src
+
+-lib tink_core

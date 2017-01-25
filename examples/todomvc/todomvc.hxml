@@ -1,0 +1,3 @@
+-cp src
+-main TodoMvc
+-js bin/todomvc.js
