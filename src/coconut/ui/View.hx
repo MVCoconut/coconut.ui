@@ -11,33 +11,10 @@ class View<Data, @:const Template> extends Renderable {
 
   public function new(data:Observable<Data>) {
     super(Observable.auto(function () { 
-      var ret = render(data); 
-      if (this.cacheHits != null) {
-        this.cachedRepresentations = this.cacheHits;//TODO: consider using a TTL rather than aggressively deleting
-      }
-      this.cacheHits = new Map();
-      return ret;
-    }));
+      return render(data); 
+    }), data);//for some weird reason render.bind(data) will not work here
   }
   
   function render(data:Data):VNode
     return throw 'abstract';
-  
-  function CACHED_RENDER<T:{}>(renderer:T->VNode, data:T):VNode {
-    return renderer(data);
-    var ret = switch cachedRepresentations[data] {
-      case null: 
-        var ret = renderer(data);
-        cachedRepresentations[data] = ret;
-        ret;
-      case v: v;
-    }
-    
-    if (cacheHits != null)
-      cacheHits[data] = ret;
-
-    return ret;
-  }
-  
-  
 }

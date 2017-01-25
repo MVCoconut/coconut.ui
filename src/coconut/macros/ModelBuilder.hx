@@ -21,9 +21,9 @@ class ModelBuilder {
               
               switch m.kind {
                 case FFun(f): 
-                  
+                                    
                 default:
-                  m.pos.error('fields are currently not allowed');
+                  m.pos.error('field ${f.name} is conflicting with model data');
               }
               var name = f.name;
               nuFields.push({ field: f.name, expr: macro this.$name });

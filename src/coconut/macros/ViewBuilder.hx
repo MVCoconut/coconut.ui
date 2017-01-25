@@ -2,15 +2,22 @@ package coconut.macros;
 
 import haxe.macro.Context;
 import haxe.macro.Expr;
+import haxe.macro.TypeTools;
 using tink.MacroApi;
 
 class ViewBuilder { 
   static function process(c:ClassBuilder) {
+    switch c.target.superClass.t.get() {
+      case { name: 'View', pack: ['coconut', 'ui'] } :
+      default: 
+        return;
+    }
     switch c.target.superClass.params {
+      
       case [data, TInst(_.get() => { kind: KExpr(v) }, [] )]:
         
         var ct = data.toComplex({ direct: true });
-        
+
         var fields = (macro class {
           override function render(__data__:$ct) {
             
