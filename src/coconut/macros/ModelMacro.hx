@@ -14,16 +14,18 @@ private typedef FieldContext = {
   var meta(default, null):MetadataEntry;
 }
 
-enum StateKind {
-  Stateless;
-  Passed(?dfault:Expr);
-  Internal(init:Expr);
+private enum Init {
+  Skip;
+  Value(e:Expr);
+  Arg;
+  OptArg(defaultsTo:Expr);
 }
 
 private typedef Result = {
   var getter(default, null):Expr;
   @:optional var setter(default, null):Expr;
-  var state(default, null):StateKind;
+  @:optional var stateful(default, null):Bool;
+  var init(default, null):Init;
 }
 
 private class ModeBuilder {
@@ -51,13 +53,16 @@ private class ModeBuilder {
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
 
-    var dataFields = new Array<Field>(),
-        argFields = new Array<Field>();
+    var dataFields = [],
+        argFields = [],
+        dataInit = [];
 
     var dataType = TAnonymous(dataFields),
         argType = TAnonymous(argFields);
 
-    var constr = c.getConstructor((macro function (data:$argType) {}).getFunction().sure());
+    var constr = c.getConstructor((macro function (initial:$argType) {
+      this.__cocostate__ = new tink.state.State(${EObjectDecl(dataInit).at(c.target.pos)});
+    }).getFunction().sure());
     constr.publish();
 
     for (member in c) 
@@ -87,9 +92,9 @@ private class ModeBuilder {
               case None: 
                 member.pos.error('Plain fields not allowed on models');
               case Some(v):
-                
+                var name = member.name;
                 var res = v.apply({
-                  name: member.name,
+                  name: name,
                   type: t,
                   expr: switch e {
                     case null: null;
@@ -99,23 +104,66 @@ private class ModeBuilder {
                   meta: v.meta,
                 });
 
-                c.addMember(Member.getter(member.name, res.getter, t));
+                c.addMember(Member.getter(name, res.getter, t));
 
                 var setter = 
                   switch res.setter {
                     case null:
                       'never';
                     case v:
-                      c.addMember(Member.setter(member.name, v, t));
+                      c.addMember(Member.setter(name, v, t));
                       'set';
                   }
 
                 member.kind = FProp('get', setter, t, null);
                 member.publish();
-                //switch res.state {
-                  //case 
-                //}
-                //dataFields = dataFields.concat();
+
+                function addArg(?meta)
+                  argFields.push({
+                    name: name,
+                    pos: member.pos,
+                    meta: meta,
+                    kind: FProp('default', 'null', t),
+                  });
+
+                function getValue() 
+                  return switch res.init {
+                    case Value(e): e;
+                    case Arg: 
+                      
+                      addArg();
+                      macro initial.$name;
+
+                    case OptArg(e):
+                      
+                      addArg([{ name: ':optional', params: [], pos: member.pos }]);
+                      macro switch initial.$name {
+                        case null: $e;
+                        case v: v;
+                      }
+
+                    case Skip: 
+                      null;
+                  }
+
+                if (res.stateful) {
+                  switch getValue() {
+                    case null:
+                    case e: 
+                      dataInit.push({ field: name, expr: e });
+                  }
+
+                  dataFields.push({
+                    name: name,
+                    pos: member.pos,
+                    kind: FVar(t)
+                  });
+                }
+                else switch getValue(){
+                  case null:
+                  case v:
+                    constr.init(name, member.pos, Value(v), { bypass: true });
+                }
             }
 
             switch member.extractMeta(':transition') {
@@ -154,30 +202,31 @@ private class ModeBuilder {
 
   function constantField(ctx:FieldContext):Result {
     var name = ctx.name;
-    c.getConstructor().init(name, ctx.pos, switch ctx.expr {
-      case null: Arg(ctx.type, true);
-      case v: Value(v);
-    }, { bypass: true });
     
     return {
       getter: macro @:pos(ctx.pos) this.$name,
-      state: Stateless,
+      init: switch ctx.expr {
+        case null: Arg;
+        case macro @byDefault $v: OptArg(v);
+        case v: Value(v);
+      },
     }
   }
 
   function computedField(ctx:FieldContext):Result
     return {
       getter: ctx.expr,
-      state: Stateless,
+      init: Skip,
     }
 
-  function editableField(ctx:FieldContext) {
+  function editableField(ctx:FieldContext):Result {
     var name = ctx.name,
         ret = observableField(ctx);
     
     return {
       getter: ret.getter,
-      state: ret.state,
+      stateful: true,
+      init: ret.init,
       setter: ModelMacro.buildTransition(macro this.$name = param),
     }
   }
@@ -186,7 +235,12 @@ private class ModeBuilder {
     var name = ctx.name;
     return {
       getter: macro @:pos(ctx.pos) this.__cocostate__.value.$name,
-      state: Passed(ctx.expr),
+      stateful: true,
+      init: switch ctx.expr {
+        case null: Arg;
+        case macro @byDefault $v: OptArg(v);
+        case v: Value(v);
+      },
     }
   }
 }
