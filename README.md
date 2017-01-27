@@ -26,11 +26,11 @@ class TodoList implements Model {
 
   @:observable var items:List<TodoItem>;
 
-  public function add(description:String) 
-    modify(items = items.prepend());
+  @:transition function add(description:String) 
+    items = items.prepend();
   
-  public function clearCompleted() 
-    modify(items = items.filter(i => !i.isActive))
+  @:transition function clearCompleted() 
+    items = items.filter(i => !i.isActive);
 
 }
 
@@ -46,7 +46,7 @@ class TodoFilter implements Model {
   public function matches(item:TodoItem):Bool
     return currentFilter(item);
 
-  public function toggle(filter:TodoItem->Bool) {
+  @:transition function toggle(filter:TodoItem->Bool) {
     for (o in options)
       if (o.value == filter) currentFilter = filter;
 
