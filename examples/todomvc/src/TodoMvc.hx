@@ -1,7 +1,6 @@
 package ;
 
 import coconut.data.*;
-import tink.state.*;
 import tink.pure.List;
 import js.html.*;
 import js.Browser.*;
@@ -40,11 +39,11 @@ class TodoList implements Model {
 
   @:observable var items:List<TodoItem>;
 
-  // @:transition function add(description:String) 
-  //   items = items.prepend(TodoItem.create(description));
+  @:transition function add(description:String) 
+    items = items.prepend(TodoItem.create(description));
   
-  // @:transition function clearCompleted() 
-  //   items = items.filter(i => !i.completed);
+  @:transition function clearCompleted() 
+    items = items.filter(i => !i.completed);
 
 }
 

@@ -109,7 +109,7 @@ private class ModeBuilder {
                   }
 
                 member.kind = FProp('get', setter, t, null);
-
+                member.publish();
                 //switch res.state {
                   //case 
                 //}
@@ -189,8 +189,38 @@ class ModelMacro {
   static function build() {
     return ClassBuilder.run([ModeBuilder.new]);
   }
-  static function buildTransition(e:Expr) 
-    return e;
+
+  static function isAssignment(op:Binop)
+    return switch op {
+      case OpAssign | OpAssignOp(_): true;
+      default: false; 
+    }
+
+  static function buildTransition(e:Expr) {
+    
+    function process(e:Expr)
+      return switch e.map(process) {
+        case { expr: EBinop(op, macro this.$name, b)} if (isAssignment(op)):
+
+          EBinop(op, macro @:pos(e.pos) __next_state__.$name, b).at(e.pos);
+
+        case { expr: EBinop(op, macro $i{name}, b)} if (isAssignment(op)):
+
+          (function () {
+            return 
+              if (Context.getLocalVars().exists(name)) e;
+              else EBinop(op, macro @:pos(e.pos) __next_state__.$name, b).at(e.pos);
+          }).bounce(e.pos);
+
+        case v:
+          v;
+      }
+
+    return (macro @:pos(e.pos) {
+      var __next_state__:Dynamic = {};
+      ${process(e)};
+    });
+  }
   #end
   macro static public function transition(e) 
     return buildTransition(e);
