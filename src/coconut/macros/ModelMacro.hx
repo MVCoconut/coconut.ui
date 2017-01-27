@@ -6,9 +6,29 @@ import haxe.macro.Expr;
 using tink.CoreApi;
 using tink.MacroApi;
 
+private typedef FieldContext = {
+  var name(default, null):String;
+  var pos(default, null):Position;
+  var type(default, null):ComplexType;
+  var expr(default, null):Null<Expr>;
+  var meta(default, null):MetadataEntry;
+}
+
+enum StateKind {
+  Stateless;
+  Passed(?dfault:Expr);
+  Internal(init:Expr);
+}
+
+private typedef Result = {
+  var getter(default, null):Expr;
+  @:optional var setter(default, null):Expr;
+  var state(default, null):StateKind;
+}
+
 private class ModeBuilder {
 
-  var fieldDirectives:Array<Named<Member->MetadataEntry->Array<Field>>>;
+  var fieldDirectives:Array<Named<FieldContext->Result>>;
 
   var c:ClassBuilder;
 
@@ -32,6 +52,11 @@ private class ModeBuilder {
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
 
     var dataFields = new Array<Field>();
+
+    var dataType = TAnonymous(dataFields);
+
+    var constr = c.getConstructor((macro function (data:$dataType) {}).getFunction().sure());
+    constr.publish();
 
     for (member in c) 
       if (!member.isStatic)
@@ -60,7 +85,35 @@ private class ModeBuilder {
               case None: 
                 member.pos.error('Plain fields not allowed on models');
               case Some(v):
-                dataFields = dataFields.concat(v.apply(member, v.meta));
+                
+                var res = v.apply({
+                  name: member.name,
+                  type: t,
+                  expr: switch e {
+                    case null: null;
+                    default: macro @:pos(e.pos) ($e : $t);
+                  },
+                  pos: member.pos,
+                  meta: v.meta,
+                });
+
+                c.addMember(Member.getter(member.name, res.getter, t));
+
+                var setter = 
+                  switch res.setter {
+                    case null:
+                      'never';
+                    case v:
+                      c.addMember(Member.setter(member.name, v, t));
+                      'set';
+                  }
+
+                member.kind = FProp('get', setter, t, null);
+
+                //switch res.state {
+                  //case 
+                //}
+                //dataFields = dataFields.concat();
             }
 
             switch member.extractMeta(':transition') {
@@ -78,25 +131,56 @@ private class ModeBuilder {
                 v[0].reject("@:transtion does not accept arguments");
               default:
             }
+
+            for (d in fieldDirectives)
+              switch member.extractMeta(d.name) {
+                case Success({ pos: p, name: n }):
+                  p.error('@:$n not allowed on functions');
+                default:
+              }
+                
         }
+
+    //trace(TAnonymous(@:privateAccess c.memberList).toString());
+    add(macro class {
+      var __cocostate__:Dynamic;
+    });
   }
 
   function add(td:TypeDefinition)
     for (f in td.fields)
       c.addMember(f);  
 
-  function constantField(member:Member, meta:MetadataEntry) 
-    return [];
-
-  function computedField(member:Member, meta:MetadataEntry) 
-    return [];
-
-  function editableField(member:Member, meta:MetadataEntry) {
-    return observableField(member, meta);
+  function constantField(ctx:FieldContext):Result {
+    var name = ctx.name;
+    c.getConstructor().init(name, ctx.pos, switch ctx.expr {
+      case null: Arg(ctx.type, true);
+      case v: Value(v);
+    }, { bypass: true });
+    
+    return {
+      getter: macro @:pos(ctx.pos) this.$name,
+      state: Stateless,
+    }
   }
 
-  function observableField(member:Member, meta:MetadataEntry) 
-    return [];
+  function computedField(ctx:FieldContext):Result
+    return {
+      getter: ctx.expr,
+      state: Stateless,
+    }
+
+  function editableField(ctx:FieldContext) {
+    return observableField(ctx);
+  }
+
+  function observableField(ctx:FieldContext):Result {
+    var name = ctx.name;
+    return {
+      getter: macro @:pos(ctx.pos) this.__cocostate__.$name,
+      state: Passed(ctx.expr),
+    }
+  }
 }
 #end 
 
@@ -105,9 +189,8 @@ class ModelMacro {
   static function build() {
     return ClassBuilder.run([ModeBuilder.new]);
   }
-  static function buildTransition(e:Expr) {
+  static function buildTransition(e:Expr) 
     return e;
-  }
   #end
   macro static public function transition(e) 
     return buildTransition(e);
