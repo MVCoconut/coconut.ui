@@ -51,11 +51,13 @@ private class ModeBuilder {
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
 
-    var dataFields = new Array<Field>();
+    var dataFields = new Array<Field>(),
+        argFields = new Array<Field>();
 
-    var dataType = TAnonymous(dataFields);
+    var dataType = TAnonymous(dataFields),
+        argType = TAnonymous(argFields);
 
-    var constr = c.getConstructor((macro function (data:$dataType) {}).getFunction().sure());
+    var constr = c.getConstructor((macro function (data:$argType) {}).getFunction().sure());
     constr.publish();
 
     for (member in c) 
@@ -141,9 +143,8 @@ private class ModeBuilder {
                 
         }
 
-    //trace(TAnonymous(@:privateAccess c.memberList).toString());
     add(macro class {
-      var __cocostate__:Dynamic;
+      @:noCompletion var __cocostate__:tink.state.State<$dataType>;//access this thing directly and you will suffer!!!
     });
   }
 
@@ -171,13 +172,20 @@ private class ModeBuilder {
     }
 
   function editableField(ctx:FieldContext) {
-    return observableField(ctx);
+    var name = ctx.name,
+        ret = observableField(ctx);
+    
+    return {
+      getter: ret.getter,
+      state: ret.state,
+      setter: ModelMacro.buildTransition(macro this.$name = param),
+    }
   }
 
   function observableField(ctx:FieldContext):Result {
     var name = ctx.name;
     return {
-      getter: macro @:pos(ctx.pos) this.__cocostate__.$name,
+      getter: macro @:pos(ctx.pos) this.__cocostate__.value.$name,
       state: Passed(ctx.expr),
     }
   }
@@ -186,30 +194,29 @@ private class ModeBuilder {
 
 class ModelMacro {
   #if macro 
-  static function build() {
-    return ClassBuilder.run([ModeBuilder.new]);
-  }
+  static public function build() 
+    return ClassBuilder.run([function (c) new ModeBuilder(c)]);
 
-  static function isAssignment(op:Binop)
+  static public function isAssignment(op:Binop)
     return switch op {
       case OpAssign | OpAssignOp(_): true;
       default: false; 
     }
 
-  static function buildTransition(e:Expr) {
+  static public function buildTransition(e:Expr) {
     
     function process(e:Expr)
       return switch e.map(process) {
         case { expr: EBinop(op, macro this.$name, b)} if (isAssignment(op)):
 
-          EBinop(op, macro @:pos(e.pos) __next_state__.$name, b).at(e.pos);
+          EBinop(op, macro @:pos(e.pos) __nextstate__.$name, b).at(e.pos);
 
         case { expr: EBinop(op, macro $i{name}, b)} if (isAssignment(op)):
 
           (function () {
             return 
               if (Context.getLocalVars().exists(name)) e;
-              else EBinop(op, macro @:pos(e.pos) __next_state__.$name, b).at(e.pos);
+              else EBinop(op, macro @:pos(e.pos) __nextstate__.$name, b).at(e.pos);
           }).bounce(e.pos);
 
         case v:
@@ -217,8 +224,9 @@ class ModelMacro {
       }
 
     return (macro @:pos(e.pos) {
-      var __next_state__:Dynamic = {};
+      var __nextstate__ = this.__cocostate__.value;
       ${process(e)};
+      this.__cocostate__.set(__nextstate__);
     });
   }
   #end
