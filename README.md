@@ -84,6 +84,7 @@ class TodoListView extends View<TodoList, TodoFilter> {
       <ol>
         <for {item in todos.items}>
           <if {filter}>
+            <TodoItemView {...view} />
           </if>
         </for>
       </ol>

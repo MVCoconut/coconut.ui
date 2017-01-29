@@ -28,7 +28,7 @@ private typedef Result = {
   var init(default, null):Init;
 }
 
-private class ModeBuilder {
+private class ModelBuilder {
 
   var fieldDirectives:Array<Named<FieldContext->Result>>;
 
@@ -176,7 +176,7 @@ private class ModeBuilder {
 
             switch member.extractMeta(':transition') {
               case Success({ params: [] }):
-                f.expr = macro @:pos(f.expr.pos) coconut.macros.ModelMacro.transition(${f.expr});
+                f.expr = macro @:pos(f.expr.pos) coconut.macros.Models.transition(${f.expr});
               case Success({ params: v }): 
                 v[0].reject("@:transtion does not accept arguments");
               default:
@@ -227,7 +227,7 @@ private class ModeBuilder {
       getter: ret.getter,
       stateful: true,
       init: ret.init,
-      setter: ModelMacro.buildTransition(macro this.$name = param),
+      setter: Models.buildTransition(macro this.$name = param),
     }
   }
 
@@ -246,7 +246,7 @@ private class ModeBuilder {
 }
 #end 
 
-class ModelMacro {
+class Models {
   #if macro 
   static public function build() 
     return ClassBuilder.run([function (c) new ModeBuilder(c)]);

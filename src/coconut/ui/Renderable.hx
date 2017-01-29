@@ -1,6 +1,5 @@
 package coconut.ui;
 
-import haxe.Timer;
 import js.html.Element;
 import tink.CoreApi.CallbackLink;
 import tink.state.Observable;
