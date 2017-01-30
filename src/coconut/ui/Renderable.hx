@@ -1,12 +1,12 @@
 package coconut.ui;
 
+#if !macro
 import js.html.Element;
-import tink.CoreApi.CallbackLink;
+import tink.CoreApi;
 import tink.state.Observable;
 import vdom.Attr.Key;
 import vdom.VDom.*;
 import vdom.*;
-
 
 class Renderable extends Widget {
   
@@ -73,11 +73,33 @@ class Renderable extends Widget {
     return toElement();
   }
   
-  function get(s:String):Element 
-    return this.element.querySelector(s);
-  
+  macro function get(_, e);
+
   override public function destroy():Void {
     this.binding.dissolve();
     super.destroy();
   }  
 }
+#else
+import haxe.macro.Expr;
+using tink.MacroApi;
+
+class Renderable {
+  static var tags = [
+    'a' => macro : js.html.AnchorElement,
+    'input' => macro : js.html.InputElement,
+    'iframe' => macro : js.html.IFrameElement,    
+    'img' => macro : js.html.ImageElement,    
+    'button' => macro : js.html.ButtonElement,    
+  ];
+ 
+  macro function get(_, e:Expr) {
+    var type = 
+      switch tink.csss.Parser.parse(e.getString().sure(), e.pos).sure() {
+        case [tags[_[_.length - 1].tag] => v] if (v != null): v;
+        default: macro : js.html.Element;
+      }
+    return macro (cast this.element.querySelector($e) : $type);
+  }    
+}
+#end
