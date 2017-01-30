@@ -283,7 +283,7 @@ class Models {
       }
 
     return (macro @:pos(e.pos) {
-      var __nextstate__ = this.__cocostate__.value;
+      var __nextstate__ = Reflect.copy(this.__cocostate__.value);
       ${process(e)};
       this.__cocostate__.set(__nextstate__);
     });
