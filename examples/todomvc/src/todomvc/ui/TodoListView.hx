@@ -8,6 +8,7 @@ import coconut.ui.*;
 class TodoListView extends View<{todos:TodoList, filter:TodoFilter}> {
   function render() '
     <div class="todo-list">
+      <input type="text" onkeypress={e => if (e.keyCode == KeyboardEvent.DOM_VK_RETURN) { todos.add(e.target.value); e.target.value = ""; }} />
       <if {todos.items.length > 0}>
         <if {todos.items.exists(TodoItem.isActive)}>
           <button onclick={[] => for (i in todos.items) i.completed = true}>Mark all as completed</button>
@@ -15,7 +16,6 @@ class TodoListView extends View<{todos:TodoList, filter:TodoFilter}> {
           <button onclick={[] => for (i in todos.items) i.completed = false}>Unmark all as completed</button>
         </if>
       </if>
-      <input type="text" onkeypress={e => if (e.keyCode == KeyboardEvent.DOM_VK_RETURN) { todos.add(e.target.value); e.target.value = ""; }} />
       <ol>
         <for {item in todos.items}>
           <if {filter.matches(item)}>
