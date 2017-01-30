@@ -53,7 +53,7 @@ class Views {
                     set = 'set_' + member.name,
                     state = '__coco_${member.name}__';
 
-                c.addFields(macro class {
+                for (f in (macro class {
                   @:noCompletion var $state:tink.state.State<$t> = new tink.state.State($e);
 
                   @:noCompletion inline function $get():$t
@@ -64,7 +64,7 @@ class Views {
                     return param;
                   }
 
-                });    
+                }).fields) c.addMember(f);    
             }
             
           default:
