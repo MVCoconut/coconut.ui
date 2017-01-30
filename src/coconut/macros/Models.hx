@@ -63,9 +63,10 @@ private class ModelBuilder {
     var dataType = TAnonymous(dataFields),
         argType = TAnonymous(argFields);
 
-    var constr = c.getConstructor((macro function (initial:$argType) {
+    var cFunc = (macro function (?initial:$argType) {
       this.__cocostate__ = new tink.state.State(${EObjectDecl(dataInit).at(c.target.pos)});
-    }).getFunction().sure());
+    }).getFunction().sure();
+    var constr = c.getConstructor(cFunc);
     constr.publish();
 
     for (member in c) 
@@ -133,7 +134,7 @@ private class ModelBuilder {
                   return switch res.init {
                     case Value(e): e;
                     case Arg: 
-                      
+                      cFunc.args[0].opt = false;
                       addArg();
                       macro initial.$name;
 
@@ -179,9 +180,10 @@ private class ModelBuilder {
 
             switch member.extractMeta(':transition') {
               case Success({ params: [] }):
+                member.publish();
                 f.expr = macro @:pos(f.expr.pos) coconut.macros.Models.transition(${f.expr});
               case Success({ params: v }): 
-                v[0].reject("@:transtion does not accept arguments");
+                v[0].reject("@:transition does not accept arguments");
               default:
             }
 
