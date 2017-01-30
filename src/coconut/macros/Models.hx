@@ -41,15 +41,18 @@ private class ModelBuilder {
     if (c.target.isInterface) return;
 
     fieldDirectives = [
-      new Named(':constant',   constantField),
-      new Named(':computed',   computedField),
-      new Named(':editable',   editableField),
+      new Named(':constant'  , constantField),
+      new Named(':computed'  , computedField),
+      new Named(':editable'  , editableField),
       new Named(':observable', observableField),
     ];
 
+    
     if (!c.target.meta.has(':tink'))
       c.target.meta.add(':tink', [], c.target.pos);
 
+    //trace(c.target.name + ' -> ' + c.target.meta.has(':tink'));
+    
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
 
@@ -249,7 +252,7 @@ private class ModelBuilder {
 class Models {
   #if macro 
   static public function build() 
-    return ClassBuilder.run([function (c) new ModeBuilder(c)]);
+    return ClassBuilder.run([function (c) new ModelBuilder(c)]);
 
   static public function isAssignment(op:Binop)
     return switch op {

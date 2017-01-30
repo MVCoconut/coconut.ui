@@ -5,12 +5,14 @@ import tink.pure.List;
 import js.html.*;
 import js.Browser.*;
 import vdom.VDom.*;
+import vdom.VNode;
 
 using tink.CoreApi;
 
 class TodoMvc {
   static function main() {
-    
+    var item = TodoItem.create('test');
+    // var view = new TodoItemView(item);
     // var data = new TodoList({ items: [] });
     // var view = new TodoListView(data);
     // document.body.appendChild(view.toElement());
@@ -68,4 +70,13 @@ class TodoFilter implements Model {
   
   public function isActive(filter:TodoItem->Bool)
     return filter == currentFilter;
+}
+
+class TodoItemView extends coconut.ui.View<TodoItem> {
+  function render(item:TodoItem):VNode return @hxx '
+    <div class="todo-item" data-completed={item.completed}>
+      <input type="checkbox" checked={item.completed} onchange={e => item.completed = e.target.checked} />
+      <input type="name" value={item.description} onchange={e => item.description = e.target.value} />
+    </div>
+  ';
 }
