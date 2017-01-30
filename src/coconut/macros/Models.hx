@@ -50,8 +50,6 @@ private class ModelBuilder {
     
     if (!c.target.meta.has(':tink'))
       c.target.meta.add(':tink', [], c.target.pos);
-
-    //trace(c.target.name + ' -> ' + c.target.meta.has(':tink'));
     
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
