@@ -1,6 +1,6 @@
-# @install: lix download https://lib.haxe.org/p/tink_lang/0.4.2/download/ as tink_lang#0.4.2/haxelib
+# @install: lix download https://github.com/haxetink/tink_lang/archive/1e3c855a8d40e411c86044c035412965f8d7210d.tar.gz as tink_lang#0.4.2/1e3c855a8d40e411c86044c035412965f8d7210d
 -D tink_lang=0.4.2
--cp ${HAXESHIM_LIBCACHE}/tink_lang/0.4.2/haxelib/src
+-cp ${HAXESHIM_LIBCACHE}/tink_lang/0.4.2/1e3c855a8d40e411c86044c035412965f8d7210d/src
 --macro tink.lang.Sugar.use()
 
 -lib tink_syntaxhub

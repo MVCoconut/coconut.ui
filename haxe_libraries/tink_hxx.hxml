@@ -1,6 +1,6 @@
-# @install: lix download https://github.com/haxetink/tink_hxx/archive/a85db25692312345fa72a872261f01b34e0cb3fa.tar.gz as tink_hxx#0.10.0/a85db25692312345fa72a872261f01b34e0cb3fa
+# @install: lix download https://github.com/haxetink/tink_hxx/archive/e636cd89fc95aa57dfefd8ae4fb3d0113fe1fe55.tar.gz as tink_hxx#0.10.0/e636cd89fc95aa57dfefd8ae4fb3d0113fe1fe55
 -D tink_hxx=0.10.0
--cp ${HAXESHIM_LIBCACHE}/tink_hxx/0.10.0/a85db25692312345fa72a872261f01b34e0cb3fa/src
+-cp ${HAXESHIM_LIBCACHE}/tink_hxx/0.10.0/e636cd89fc95aa57dfefd8ae4fb3d0113fe1fe55/src
 
 -lib tink_parse
 -lib tink_macro

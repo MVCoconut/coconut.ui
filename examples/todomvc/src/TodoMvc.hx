@@ -73,7 +73,7 @@ class TodoFilter implements Model {
 }
 
 class TodoItemView extends coconut.ui.View<TodoItem> {
-  function render(item:TodoItem):VNode return @hxx '
+  function render(item:TodoItem):VNode '
     <div class="todo-item" data-completed={item.completed}>
       <input type="checkbox" checked={item.completed} onchange={e => item.completed = e.target.checked} />
       <input type="name" value={item.description} onchange={e => item.description = e.target.value} />
