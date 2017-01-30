@@ -38,6 +38,38 @@ class Views {
         super(data, render);
       }).getFunction().sure()).publish();
 
+      for (member in c)
+        switch member.extractMeta(':state') {
+          case Success(m):
+
+            switch member.getVar(true).sure() {
+              case { type: null }: member.pos.error('Field requires type');
+              case { expr: null }: member.pos.error('Field requires initial value');
+              case { expr: e, type: t }:
+                
+                member.kind = FProp('get', 'set', t);
+
+                var get = 'get_' + member.name,
+                    set = 'set_' + member.name,
+                    state = '__coco_${member.name}__';
+
+                c.addFields(macro class {
+                  @:noCompletion var $state:tink.state.State<$t> = new tink.state.State($e);
+
+                  @:noCompletion inline function $get():$t
+                    return this.$state.value;
+
+                  @:noCompletion inline function $set(param:$t) {
+                    this.$state.set(param);
+                    return param;
+                  }
+
+                });    
+            }
+            
+          default:
+        }
+
       var render = c.memberByName('render').sure();
       var impl = render.getFunction().sure();
 
