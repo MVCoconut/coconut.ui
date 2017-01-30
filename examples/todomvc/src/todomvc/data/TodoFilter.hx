@@ -13,14 +13,12 @@ class TodoFilter implements Model {
 
   @:observable var currentFilter:TodoItem->Bool = options.iterator().next().value;
 
-  public function matches(item:TodoItem):Bool
+  public function matches(item:TodoItem):Bool 
     return currentFilter(item);
 
   @:transition function toggle(filter:TodoItem->Bool) {
     for (o in options)
       if (o.value == filter) currentFilter = filter;
-
-    throw 'this should not happen';
   }
   
   public function isActive(filter:TodoItem->Bool)

@@ -10,6 +10,9 @@ class TodoList implements Model {
   @:transition function add(description:String) 
     items = items.prepend(TodoItem.create(description));
   
+  @:transition function delete(item)
+    items = items.filter(i => i != item);
+
   @:transition function clearCompleted() 
     items = items.filter(i => !i.completed);
 
