@@ -1,7 +1,7 @@
 {
     "version": "0.1.0",
     "command": "haxe",
-    "args": ["dev.hxml", "--times", "--connect", "2000"],
+    "args": ["dev.hxml", "--times"],
     "problemMatcher": {
         "owner": "haxe",
         "pattern": {

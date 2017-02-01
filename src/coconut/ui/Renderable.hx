@@ -29,7 +29,7 @@ class Renderable extends Widget {
   function SIDE_EFFECT<T>(v:T):VNode return null;
   
   override public function init():Element {
-    trace('init ' + Type.getClassName(Type.getClass(this)));
+    //trace('init ' + Type.getClassName(Type.getClass(this)));
     last = rendered.value;
     this.element = create(last);
     
@@ -39,9 +39,9 @@ class Renderable extends Widget {
   }
   
   function setupBinding()
-  this.binding = this.rendered.bind(function (next) {
-    if (next != last) apply(next);
-  });
+    this.binding = this.rendered.bind(function (next) {
+      if (next != last) apply(next);
+    });
   
   function apply(next) {
     var changes = diff(last, next);

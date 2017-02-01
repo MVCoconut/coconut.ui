@@ -1,24 +1,37 @@
 package coconut.macros;
 
 #if macro
+import tink.hxx.Parser;
 import tink.macro.BuildCache;
+import haxe.macro.Context;
 import haxe.macro.Expr;
 using tink.MacroApi;
 
 class Views {
-  
   static function buildType() 
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
 
       var name = ctx.name,
           type = ctx.type.toComplex();
 
-      var ret = macro class $name extends coconut.ui.Renderable {
-        public function new(data:$type, render:$type->vdom.VNode)
-          super(tink.state.Observable.auto(function ():vdom.VNode {
-            return render(data);
-          }), data);
-      }; 
+      var ret = 
+        switch ctx.type.reduce() {
+          case TAnonymous(_):
+            macro class $name extends coconut.ui.Renderable {
+              public function new(data:tink.state.Observable<$type>, render:$type->vdom.VNode)
+                super(tink.state.Observable.auto(function ():vdom.VNode {
+                  return render(data);
+                }), data);
+            }; 
+          default:
+            macro class $name extends coconut.ui.Renderable {
+              public function new(data:$type, render:$type->vdom.VNode)
+                super(tink.state.Observable.auto(function ():vdom.VNode {
+                  return render(data);
+                }), data);
+            }; 
+        }
+          
 
       ret.meta = [{ name: ':autoBuild', params: [macro coconut.macros.Views.buildClass()], pos: ctx.pos }];
       
@@ -38,6 +51,8 @@ class Views {
         super(data, render);
       }).getFunction().sure()).publish();
 
+      var states = [];
+
       for (member in c)
         switch member.extractMeta(':state') {
           case Success(m):
@@ -53,11 +68,15 @@ class Views {
                     set = 'set_' + member.name,
                     state = '__coco_${member.name}__';
 
+                states.push(state); 
                 for (f in (macro class {
-                  @:noCompletion var $state:tink.state.State<$t> = new tink.state.State($e);
+                  @:noCompletion var $state:tink.state.State<$t>;
 
-                  @:noCompletion inline function $get():$t
+                  @:noCompletion function $get():$t {
+                    if (this.$state == null)
+                       this.$state = new tink.state.State($e);
                     return this.$state.value;
+                  }
 
                   @:noCompletion inline function $set(param:$t) {
                     this.$state.set(param);
@@ -70,6 +89,25 @@ class Views {
           default:
         }
 
+      switch states {
+        case []:
+        case v:
+
+          var copyStates = [
+            for (s in states) macro this.$s = that.$s
+          ];
+          for (f in (macro class {
+            override function update(old:{}, elt:js.html.Element) {
+              switch Std.instance(old, $i{c.target.name}) {
+                case null:
+                case that:
+                  $b{copyStates};
+              }
+              return super.update(old, elt);
+            }
+          }).fields) c.addMember(f);
+      }
+
       var render = c.memberByName('render').sure();
       var impl = render.getFunction().sure();
 
@@ -77,7 +115,7 @@ class Views {
         case []:
 
           switch c.target.superClass.t.get().constructor.get().type.reduce() {
-            case TFun(_[0].t => data, _):
+            case TFun(_[1].t.reduce() => TFun(_[0].t => data, _), _):
 
               impl.args.push({
                 name: '__data__',
