@@ -15,6 +15,9 @@
   "dependencies": {
     "tink_state": "",
     "tink_hxx": "",
+    "tink_lang": "",
+    "tink_csss": "",
+    "tink_pure": "",
     "js-virtual-dom": ""
   }
 }
