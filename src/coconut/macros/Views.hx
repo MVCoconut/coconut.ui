@@ -41,6 +41,12 @@ class Views {
   static function buildClass():Array<Field> {
     return ClassBuilder.run([function (c:ClassBuilder) {
       
+      var data =           
+        switch c.target.superClass.t.get().constructor.get().type.reduce() {
+          case TFun(_[1].t.reduce() => TFun(_[0].t => ret, _), _): ret;
+          default: throw "super class constructor has unexpected shape";
+        }
+
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], haxe.macro.Context.currentPos());
 
@@ -114,32 +120,30 @@ class Views {
       switch impl.args {
         case []:
 
-          switch c.target.superClass.t.get().constructor.get().type.reduce() {
-            case TFun(_[1].t.reduce() => TFun(_[0].t => data, _), _):
+          impl.args.push({
+            name: '__data__',
+            type: data.toComplex({ direct: true }),
+          });
+          
+          var statements = [
+            if (impl.expr.getString().isSuccess()) 
+              macro @:pos(impl.expr.pos) return hxx(${impl.expr});
+            else
+              impl.expr
+          ];
 
-              impl.args.push({
-                name: '__data__',
-                type: data.toComplex({ direct: true }),
-              });
-              
-              var statements = [
-                if (impl.expr.getString().isSuccess()) 
-                  macro @:pos(impl.expr.pos) return hxx(${impl.expr});
-                else
-                  impl.expr
-              ];
-
-              for (v in data.getFields().sure()) if (v.isPublic) {
-                var name = v.name;
-                statements.unshift(macro var $name = __data__.$name);
-              }
-
-              impl.expr = statements.toBlock(impl.expr.pos);
-
-            default: throw 'assert';
+          for (v in data.getFields().sure()) if (v.isPublic) {
+            var name = v.name;
+            statements.unshift(macro var $name = __data__.$name);
           }
 
+          impl.expr = statements.toBlock(impl.expr.pos);
+
         case [v]:
+          if (v.type == null)
+            v.type = data.toComplex();
+          else 
+            render.pos.getOutcome(v.type.toType(render.pos).sure().isSubTypeOf(data));
         case v: 
           render.pos.error("The render function should have one argument at most");
       }
