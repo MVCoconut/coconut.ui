@@ -98,10 +98,7 @@ private class ModelBuilder {
                 var res = v.apply({
                   name: name,
                   type: t,
-                  expr: switch e {
-                    case null: null;
-                    default: macro @:pos(e.pos) ($e : $t);
-                  },
+                  expr: e,
                   pos: member.pos,
                   meta: v.meta,
                 });
@@ -130,7 +127,7 @@ private class ModelBuilder {
 
                 function getValue() 
                   return switch res.init {
-                    case Value(e): e;
+                    case Value(e): macro @:pos(e.pos) ($e : $t);
                     case Arg: 
                       cFunc.args[0].opt = false;
                       addArg();
@@ -140,7 +137,7 @@ private class ModelBuilder {
                       
                       addArg([{ name: ':optional', params: [], pos: member.pos }]);
                       macro switch initial.$name {
-                        case null: $e;
+                        case null: @:pos(e.pos) ($e : $t);
                         case v: v;
                       }
 
