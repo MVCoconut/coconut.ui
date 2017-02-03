@@ -96,7 +96,7 @@ class Renderable {
   macro function get(_, e:Expr) {
     var type = 
       switch tink.csss.Parser.parse(e.getString().sure(), e.pos).sure() {
-        case [tags[_[_.length - 1].tag] => v] if (v != null): v;
+        case [tags[Std.string(_[_.length - 1].tag)] => v] if (v != null): v;
         default: macro : js.html.Element;
       }
     return macro (cast this.element.querySelector($e) : $type);
