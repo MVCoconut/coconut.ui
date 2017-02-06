@@ -39,6 +39,8 @@ private class ModelBuilder {
     this.c = c;
 
     if (c.target.isInterface) return;
+    
+    var OPTIONAL = [{ name: ':optional', params: [], pos: c.target.pos }];
 
     fieldDirectives = [
       new Named(':constant'  , constantField),
@@ -56,10 +58,12 @@ private class ModelBuilder {
 
     var dataFields = [],
         argFields = [],
-        dataInit = [];
+        dataInit = [],
+        transitionFields = [];
 
     var dataType = TAnonymous(dataFields),
-        argType = TAnonymous(argFields);
+        argType = TAnonymous(argFields),
+        transitionType = TAnonymous(transitionFields);
 
     var cFunc = (macro function (?initial:$argType) {
       this.__cocostate__ = new tink.state.State(${EObjectDecl(dataInit).at(c.target.pos)});
@@ -135,7 +139,7 @@ private class ModelBuilder {
 
                     case OptArg(e):
                       
-                      addArg([{ name: ':optional', params: [], pos: member.pos }]);
+                      addArg(OPTIONAL);
                       macro switch initial.$name {
                         case null: @:pos(e.pos) ($e : $t);
                         case v: v;
@@ -157,6 +161,13 @@ private class ModelBuilder {
                     pos: member.pos,
                     kind: FVar(t)
                   });
+                  if (setter == 'never')
+                    transitionFields.push({
+                      name: name,
+                      pos: member.pos,
+                      kind: FProp('default', 'never', t),
+                      meta: OPTIONAL,
+                    });
                 }
                 else switch getValue(){
                   case null:
@@ -175,8 +186,18 @@ private class ModelBuilder {
 
             switch member.extractMeta(':transition') {
               case Success({ params: [] }):
+                
                 member.publish();
-                f.expr = macro @:pos(f.expr.pos) coconut.macros.Models.transition(${f.expr});
+
+                function next(e:Expr) return switch e {
+                  case macro @next $v: macro @:pos(e.pos) ($v : $transitionType);
+                  default: e.map(next);
+                }
+
+                f.expr = macro @:pos(f.expr.pos) coconut.macros.Models.transition(
+                  function ():tink.core.Promise<$transitionType> ${next(f.expr)}
+                );
+
               case Success({ params: v }): 
                 v[0].reject("@:transition does not accept arguments");
               default:
@@ -194,6 +215,12 @@ private class ModelBuilder {
       constr.addStatement(macro initial = {}, true);
     add(macro class {
       @:noCompletion var __cocostate__:tink.state.State<$dataType>;//access this thing directly and you will suffer!!!
+      @:noCompletion function __cocoupdate(delta:$transitionType) {//see above
+        var next = Reflect.copy(__cocostate__.value);
+        for (f in Reflect.fields(delta))
+          Reflect.setField(next, f, Reflect.field(delta, f));
+        __cocostate__.set(next);
+      }
     });
   }
 
@@ -228,7 +255,8 @@ private class ModelBuilder {
       getter: ret.getter,
       stateful: true,
       init: ret.init,
-      setter: Models.buildTransition(macro this.$name = param),
+      //setter: Models.buildTransition(macro this.$name = param),
+      setter: macro null,
     }
   }
 
@@ -258,32 +286,15 @@ class Models {
       default: false; 
     }
 
-  static public function buildTransition(e:Expr) {
-    
-    function process(e:Expr)
-      return switch e.map(process) {
-        case { expr: EBinop(op, macro this.$name, b)} if (isAssignment(op)):
-
-          EBinop(op, macro @:pos(e.pos) __nextstate__.$name, b).at(e.pos);
-
-        case { expr: EBinop(op, macro $i{name}, b)} if (isAssignment(op)):
-
-          (function () {
-            return 
-              if (Context.getLocalVars().exists(name)) e;
-              else EBinop(op, macro @:pos(e.pos) __nextstate__.$name, b).at(e.pos);
-          }).bounce(e.pos);
-
-        case v:
-          v;
-      }
-
-    return (macro @:pos(e.pos) {
-      var __nextstate__ = Reflect.copy(this.__cocostate__.value);
-      ${process(e)};
-      this.__cocostate__.set(__nextstate__);
-    });
-  }
+  static public function buildTransition(e:Expr) 
+    return macro @:pos(e.pos) {
+      var ret = $e();
+      ret.handle(function (o) switch o {
+        case Success(v): __cocoupdate(v);
+        case _:
+      });
+      return ret;
+    }
   #end
   macro static public function transition(e) 
     return buildTransition(e);
