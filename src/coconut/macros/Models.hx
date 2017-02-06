@@ -190,7 +190,8 @@ private class ModelBuilder {
               }
                 
         }
-
+    if (cFunc.args[0].opt)
+      constr.addStatement(macro initial = {}, true);
     add(macro class {
       @:noCompletion var __cocostate__:tink.state.State<$dataType>;//access this thing directly and you will suffer!!!
     });
