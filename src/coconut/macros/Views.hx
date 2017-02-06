@@ -5,15 +5,16 @@ import tink.hxx.Parser;
 import tink.macro.BuildCache;
 import haxe.macro.Context;
 import haxe.macro.Expr;
+
 using tink.MacroApi;
 
 class Views {
   static function buildType() 
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
-
+      
       var name = ctx.name,
           type = ctx.type.toComplex();
-
+      
       var ret = 
         switch ctx.type.reduce() {
           case TAnonymous(_):
@@ -32,7 +33,20 @@ class Views {
             }; 
         }
           
-
+      switch ctx.type {
+        case TInst(_, params), TEnum(_, params), TAbstract(_, params), TType(_, params) if (params.length > 0):
+          ret.params = [];
+          for (p in params)
+            switch p {
+              case TInst(_.get() => { name: name, kind: KTypeParameter(constraints) }, []):
+                ret.params.push({
+                  name: name,
+                  constraints: [for (c in constraints) c.toComplex()],
+                });
+              default:
+            }
+        default:
+      }
       ret.meta = [{ name: ':autoBuild', params: [macro coconut.macros.Views.buildClass()], pos: ctx.pos }];
       
       return ret;
