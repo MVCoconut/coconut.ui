@@ -190,7 +190,7 @@ private class ModelBuilder {
                 member.publish();
 
                 function next(e:Expr) return switch e {
-                  case macro @next $v: macro @:pos(e.pos) ($v : $transitionType);
+                  case macro @applyChanges $v: macro @:pos(e.pos) ($v : $transitionType);
                   default: e.map(next);
                 }
 
