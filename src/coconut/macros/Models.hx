@@ -45,8 +45,8 @@ private class ModelBuilder {
     fieldDirectives = [
       new Named(':constant'  , constantField),
       new Named(':computed'  , computedField),
-      new Named(':editable'  , editableField),
-      new Named(':observable', observableField),
+      new Named(':editable'  , observableField.bind(_, true)),
+      new Named(':observable', observableField.bind(_, false)),
     ];
 
     
@@ -56,17 +56,13 @@ private class ModelBuilder {
     if (c.hasConstructor())
       c.getConstructor().toHaxe().pos.error('Custom constructors not allowed in models');
 
-    var dataFields = [],
-        argFields = [],
-        dataInit = [],
+    var argFields = [],
         transitionFields = [];
 
-    var dataType = TAnonymous(dataFields),
-        argType = TAnonymous(argFields),
+    var argType = TAnonymous(argFields),
         transitionType = TAnonymous(transitionFields);
 
     var cFunc = (macro function (?initial:$argType) {
-      this.__cocostate__ = new tink.state.State(${EObjectDecl(dataInit).at(c.target.pos)});
     }).getFunction().sure();
 
     var constr = c.getConstructor(cFunc);
@@ -151,18 +147,6 @@ private class ModelBuilder {
                   }
 
                 if (res.stateful) {
-                  switch getValue() {
-                    case null:
-                    case e: 
-                      dataInit.push({ field: name, expr: e });
-                  }
-
-                  dataFields.push({
-                    name: name,
-                    pos: member.pos,
-                    kind: FVar(t)
-                  });
-
                   if (setter == 'never')
                     transitionFields.push({
                       name: name,
@@ -170,12 +154,25 @@ private class ModelBuilder {
                       kind: FProp('default', 'never', t),
                       meta: OPTIONAL,
                     });
+
+                  switch getValue() {
+                    case null:
+                      throw "assert";
+                    case e: 
+                      c.addMember({
+                        access: [APrivate],
+                        name: stateOf(name),
+                        pos: member.pos,
+                        kind: FVar(macro : tink.state.State<$t>),
+                      });
+                      constr.init(stateOf(name), e.pos, Value(e));
+                  }
                 }
-                else switch getValue(){
+                else switch getValue() {
                   case null:
                   case v:
                     constr.init(name, member.pos, Value(v), { bypass: true });
-                }
+                }                  
             }
 
             switch member.extractMeta(':transition') {
@@ -226,19 +223,23 @@ private class ModelBuilder {
               }
                 
         }
+
     if (cFunc.args[0].opt)
       constr.addStatement(macro initial = {}, true);
-    add(macro class {
 
-      @:noCompletion var __cocostate__:tink.state.State<$dataType>;//access this thing directly and you will suffer!!!
-      @:noCompletion function __cocoupdate(delta:$transitionType) {//see above
-        var next = Reflect.copy(__cocostate__.value);
-        for (f in Reflect.fields(delta))
-          Reflect.setField(next, f, Reflect.field(delta, f));
-        __cocostate__.set(next);
-      }
+    var updates = [];
+    
+    for (f in transitionFields) {
+      var name = f.name;
+      updates.push(macro if (delta.$name != null) $i{stateOf(name)}.set(delta.$name));
+    }
+
+    add(macro class {
+      @:noCompletion function __cocoupdate(delta:$transitionType) $b{updates};
     });
   }
+  static public function stateOf(name:String)
+    return '__coco_$name';
 
   function add(td:TypeDefinition)
     for (f in td.fields)
@@ -263,23 +264,12 @@ private class ModelBuilder {
       init: Skip,
     }
 
-  function editableField(ctx:FieldContext):Result {
+  function observableField(ctx:FieldContext, setter:Bool):Result {
     var name = ctx.name,
-        ret = observableField(ctx);
-    
+        state = '__coco_$name';
     return {
-      getter: ret.getter,
-      stateful: true,
-      init: ret.init,
-      //setter: Models.buildTransition(macro this.$name = param),
-      setter: macro null,
-    }
-  }
-
-  function observableField(ctx:FieldContext):Result {
-    var name = ctx.name;
-    return {
-      getter: macro @:pos(ctx.pos) this.__cocostate__.value.$name,
+      getter: macro @:pos(ctx.pos) this.$state.value,
+      setter: if (setter) macro @:pos(ctx.pos) this.$state.set(param) else null,
       stateful: true,
       init: switch ctx.expr {
         case null: Arg;
