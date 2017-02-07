@@ -68,6 +68,7 @@ private class ModelBuilder {
     var cFunc = (macro function (?initial:$argType) {
       this.__cocostate__ = new tink.state.State(${EObjectDecl(dataInit).at(c.target.pos)});
     }).getFunction().sure();
+
     var constr = c.getConstructor(cFunc);
     constr.publish();
 
@@ -161,6 +162,7 @@ private class ModelBuilder {
                     pos: member.pos,
                     kind: FVar(t)
                   });
+
                   if (setter == 'never')
                     transitionFields.push({
                       name: name,
@@ -185,9 +187,24 @@ private class ModelBuilder {
           case FFun(f):
 
             switch member.extractMeta(':transition') {
-              case Success({ params: [] }):
+              case Success({ params: params }):
                 
                 member.publish();
+
+                var ret = null;
+                for (v in params)
+                  switch v {
+                    case macro return $e: 
+                      if (ret == null)
+                        ret = e;
+                      else
+                        v.reject('Only one return clause allowed');
+                    default:
+                      v.reject();
+                  }
+
+                if (ret == null) 
+                  ret = macro null;
 
                 function next(e:Expr) return switch e {
                   case macro @applyChanges $v: macro @:pos(e.pos) ($v : $transitionType);
@@ -195,11 +212,9 @@ private class ModelBuilder {
                 }
 
                 f.expr = macro @:pos(f.expr.pos) coconut.macros.Models.transition(
-                  function ():tink.core.Promise<$transitionType> ${next(f.expr)}
+                  function ():tink.core.Promise<$transitionType> ${next(f.expr)}, $ret
                 );
 
-              case Success({ params: v }): 
-                v[0].reject("@:transition does not accept arguments");
               default:
             }
 
@@ -214,6 +229,7 @@ private class ModelBuilder {
     if (cFunc.args[0].opt)
       constr.addStatement(macro initial = {}, true);
     add(macro class {
+
       @:noCompletion var __cocostate__:tink.state.State<$dataType>;//access this thing directly and you will suffer!!!
       @:noCompletion function __cocoupdate(delta:$transitionType) {//see above
         var next = Reflect.copy(__cocostate__.value);
@@ -286,16 +302,24 @@ class Models {
       default: false; 
     }
 
-  static public function buildTransition(e:Expr) 
+  static public function buildTransition(e:Expr, ret:Expr) { 
+    
+    var ret = switch ret {
+      case null | macro null: macro ret;
+      case v: macro ret.next(function (_) return $v);
+    }
+
     return macro @:pos(e.pos) {
       var ret = $e();
       ret.handle(function (o) switch o {
         case Success(v): __cocoupdate(v);
         case _:
       });
-      return ret;
+      return $ret;
     }
+
+  }
   #end
-  macro static public function transition(e) 
-    return buildTransition(e);
+  macro static public function transition(e, ?ret) 
+    return buildTransition(e, ret);
 }
