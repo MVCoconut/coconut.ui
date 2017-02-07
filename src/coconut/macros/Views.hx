@@ -20,14 +20,14 @@ class Views {
           case TAnonymous(_):
             macro class $name extends coconut.ui.Renderable {
               public function new(data:tink.state.Observable<$type>, render:$type->vdom.VNode)
-                super(tink.state.Observable.auto(function ():vdom.VNode {
+                @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
                   return render(data);
                 }), data);
             }; 
           default:
             macro class $name extends coconut.ui.Renderable {
               public function new(data:$type, render:$type->vdom.VNode)
-                super(tink.state.Observable.auto(function ():vdom.VNode {
+                @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
                   return render(data);
                 }), data);
             }; 
