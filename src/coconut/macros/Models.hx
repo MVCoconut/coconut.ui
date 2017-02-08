@@ -258,15 +258,25 @@ private class ModelBuilder {
     }
   }
 
-  function computedField(ctx:FieldContext):Result
+  function computedField(ctx:FieldContext):Result {
+    var state = stateOf(ctx.name),
+        t = ctx.type;
+    c.addMember({
+      name: state,
+      pos: ctx.pos,
+      access: [APrivate],
+      kind: FVar(macro : tink.state.Observable<$t>)
+    });
+    c.getConstructor().init(state, ctx.pos, Value(macro tink.state.Observable.auto(function () return ${ctx.expr})));
     return {
-      getter: ctx.expr,
+      getter: macro this.$state.value,
       init: Skip,
     }
+  }
 
   function observableField(ctx:FieldContext, setter:Bool):Result {
     var name = ctx.name,
-        state = '__coco_$name';
+        state = stateOf(name);
     return {
       getter: macro @:pos(ctx.pos) this.$state.value,
       setter: if (setter) macro @:pos(ctx.pos) this.$state.set(param) else null,
