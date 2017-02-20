@@ -1,18 +1,18 @@
 {
-  "name": "coconut.ui",
-  "license": "MIT",
-  "tags": [
-    "ui"
-  ],
-  "classPath": "src",
-  "contributors": [
-    "back2dos"
-  ],
-  "releasenote": "initial release",
-  "version": "0.0.0",
-  "url": "https://github.com/back2dos/coconut.ui/",
-  "dependencies": {
-    "coconut.data": "",
-    "tink_lang": ""
-  }
+	"name": "coconut.ui",
+	"license": "MIT",
+	"tags": [
+		"ui"
+	],
+	"classPath": "src",
+	"contributors": [
+		"back2dos"
+	],
+	"releasenote": "Initial haxelib release.",
+	"version": "0.1.0",
+	"url": "https://github.com/back2dos/coconut.ui/",
+	"dependencies": {
+		"coconut.data": "",
+		"tink_lang": ""
+	}
 }
