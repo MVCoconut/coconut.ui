@@ -1,15 +1,30 @@
 package ;
 
+import js.Browser.*;
+
 class RunTests {
 
   static function main() {
-    travix.Logger.exit(0); // make sure we exit properly, which is necessary on some targets, e.g. flash & (phantom)js
+    travix.Logger.exit(
+      try {
+        document.body.appendChild(new Example({ foo: 4 }).toElement());
+        if (document.querySelector('body>div>h1').innerHTML != '4')
+          throw 'test failed';
+        0;
+      }
+      catch (e:Dynamic) {
+        travix.Logger.println(Std.string(e));
+        500;
+      }
+    ); 
   }
   
 }
 
 class Example extends coconut.ui.View<{ foo: Int }> {
   function render() '
-    <div>{foo}</div>
+    <div>
+      <h1>{foo}</h1>
+    </div>
   ';
 }
