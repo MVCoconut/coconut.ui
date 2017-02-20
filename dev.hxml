@@ -1,2 +1,4 @@
-lib.hxml
--scoped-hxml examples/todomvc/todomvc.hxml
+-lib coconut.ui
+-lib travix
+tests.hxml
+-js test.js

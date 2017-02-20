@@ -1,0 +1,7 @@
+# @install: lix download https://lib.haxe.org/p/coconut.data/0.2.0/download/ as coconut.data#0.2.0/haxelib
+-D coconut.data=0.2.0
+-cp ${HAXESHIM_LIBCACHE}/coconut.data/0.2.0/haxelib/src
+
+-lib tink_state
+-lib tink_lang
+-lib tink_pure

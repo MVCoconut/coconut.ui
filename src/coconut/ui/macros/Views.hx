@@ -1,4 +1,4 @@
-package coconut.macros;
+package coconut.ui.macros;
 
 #if macro
 import tink.hxx.Parser;
@@ -47,7 +47,7 @@ class Views {
             }
         default:
       }
-      ret.meta = [{ name: ':autoBuild', params: [macro coconut.macros.Views.buildClass()], pos: ctx.pos }];
+      ret.meta = [{ name: ':autoBuild', params: [macro coconut.ui.macros.Views.buildClass()], pos: ctx.pos }];
       
       return ret;
     });
@@ -128,7 +128,10 @@ class Views {
           }).fields) c.addMember(f);
       }
 
-      var render = c.memberByName('render').sure();
+      var render = switch c.memberByName('render') {
+        case Success(f): f;
+        case Failure(_): c.target.pos.error('View requires render method');
+      }
       var impl = render.getFunction().sure();
 
       switch impl.args {

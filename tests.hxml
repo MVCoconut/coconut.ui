@@ -1,4 +1,3 @@
 -cp tests
--lib travix
--lib coconut
+-lib coconut.vdom
 -main RunTests

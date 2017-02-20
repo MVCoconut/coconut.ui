@@ -1,8 +1,0 @@
--D coconut
--cp src
--lib tink_csss
--lib tink_hxx
--lib tink_state
--lib tink_pure
--lib tink_lang
--lib js-virtual-dom
