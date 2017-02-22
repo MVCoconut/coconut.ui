@@ -59,21 +59,22 @@ class Views {
                 }),
               });              
             }
-
-            macro class $name extends coconut.ui.Renderable {
+            
+            macro class $name extends coconut.ui.ViewBase<$lt, $pt> {
               public function new(data:$lt, render:$pt->vdom.VNode) {
-                @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
-                  return render($obj);
-                }), data.key);
+                super(data, function (data) return $obj, function (old, nu) return old == nu, render, data.key);
               }
             }; 
           default:
-            macro class $name extends coconut.ui.Renderable {
-              public function new(data:$type, render:$type->vdom.VNode)
-                @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
-                  return render(data);
-                }), data);
-            }; 
+            throw 'not implemented';
+            // Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
+
+            // macro class $name extends coconut.ui.Renderable<$type, $type> {
+              // public function new(data:$type, render:$type->vdom.VNode)
+              //   @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
+              //     return render(data);
+              //   }), data);
+            // }; 
         }
           
       switch ctx.type {

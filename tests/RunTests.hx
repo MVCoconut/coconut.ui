@@ -50,7 +50,7 @@ class RunTests extends haxe.unit.TestCase {
      var s = new State(4);
      var e = new Example({ foo: s, bar: s, key: 1234 });
      e.baz = 42;
-     var r = new coconut.ui.Renderable(
+     var r = new coconut.vdom.Renderable(
       Observable.auto(function () return hxx('
         <div>
           <if {s.value == 4}>{e}
@@ -89,17 +89,4 @@ class RunTests extends haxe.unit.TestCase {
 class Foo implements coconut.data.Model {
   @:editable var foo:Int;
   @:computed var bar:Int = foo;
-}
-
-class Example extends coconut.ui.View<{ foo: Observable<Int>, bar:Int }> {
-  static public var redraws = 0;
-  @:state public var baz:Int = 0;
-  function render() '
-    <div>
-      {redraws++}
-      <span class="foo">{foo.value}</span>
-      <span class="bar">{bar}</span>
-      <span class="baz">{baz}</span>
-    </div>
-  ';
 }
