@@ -22,34 +22,35 @@ class RunTests extends haxe.unit.TestCase {
 
     mount(new Example({ foo: s, bar: s }));
     
-    assertEquals(q('.foo').innerHTML, '4');
-    assertEquals(q('.bar').innerHTML, '4');
+    assertEquals('4', q('.foo').innerHTML);
+    assertEquals('4', q('.bar').innerHTML);
 
     s.set(5);
+    Observable.updateAll();
 
-    assertEquals(q('.foo').innerHTML, '5');
-    assertEquals(q('.bar').innerHTML, '5');
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
   }
 
   function testModel() {
     var model = new Foo({ foo: 4 });
 
-    mount(new Example(model.observables));
+    mount(hxx('<Example key={model} {...model.observables} />'));
     
-    assertEquals(q('.foo').innerHTML, '4');
-    assertEquals(q('.bar').innerHTML, '4');
+    assertEquals('4', q('.foo').innerHTML);
+    assertEquals('4', q('.bar').innerHTML);
 
     model.foo = 5;
-
-    assertEquals(q('.foo').innerHTML, '5');
-    assertEquals(q('.bar').innerHTML, '5');
+    Observable.updateAll();
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
   }
 
   function testLifeCycle() {
      var s = new State(4);
      var e = new Example({ foo: s, bar: s, key: 1234 });
      e.baz = 42;
-     mount(new coconut.ui.Renderable(
+     var r = new coconut.ui.Renderable(
       Observable.auto(function () return hxx('
         <div>
           <if {s.value == 4}>{e}
@@ -58,13 +59,20 @@ class RunTests extends haxe.unit.TestCase {
           </if>
         </div>
       '))
-     ));
-     assertEquals(q('.foo').innerHTML, '4');
-     assertEquals(q('.bar').innerHTML, '4');
-     assertEquals(q('.baz').innerHTML, '42');
+     );
+     mount(r);
+     assertEquals('4', q('.foo').innerHTML);
+     assertEquals('4', q('.bar').innerHTML);
+     assertEquals('42', q('.baz').innerHTML);
      s.set(5);
-     assertEquals(q('.foo').innerHTML, '123');
-     assertEquals(q('.bar').innerHTML, '321');
+     Observable.updateAll();
+     trace(Example.redraws);
+     assertEquals('123', q('.foo').innerHTML);
+     assertEquals('321', q('.bar').innerHTML);
+     assertEquals('42', q('.baz').innerHTML);
+     s.set(6);
+     Observable.updateAll();
+     trace(Example.redraws);
   }
 
   static function main() {
@@ -79,15 +87,16 @@ class RunTests extends haxe.unit.TestCase {
 }
 
 class Foo implements coconut.data.Model {
-  @:constant var key:Dynamic = this;
   @:editable var foo:Int;
   @:computed var bar:Int = foo;
 }
 
 class Example extends coconut.ui.View<{ foo: Observable<Int>, bar:Int }> {
+  static public var redraws = 0;
   @:state public var baz:Int = 0;
   function render() '
     <div>
+      {redraws++}
       <span class="foo">{foo.value}</span>
       <span class="bar">{bar}</span>
       <span class="baz">{baz}</span>

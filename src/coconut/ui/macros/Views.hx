@@ -20,9 +20,10 @@ class Views {
       var ret = 
         switch ctx.type.reduce() {
           case TAnonymous(_.get().fields => fields):
-            
+            var key = ctx.pos.makeBlankType();
+
             var plain = [],
-                lifted = (macro class { @:optional var key(default, never):K; }).fields,
+                lifted = (macro class { @:optional var key(default, never):$key; }).fields,
                 transplant = [];
 
             var pt = TAnonymous(plain),
@@ -49,17 +50,22 @@ class Views {
                 pos: f.pos,
                 kind: FProp('default', 'never', {
                   var blank = f.pos.makeBlankType();
-                  if ((macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>)).typeof().isSuccess()) t;
-                  else macro : tink.state.Observable<$t>;
+                  switch (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof() {
+                    case Success(v): 
+                      t;
+                    default: 
+                      macro: tink.state.Observable<$t>;
+                  }
                 }),
               });              
             }
 
             macro class $name extends coconut.ui.Renderable {
-              public function new<K>(data:$lt, render:$pt->vdom.VNode)
+              public function new(data:$lt, render:$pt->vdom.VNode) {
                 @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
                   return render($obj);
                 }), data.key);
+              }
             }; 
           default:
             macro class $name extends coconut.ui.Renderable {
@@ -136,6 +142,8 @@ class Views {
                   }
 
                   @:noCompletion inline function $set(param:$t) {
+                    if (this.$state == null)
+                       this.$state = new tink.state.State($e);
                     this.$state.set(param);
                     return param;
                   }
