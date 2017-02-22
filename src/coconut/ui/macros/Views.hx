@@ -6,9 +6,11 @@ import tink.macro.BuildCache;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 
+using haxe.macro.Tools;
 using tink.MacroApi;
 
 class Views {
+
   static function buildType() 
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
       
@@ -17,12 +19,47 @@ class Views {
       
       var ret = 
         switch ctx.type.reduce() {
-          case TAnonymous(_):
+          case TAnonymous(_.get().fields => fields):
+            
+            var plain = [],
+                lifted = (macro class { @:optional var key(default, never):K; }).fields,
+                transplant = [];
+
+            var pt = TAnonymous(plain),
+                lt = TAnonymous(lifted),
+                obj = EObjectDecl(transplant).at();
+
+            for (f in fields) {
+              var t = f.type.toComplex(),
+                  name = f.name;
+              
+              plain.push({
+                name: name,
+                pos: f.pos,
+                kind: FProp('default', 'never', t),
+              });
+
+              transplant.push({
+                field: name,
+                expr: macro data.$name,
+              });
+
+              lifted.push({
+                name: name,
+                pos: f.pos,
+                kind: FProp('default', 'never', {
+                  var blank = f.pos.makeBlankType();
+                  if ((macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>)).typeof().isSuccess()) t;
+                  else macro : tink.state.Observable<$t>;
+                }),
+              });              
+            }
+
             macro class $name extends coconut.ui.Renderable {
-              public function new(data:tink.state.Observable<$type>, render:$type->vdom.VNode)
+              public function new<K>(data:$lt, render:$pt->vdom.VNode)
                 @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
-                  return render(data);
-                }), data);
+                  return render($obj);
+                }), data.key);
             }; 
           default:
             macro class $name extends coconut.ui.Renderable {
