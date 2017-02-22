@@ -1,4 +1,5 @@
+-cp tests
+-lib coconut.vdom
 -lib coconut.ui
--lib travix
-tests.hxml
--js test.js
+-js bin\test.js
+-main Test

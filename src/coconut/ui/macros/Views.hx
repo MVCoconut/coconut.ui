@@ -23,7 +23,7 @@ class Views {
             var key = ctx.pos.makeBlankType();
 
             var plain = [],
-                lifted = (macro class { @:optional var key(default, never):$key; }).fields,
+                lifted = (macro class { var key(default, never):$key; }).fields,
                 transplant = [];
 
             var pt = TAnonymous(plain),
@@ -32,22 +32,33 @@ class Views {
 
             for (f in fields) {
               var t = f.type.toComplex(),
-                  name = f.name;
+                  name = f.name,
+                  opt = f.meta.has(':optional');
               
+              var meta = if (opt) [{ name: ':optional', params: [], pos: f.pos }] else [];
               plain.push({
                 name: name,
                 pos: f.pos,
                 kind: FProp('default', 'never', t),
+                meta: meta,
               });
 
               transplant.push({
                 field: name,
-                expr: macro data.$name,
+                expr: 
+                  if (opt)
+                    macro switch data.$name {
+                      case null: null;
+                      case v: v.value;
+                    }
+                  else
+                    macro data.$name,
               });
 
               lifted.push({
                 name: name,
                 pos: f.pos,
+                meta: meta,
                 kind: FProp('default', 'never', {
                   var blank = f.pos.makeBlankType();
                   switch (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof() {
@@ -62,7 +73,7 @@ class Views {
             
             macro class $name extends coconut.ui.ViewBase<$lt, $pt> {
               public function new(data:$lt, render:$pt->vdom.VNode) {
-                super(data, function (data) return $obj, function (old, nu) return old == nu, render, data.key);
+                super(data, function (data) return $obj, render, data.key);
               }
             }; 
           default:
@@ -115,6 +126,7 @@ class Views {
         super(data, render);
       }).getFunction().sure()).publish();
 
+      var getStates = [];
       var states = [];
 
       for (member in c)
@@ -133,6 +145,7 @@ class Views {
                     state = '__coco_${member.name}__';
 
                 states.push(state); 
+                getStates.push(macro this.$get());
                 for (f in (macro class {
                   @:noCompletion var $state:tink.state.State<$t>;
 
@@ -142,9 +155,8 @@ class Views {
                     return this.$state.value;
                   }
 
-                  @:noCompletion inline function $set(param:$t) {
-                    if (this.$state == null)
-                       this.$state = new tink.state.State($e);
+                  @:noCompletion function $set(param:$t) {
+                    this.$get();
                     this.$state.set(param);
                     return param;
                   }
@@ -168,6 +180,7 @@ class Views {
                 case null:
                 case that:
                   $b{copyStates};
+                  this.__lastPresented = that.__lastPresented;
               }
               return super.update(old, elt);
             }
@@ -210,6 +223,11 @@ class Views {
         case v: 
           render.pos.error("The render function should have one argument at most");
       }
+      impl.expr = macro {
+        $b{getStates};
+        ${impl.expr};
+      }
+
     }]);
   }
 }

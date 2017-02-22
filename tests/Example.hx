@@ -1,6 +1,6 @@
 package ;
 
-class Example extends coconut.ui.View<{ foo: tink.state.Observable<Int>, bar:Int }> {
+class Example extends coconut.ui.View<{ foo: tink.state.Observable<Int>, bar:Int, ?opt:Float }> {
   static public var redraws = 0;
   @:state public var baz:Int = 0;
   function render() '

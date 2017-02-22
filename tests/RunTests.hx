@@ -20,7 +20,7 @@ class RunTests extends haxe.unit.TestCase {
   function testCustom() {
     var s = new State(4);
 
-    mount(new Example({ foo: s, bar: s }));
+    mount(new Example({ foo: s, bar: s, key: s }));
     
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
@@ -49,11 +49,13 @@ class RunTests extends haxe.unit.TestCase {
   function testLifeCycle() {
      var s = new State(4);
      var e = new Example({ foo: s, bar: s, key: 1234 });
+     
      e.baz = 42;
      var r = new coconut.vdom.Renderable(
       Observable.auto(function () return hxx('
         <div>
-          <if {s.value == 4}>{e}
+          <if {s.value == 4}>
+            {e}
           <else>
             <Example foo={123} bar={321} key={1234} />
           </if>
@@ -66,13 +68,13 @@ class RunTests extends haxe.unit.TestCase {
      assertEquals('42', q('.baz').innerHTML);
      s.set(5);
      Observable.updateAll();
-     trace(Example.redraws);
+     var before = Example.redraws;
      assertEquals('123', q('.foo').innerHTML);
      assertEquals('321', q('.bar').innerHTML);
      assertEquals('42', q('.baz').innerHTML);
      s.set(6);
      Observable.updateAll();
-     trace(Example.redraws);
+     assertEquals(before, Example.redraws);
   }
 
   static function main() {
