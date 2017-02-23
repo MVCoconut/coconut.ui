@@ -32,7 +32,7 @@ class RunTests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
 
-  function testModel() {
+  function testModelInCustom() {
     var model = new Foo({ foo: 4 });
 
     mount(hxx('<Example key={model} {...model.observables} />'));
@@ -45,6 +45,20 @@ class RunTests extends haxe.unit.TestCase {
     assertEquals('5', q('.foo').innerHTML);
     assertEquals('5', q('.bar').innerHTML);
   }
+
+  function testModel() {
+    var model = new Foo({ foo: 4 });
+
+    mount(hxx('<Example2 {...model} />'));
+    
+    assertEquals('4', q('.foo').innerHTML);
+    assertEquals('4', q('.bar').innerHTML);
+
+    model.foo = 5;
+    Observable.updateAll();
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
+  }  
 
   function testLifeCycle() {
      var s = new State(4);
@@ -91,4 +105,17 @@ class RunTests extends haxe.unit.TestCase {
 class Foo implements coconut.data.Model {
   @:editable var foo:Int;
   @:computed var bar:Int = foo;
+}
+
+class Example2 extends coconut.ui.View<Foo> {
+  static public var redraws = 0;
+  @:state public var baz:Int = 0;
+  function render() '
+    <div>
+      {redraws++}
+      <span class="foo">{foo}</span>
+      <span class="bar">{bar}</span>
+      <span class="baz">{baz}</span>
+    </div>
+  ';
 }

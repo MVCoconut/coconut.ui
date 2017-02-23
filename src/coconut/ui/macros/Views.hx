@@ -73,19 +73,16 @@ class Views {
             
             macro class $name extends coconut.ui.ViewBase<$lt, $pt> {
               public function new(data:$lt, render:$pt->vdom.VNode) {
-                super(data, function (data) return $obj, render, data.key);
+                super(data, function (data) return $obj, coconut.ui.tools.Compare.shallow, render, data.key);
               }
             }; 
           default:
-            throw 'not implemented';
-            // Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
+            Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
 
-            // macro class $name extends coconut.ui.Renderable<$type, $type> {
-              // public function new(data:$type, render:$type->vdom.VNode)
-              //   @:pos(ctx.pos) super(tink.state.Observable.auto(function ():vdom.VNode {
-              //     return render(data);
-              //   }), data);
-            // }; 
+            macro class $name extends coconut.ui.ViewBase<$type, $type> {
+              public function new(data:$type, render:$type->vdom.VNode)
+                super(data, function (data) return data, function (_, _) return false, render, data);
+            }; 
         }
           
       switch ctx.type {
@@ -116,6 +113,10 @@ class Views {
           default: throw "super class constructor has unexpected shape";
         }
 
+      function add(t:TypeDefinition)
+        for (f in t.fields)
+          c.addMember(f);
+
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], haxe.macro.Context.currentPos());
 
@@ -126,7 +127,6 @@ class Views {
         super(data, render);
       }).getFunction().sure()).publish();
 
-      var getStates = [];
       var states = [];
 
       for (member in c)
@@ -142,50 +142,92 @@ class Views {
 
                 var get = 'get_' + member.name,
                     set = 'set_' + member.name,
-                    state = '__coco_${member.name}__';
+                    state =  '__coco_${member.name}__',
+                    get_state = 'get_$state';
 
                 states.push(state); 
-                getStates.push(macro this.$get());
-                for (f in (macro class {
-                  @:noCompletion var $state:tink.state.State<$t>;
+                
+                add(macro class {
 
-                  @:noCompletion function $get():$t {
-                    if (this.$state == null)
-                       this.$state = new tink.state.State($e);
+                  @:noCompletion var $state(get, null):tink.state.State<$t>;
+                    function $get_state()
+                      return switch this.$state {
+                        case null: 
+                          this.$state = new tink.state.State($e);
+                        case v: v;
+                      }
+
+                  @:noCompletion inline function $get():$t {
                     return this.$state.value;
                   }
 
-                  @:noCompletion function $set(param:$t) {
-                    this.$get();
+                  @:noCompletion inline function $set(param:$t) {
                     this.$state.set(param);
                     return param;
                   }
 
-                }).fields) c.addMember(f);    
+                });
             }
             
           default:
         }
 
       switch states {
-        case []:
-        case v:
+        case []: null;
+        case v: 
+          
+          var sum = macro (cast $i{states[0]} : tink.state.Observable<tink.core.Noise>);
+          for (i in 1...states.length)
+            sum = macro $sum.combine($i{states[i]}, function (_, _) return tink.core.Noise.Noise);
 
-          var copyStates = [
-            for (s in states) macro this.$s = that.$s
-          ];
-          for (f in (macro class {
-            override function update(old:{}, elt:js.html.Element) {
-              switch Std.instance(old, $i{c.target.name}) {
-                case null:
-                case that:
-                  $b{copyStates};
-                  this.__lastPresented = that.__lastPresented;
-              }
-              return super.update(old, elt);
+          add(macro class {
+            @:noCompletion var __coco_state_invalidate:tink.core.Callback.CallbackLink;
+            @:noCompletion var __coco_state_sum:tink.state.Observable<tink.core.Noise>;
+            @:noCompletion function __coco_state_sum_calculate() {
+              if (__coco_state_sum == null)
+                __coco_state_sum = $sum;
+              return __coco_state_sum;
             }
-          }).fields) c.addMember(f);
+            @:noCompletion override function destroy() {
+              __coco_state_invalidate.dissolve();
+              super.destroy();
+            }
+            @:noCompletion override function __beforeExtract() {
+              __coco_state_invalidate.dissolve();
+              __coco_state_invalidate = __coco_state_sum_calculate().measure().becameInvalid.handle(__resetCache);
+            }
+          });
+
       }
+
+      var copy =
+        switch states {
+          case []: [];
+          case v: 
+            [for (s in states) macro this.$s = that.$s].concat([
+              macro switch that.__coco_state_sum_calculate() {
+                case null:
+                case v: 
+                  this.__coco_state_sum = v;
+                  this.__coco_state_invalidate = v.measure().becameInvalid.handle(this.__resetCache);
+              }
+            ]);
+        }
+
+      if (c.hasMember('__copyCache'))
+        copy.push(macro this.__copyCache(that));
+
+      if (copy.length > 0)
+        for (f in (macro class {
+          override function update(old:{}, elt:js.html.Element) {
+            switch Std.instance(old, $i{c.target.name}) {
+              case null:
+              case that:
+                $b{copy};
+            }
+            return super.update(old, elt);
+          }
+        }).fields) c.addMember(f);      
 
       var render = switch c.memberByName('render') {
         case Success(f): f;
@@ -222,10 +264,6 @@ class Views {
             render.pos.getOutcome(v.type.toType(render.pos).sure().isSubTypeOf(data));
         case v: 
           render.pos.error("The render function should have one argument at most");
-      }
-      impl.expr = macro {
-        $b{getStates};
-        ${impl.expr};
       }
 
     }]);
