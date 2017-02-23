@@ -1,8 +1,10 @@
 package ;
 
 import tink.state.*;
-import vdom.VDom.*;
 import js.Browser.*;
+import vdom.VDom.*;
+import coconut.ui.macros.HXX.hxx;
+// import Test;
 
 class RunTests extends haxe.unit.TestCase {
 
@@ -34,16 +36,21 @@ class RunTests extends haxe.unit.TestCase {
 
   function testModelInCustom() {
     var model = new Foo({ foo: 4 });
-
-    mount(hxx('<Example key={model} {...model.observables} />'));
     
-    assertEquals('4', q('.foo').innerHTML);
-    assertEquals('4', q('.bar').innerHTML);
+    for (vdom in [hxx('<Example key={model} {...model} />')]) {
 
-    model.foo = 5;
-    Observable.updateAll();
-    assertEquals('5', q('.foo').innerHTML);
-    assertEquals('5', q('.bar').innerHTML);
+      mount(vdom);
+      
+      assertEquals('4', q('.foo').innerHTML);
+      assertEquals('4', q('.bar').innerHTML);
+
+      model.foo = 5;
+      Observable.updateAll();
+      assertEquals('5', q('.foo').innerHTML);
+      assertEquals('5', q('.bar').innerHTML);
+      
+      setup();
+    }
   }
 
   function testModel() {

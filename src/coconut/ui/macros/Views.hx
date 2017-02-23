@@ -43,10 +43,16 @@ class Views {
                 meta: meta,
               });
 
+              var isFunction = 
+                switch t.toType().sure().reduce() {
+                  case TFun(_, _): true;
+                  default: false;
+                }
+                
               transplant.push({
                 field: name,
                 expr: 
-                  if (opt)
+                  if (opt && !isFunction)
                     macro switch data.$name {
                       case null: null;
                       case v: v.value;
@@ -60,12 +66,15 @@ class Views {
                 pos: f.pos,
                 meta: meta,
                 kind: FProp('default', 'never', {
-                  var blank = f.pos.makeBlankType();
-                  switch (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof() {
-                    case Success(v): 
-                      t;
-                    default: 
-                      macro: tink.state.Observable<$t>;
+                  if (isFunction) t;
+                  else {
+                    var blank = f.pos.makeBlankType();
+                    switch (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof() {
+                      case Success(v): 
+                        t;
+                      default: 
+                        macro: tink.state.Observable<$t>;
+                    }
                   }
                 }),
               });              
@@ -150,7 +159,7 @@ class Views {
                 add(macro class {
 
                   @:noCompletion var $state(get, null):tink.state.State<$t>;
-                    function $get_state()
+                    @:noCompletion function $get_state()
                       return switch this.$state {
                         case null: 
                           this.$state = new tink.state.State($e);

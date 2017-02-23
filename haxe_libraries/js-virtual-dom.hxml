@@ -1,5 +1,5 @@
 # @install: lix download https://github.com/back2dos/js-virtual-dom/archive/fbc4c7f26773764a7cab84407c27603df5df6750.tar.gz as js-virtual-dom#0.4.0/fbc4c7f26773764a7cab84407c27603df5df6750
 -D js-virtual-dom=0.4.0
--cp ${HAXESHIM_LIBCACHE}/js-virtual-dom/0.4.0/fbc4c7f26773764a7cab84407c27603df5df6750/src
+-cp ../../back2dos/js-virtual-dom/src
 
 -lib tink_core

@@ -15,10 +15,10 @@ class Counter extends coconut.ui.View<{ onsave:Int->Void }> {
   @:state var count:Int = 10;
   function render() '
     <div class="counter">
-      <button onclick={function () count--}>-1</button>
+      <button onclick={count--}>-1</button>
       <span>{count}</span>
-      <button onclick={function () count++}>+1</button>
-      <button onclick={function () onsave(count)}>Save</button>
+      <button onclick={count++}>+1</button>
+      <button onclick={onsave(count)}>Save</button>
     </div>
   ';
 }
