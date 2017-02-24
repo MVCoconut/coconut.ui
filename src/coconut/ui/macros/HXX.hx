@@ -59,7 +59,23 @@ class HXX {
             }
         }
         return ctx.getDefault();
-      }
+      },
+      decomposeSingle: function (src, expected, decompose) {
+        return
+          switch expected.reduce() {
+            case TAnonymous(_.get().fields => fields):              
+              return 
+                if ((macro ($src : coconut.data.Model)).typeof().isSuccess()) {
+                  var parts = [macro __model__, macro { key: __model__ }];
+                  macro {
+                    var __model__ = $src;
+                    ${decompose.bind(parts).bounce()};
+                  }
+                }
+                else decompose([src]);
+            default: src;
+          }
+      },
     });
 
   macro static public function hxx(e:Expr)

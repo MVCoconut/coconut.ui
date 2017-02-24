@@ -37,7 +37,7 @@ class RunTests extends haxe.unit.TestCase {
   function testModelInCustom() {
     var model = new Foo({ foo: 4 });
     
-    for (vdom in [hxx('<Example key={model} {...model} />')]) {
+    for (vdom in [hxx('<Example {...model} />')]) {
 
       mount(vdom);
       
