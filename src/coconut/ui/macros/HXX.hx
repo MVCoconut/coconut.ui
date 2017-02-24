@@ -2,6 +2,7 @@ package coconut.ui.macros;
 
 #if macro 
 import haxe.macro.Context;
+import haxe.macro.Type;
 import haxe.macro.Expr;
 
 using haxe.macro.Tools;
@@ -37,28 +38,60 @@ class HXX {
 
   macro static public function observable(e:Expr) {
     var blank = e.pos.makeBlankType();
-    return 
-      try 
-        Context.storeTypedExpr(Context.typeExpr(macro @:pos(e.pos) ($e : tink.state.Observable.ObservableObject<$blank>)))
-      catch (_:Dynamic) 
-        macro @:pos(e.pos) tink.state.Observable.auto(function () return $e);
+    
+    function checkConst(t:TypedExpr) {
+      switch t.expr {
+        case TCall({ expr: TField(_, f) }, _):
+          switch f {
+            case FEnum(_, _):
+              
+            default:
+              throw false;  
+          } 
+        case TCall(_, _): 
+          throw false;
+        case TField(_, FEnum(_, _)):
+        case TField(_, FInstance(_, _, f) | FStatic(_, f) | FAnon(f)):
+          switch f.get().kind {
+            case FMethod(_):
+            case FVar(_, AccNever | AccInline):
+            default:
+              throw false;
+          }
+        case TField(_, _):
+          throw false;
+        default:
+          
+      }
+      t.iter(checkConst);
+    }
+    var t = Context.typeExpr(e);
+    return
+      try {
+        checkConst(t);
+        // trace(e.toString());
+        // trace(t.toString());
+        Context.storeTypedExpr(t);
+      }
+      catch (error:Bool) 
+        try 
+          Context.storeTypedExpr(Context.typeExpr(macro @:pos(e.pos) ($e : tink.state.Observable.ObservableObject<$blank>)))
+        catch (_:Dynamic) 
+          macro @:pos(e.pos) tink.state.Observable.auto(function () return $e);
   }
+
 
   macro static public function merge(primary:Expr, rest:Array<Expr>)
     return tink.hxx.Merge.mergeObjects(primary, rest, {
       fixField: function (e) return e,
       genField: function (ctx) {
-        if (ctx.expected.reduce().toString().startsWith('tink.state.Observable<')) {
-          var df = ctx.getDefault();
-          return
-            switch df {
-              case macro ($e : $t):
-                macro @:pos(df.pos) (coconut.ui.macros.HXX.observable($e) : $t);
-              default:
-                df;
-            }
-        }
-        return ctx.getDefault();
+        return
+          if (ctx.expected.reduce().toString().startsWith('tink.state.Observable<')) {
+            var ct = ctx.expected.toComplex();
+            var e = ctx.original;
+            macro @:pos(e.pos) (coconut.ui.macros.HXX.observable($e) : $ct);
+          }
+          else ctx.getDefault();
       },
       decomposeSingle: function (src, expected, decompose) {
         return

@@ -1,4 +1,4 @@
 package coconut.ui;
 
 @:genericBuild(coconut.ui.macros.Views.buildType())
-class View<Data> {}
+class View<Rest> {}

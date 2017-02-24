@@ -1,9 +1,11 @@
 package ;
 
+import Example3;
 import tink.state.*;
 import js.Browser.*;
 import vdom.VDom.*;
 import coconut.ui.macros.HXX.hxx;
+using tink.CoreApi;
 // import Test;
 
 class RunTests extends haxe.unit.TestCase {
@@ -35,11 +37,14 @@ class RunTests extends haxe.unit.TestCase {
   }
 
   function testModelInCustom() {
-    var model = new Foo({ foo: 4 });
     
-    for (vdom in [hxx('<Example {...model} />')]) {
-
-      mount(vdom);
+    var variants = [
+      function (model:Foo) return hxx('<Example {...model} />'), 
+      function (model:Foo) return hxx('<Example key={model} {...model} bar={model.bar} />')
+    ];
+    for (render in variants) {
+      var model = new Foo({ foo: 4 });
+      mount(render(model));
       
       assertEquals('4', q('.foo').innerHTML);
       assertEquals('4', q('.bar').innerHTML);
@@ -106,23 +111,5 @@ class RunTests extends haxe.unit.TestCase {
       else 500
     ); 
   }
-  
-}
-
-class Foo implements coconut.data.Model {
-  @:editable var foo:Int;
-  @:computed var bar:Int = foo;
-}
-
-class Example2 extends coconut.ui.View<Foo> {
-  static public var redraws = 0;
-  @:state public var baz:Int = 0;
-  function render() '
-    <div>
-      {redraws++}
-      <span class="foo">{foo}</span>
-      <span class="bar">{bar}</span>
-      <span class="baz">{baz}</span>
-    </div>
-  ';
+  static var INT(default, never) = 123;
 }

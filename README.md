@@ -36,6 +36,12 @@ class Counter extends coconut.ui.View<{ onsave:Int->Void }> {
 
 Any change to `@:state` fields results in the view being scheduled for a redraw. As shown in the example above, if you do not give the `render` method a parameter, then the data is simply decomposed into the current scope as is the case with `onsave`.
 
+### When to go Stateful?
+
+Truth be told, down the line you will probably always want to move state out of views. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
+
+The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested without the views. 
+
 ## Property Based Views
 
 The `Counter` we created is a **stateful** view. It is also what we'll call **property based** as opposed to **model based** views. The former renders "a bunch of properties" of an anonymous object, while the latter is underpinned by a coconut model (i.e. an object implementing `coconut.data.Model`). 
@@ -136,7 +142,7 @@ alert(document.querySelector(".counter-list>h1").innerHTML);//Will display "Usel
 If you wish to render a model (or multiple ones) through a property based view, it can be a bit arduous, but in HXX you can rely on the spread operator.
 
 ```haxe
-class TodoItemView extends coconut.ui.View<{ completed:Bool, description:String, important:Bool }> {
+class TodoItemView extends coconut.ui.View<{ completed:Bool, description:String, important:Bool, assignee: Person }> {
   function render() '
     <div class="todo-item">
       <! -- exercise for the reader -->
@@ -145,22 +151,41 @@ class TodoItemView extends coconut.ui.View<{ completed:Bool, description:String,
 }
 
 class TodoItem implements coconut.data.Model {
-  @:editable var completed:Bool;
+  @:editable var done:Bool = @byDefault false;
   @:editable var description:String;
-  @:editable var important:Bool;
+  @:editable var important:Bool = @byDefault false;
+  @:editable var assignee:Person = @byDefault Person.me;
 }
 
 var item = new TodoItem({ description: 'Shop groceries' });
-hxx('<TodoItemView {...item} />');
+hxx('<TodoItemView key={item} {...item} completed={item.done} />');
 ```
 
 Here we're rendering a `TodoItem` through a slightly diverging property based view. We use the model itself as key, the spread operator to assign properties automatically and finally we deal with the discrepancy in naming between `completed` and `done` by assigning that field manually.
 
-If the structure of the model completely matches
+If the structure of the model completely matches entirely, you can pass the data directly using `hxx('<TodoItemView {...item} />')`.
+
+As for combining two models, imagine the following setup:
+
+```haxe
+class TodoItem implements coconut.data.Model {
+  @:editable var completed:Bool = @byDefault false;
+  @:editable var description:String;
+}
+
+class TodoMetaData implements coconut.data.Model {
+  @:editable var assignee:Person = @byDefault Person.me;
+  @:editable var important:Bool = @byDefault false;
+}
+var item = new TodoItem({ description: 'Shop groceries' });
+var meta = new TodoMetaData();
+hxx('<TodoItemView key={item} {...item} {...metaDataFor(item)} />');
+```
+
+### Properties vs. Models
+
+Which one you chose is mostly a matter of *taste*. Model based views are slightly more predictable although hopefully you'll never know the difference. Property based views on the other hand are far more flexible, because they can be instantiated with all kinds of data.
 
 # Virtual DOM Based Rendering
 
 Currently the only renderer for `coconut.ui` is based on `virtual-dom`. Other VDOM libraries are being investigated.
-
-
-

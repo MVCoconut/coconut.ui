@@ -268,7 +268,7 @@ class Views {
 
         case [v]:
           if (v.type == null)
-            v.type = data.toComplex();
+            v.type = data.toComplex({ direct: true });
           else 
             render.pos.getOutcome(v.type.toType(render.pos).sure().isSubTypeOf(data));
         case v: 
