@@ -44,11 +44,7 @@ The main advantage of stateless views is that they are far easier to test. The s
 
 ## Property Based Views
 
-The `Counter` we created is a **stateful** view. It is also what we'll call **property based** as opposed to **model based** views. The former renders "a bunch of properties" of an anonymous object, while the latter is underpinned by a coconut model (i.e. an object implementing `coconut.data.Model`). 
-
-### Keys
-
-On occasion, views need to be recreated by their parent and because anonymous objects are, well, anonymous, coconut requires a bit of help to identify them to be able to associate the right anonymous object with the right property based view. This is done with keys:
+The `Counter` we created is a **stateful** view. It is also what we'll call **property based** as opposed to **model based** views. The former renders "a bunch of properties" of an anonymous object, while the latter is underpinned by a coconut model (i.e. an object implementing `coconut.data.Model`). The main reason we want property based views is that they are more flexible in that rather than having to construct a specific model, the user may just configure the view directly through setting the required properties. Providing that flexibility leaves us with a bit of a problem though. Consider the following view for a moment:
 
 ```haxe
 class CounterList extends coconut.ui.View<{ title:String }> {
@@ -57,12 +53,20 @@ class CounterList extends coconut.ui.View<{ title:String }> {
     <div class="counter-list">
       <h1>{title}</h1>
       <for {i in 0...total}>
-        <Counter key={i} onsave={function (count) total = count} />
+        <Counter onsave={function (count) total = count} />
       </for>
     </div>
   ';
 }
 ```
+
+
+
+### Keys
+
+On occasion, views need to be recreated by their parent and because anonymous objects are, well, anonymous, coconut requires a bit of help to identify them to be able to associate the right anonymous object with the right property based view. This is done with keys:
+
+
 
 In this (rather pointless) example, we create a whole range of counters. Once we click "save" on one of them, the view's `total` gets updated and the `CounterList` must re-render - with a different amount of children. Notice that the only data a `Counter` gets is a callback, which in this case is even an anonymous function that gets created when the `Counter` is created, which means the only actual data given to the view changes *every time* the view must be updated from the parent component. This is where the `key` comes in. 
 
