@@ -8,6 +8,7 @@ import haxe.macro.Expr;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
+using tink.CoreApi;
 
 class Views {
 
@@ -30,6 +31,8 @@ class Views {
                 lt = TAnonymous(lifted),
                 obj = EObjectDecl(transplant).at();
 
+            var model = Context.getType('coconut.data.Model');
+            
             for (f in fields) {
               var t = f.type.toComplex(),
                   name = f.name,
@@ -43,8 +46,15 @@ class Views {
                 meta: meta,
               });
 
-              var isFunction = 
-                switch t.toType().sure().reduce() {
+              var isModel = f.type.isSubTypeOf(model).isSuccess();
+
+              var isObservable = !isModel && {
+                var blank = f.pos.makeBlankType();
+                (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof().isSuccess();
+              }
+
+              var isFunction = !isModel && !isObservable && 
+                switch f.type.reduce() {
                   case TFun(_, _): true;
                   default: false;
                 }
@@ -52,7 +62,7 @@ class Views {
               transplant.push({
                 field: name,
                 expr: 
-                  if (opt && !isFunction)
+                  if (opt && isObservable)
                     macro switch data.$name {
                       case null: null;
                       case v: v.value;
@@ -66,16 +76,8 @@ class Views {
                 pos: f.pos,
                 meta: meta,
                 kind: FProp('default', 'never', {
-                  if (isFunction) t;
-                  else {
-                    var blank = f.pos.makeBlankType();
-                    switch (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof() {
-                      case Success(v): 
-                        t;
-                      default: 
-                        macro: tink.state.Observable<$t>;
-                    }
-                  }
+                  if (isObservable || isModel || isFunction) t;
+                  else macro: tink.state.Observable<$t>;
                 }),
               });              
             }
@@ -89,8 +91,9 @@ class Views {
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
 
             macro class $name extends coconut.ui.ViewBase<$type, $type> {
-              public function new(data:$type, render:$type->vdom.VNode)
+              public function new(data:$type, render:$type->vdom.VNode) {
                 super(data, function (data) return data, function (_, _) return false, render, data);
+              }
             }; 
         }
           
@@ -131,9 +134,13 @@ class Views {
 
       if (c.hasConstructor())
         c.getConstructor().toHaxe().pos.error('Custom constructors not allowed on views');
+      
+      var postConstruct = [];
 
       c.getConstructor((macro function (data) {
         super(data, render);
+        $b{postConstruct};
+        
       }).getFunction().sure()).publish();
 
       var states = [];
@@ -181,13 +188,45 @@ class Views {
           default:
         }
 
+      switch data {
+        case TAnonymous(_.get().fields => fields):
+
+          var model = Context.getType('coconut.data.Model');
+          var parts = [];
+          
+          for (f in fields)
+            if (f.type.isSubTypeOf(model).isSuccess()) {
+              for (sub in f.type.getClass().findField('observables').type.getFields().sure()) {
+                var name = f.name,
+                    sub = sub.name;
+                parts.push(macro data.$name.observables.$sub);
+              }
+            }
+
+          if (parts.length > 0) {
+            var sum = macro (cast ${parts[0]} : tink.state.Observable<tink.core.Noise>);
+
+            for (i in 1...parts.length)
+              sum = macro $sum.combine(${parts[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
+
+            add(macro class {
+              @:noCompletion var __model_states:tink.state.Observable<tink.core.Noise>;
+            });
+            // postConstruct.push(macro trace("call!"));
+            postConstruct.push(macro this.__model_states = $sum);
+            states.push('__model_states');
+          }
+
+        default:
+      }
+
       switch states {
         case []: null;
         case v: 
           
           var sum = macro (cast $i{states[0]} : tink.state.Observable<tink.core.Noise>);
           for (i in 1...states.length)
-            sum = macro $sum.combine($i{states[i]}, function (_, _) return tink.core.Noise.Noise);
+            sum = macro $sum.combine($i{states[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
 
           add(macro class {
             @:noCompletion var __coco_state_invalidate:tink.core.Callback.CallbackLink;
