@@ -188,37 +188,37 @@ class Views {
           default:
         }
 
-      switch data {
-        case TAnonymous(_.get().fields => fields):
+      // switch data {
+      //   case TAnonymous(_.get().fields => fields):
 
-          var model = Context.getType('coconut.data.Model');
-          var parts = [];
+      //     var model = Context.getType('coconut.data.Model');
+      //     var parts = [];
           
-          for (f in fields)
-            if (f.type.isSubTypeOf(model).isSuccess()) {
-              for (sub in f.type.getClass().findField('observables').type.getFields().sure()) {
-                var name = f.name,
-                    sub = sub.name;
-                parts.push(macro data.$name.observables.$sub);
-              }
-            }
+      //     for (f in fields)
+      //       if (f.type.isSubTypeOf(model).isSuccess()) {
+      //         for (sub in f.type.getClass().findField('observables').type.getFields().sure()) {
+      //           var name = f.name,
+      //               sub = sub.name;
+      //           parts.push(macro data.$name.observables.$sub);
+      //         }
+      //       }
 
-          if (parts.length > 0) {
-            var sum = macro (cast ${parts[0]} : tink.state.Observable<tink.core.Noise>);
+      //     if (parts.length > 0) {
+      //       var sum = macro (cast ${parts[0]} : tink.state.Observable<tink.core.Noise>);
 
-            for (i in 1...parts.length)
-              sum = macro $sum.combine(${parts[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
+      //       for (i in 1...parts.length)
+      //         sum = macro $sum.combine(${parts[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
 
-            add(macro class {
-              @:noCompletion var __model_states:tink.state.Observable<tink.core.Noise>;
-            });
-            // postConstruct.push(macro trace("call!"));
-            postConstruct.push(macro this.__model_states = $sum);
-            states.push('__model_states');
-          }
+      //       add(macro class {
+      //         @:noCompletion var __model_states:tink.state.Observable<tink.core.Noise>;
+      //       });
+      //       // postConstruct.push(macro trace("call!"));
+      //       postConstruct.push(macro this.__model_states = $sum);
+      //       states.push('__model_states');
+      //     }
 
-        default:
-      }
+      //   default:
+      // }
 
       switch states {
         case []: null;
