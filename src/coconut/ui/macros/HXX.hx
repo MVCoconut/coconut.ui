@@ -37,28 +37,13 @@ class HXX {
       );
 
     return 
-      if ((macro this.__cachedModelView).typeof().isSuccess()) cached(ret);
+      if ((macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess()) cached(ret);
       else ret;
   }
   static function cached(e:Expr) 
     return switch e.map(cached) {
-      case { expr: ENew(cl, [a]), pos: pos }:
-        
-        var path = cl.pack.copy();
-        path.push(cl.name);
-
-        switch cl.sub {
-          case null: '';
-          case v: path.push(v);
-        }
-
-        var name = path.join('.');
-
-        if (Context.getType(name).isSubTypeOf(Context.getType('coconut.ui.tools.ModelView')).isSuccess())
-          macro __cachedModelView($a, $v{name}, $p{path}.new);
-        else
-          throw 'not implemented';
-        // ENew(cl, args).at(pos).log();
+      case create if (create.expr.match(ENew(_, _))):
+        macro @:pos(create.pos) cache.createView($create);
       case v: v;
     }    
   #end

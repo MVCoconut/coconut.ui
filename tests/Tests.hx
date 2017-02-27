@@ -36,6 +36,7 @@ class Tests extends haxe.unit.TestCase {
   // }  
 
   function testModelViewReuse() {
+
     var models = [for (i in 0...10) new Foo({ foo: i })];
     var list = new FooList({ items: models });
 
@@ -51,10 +52,8 @@ class Tests extends haxe.unit.TestCase {
     list.items = models.concat(models);
     Observable.updateAll();
     assertEquals(before + 10, Example2.created);
-    // var a = Example2.new;
-    // var b = Example2.new;
-    // console.log(a);
-    // assertEquals(a, b);
+
+    
   }
 
   static function main() {
