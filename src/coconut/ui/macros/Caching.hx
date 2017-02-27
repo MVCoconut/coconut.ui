@@ -1,6 +1,7 @@
 package coconut.ui.macros;
 
 import haxe.macro.Expr;
+using haxe.macro.Tools;
 using tink.MacroApi;
 
 class Caching {
@@ -22,30 +23,8 @@ class Caching {
               data = (macro @:privateAccess { var __x = null; new $cl(__x); __x; }).typeof().sure().reduce();
 
           switch data {
-            case TAnonymous(_):
-              var dt = switch data.toComplex() {
-                case TAnonymous(fields): 
-                  fields.push({ 
-                    pos: view.pos,
-                    name: 'key',
-                    kind: FVar(macro : {}),
-                  });
-                  for (f in fields)
-                    switch f.kind {
-                      case FVar(t, e):
-                        f.kind = FProp('default', 'never', t, e);
-                      default:
-                    }
-                    TAnonymous(fields);
-                default: throw 'assert';
-              }
-                
-              macro {
-                var __f = @:privateAccess $ethis.getFactory($v{name}, $p{path}.new);
-                var __o:$dt = $a;
-                @:privateAccess __f.make(__o);
-              }
-
+            case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.toComplex() => t]):
+              throw t.toString();
             default:
               macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make($a);
           }

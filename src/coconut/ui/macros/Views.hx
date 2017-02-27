@@ -21,17 +21,10 @@ class Views {
       var ret = 
         switch ctx.type.reduce() {
           case TAnonymous(_.get().fields => fields):
-            var key = ctx.pos.makeBlankType();
 
-            var plain = [],
-                lifted = [],
-                transplant = [];
+            var plain = [];
 
-            var pt = TAnonymous(plain),
-                lt = TAnonymous(lifted),
-                obj = EObjectDecl(transplant).at();
-
-            var model = Context.getType('coconut.data.Model');
+            var pt = TAnonymous(plain);
             
             for (f in fields) {
               var t = f.type.toComplex(),
@@ -44,50 +37,15 @@ class Views {
                 pos: f.pos,
                 kind: FProp('default', 'never', t),
                 meta: meta,
-              });
-
-              var isModel = f.type.isSubTypeOf(model).isSuccess();
-
-              var isObservable = !isModel && {
-                var blank = f.pos.makeBlankType();
-                (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof().isSuccess();
-              }
-
-              var isFunction = !isModel && !isObservable && 
-                switch f.type.reduce() {
-                  case TFun(_, _): true;
-                  default: false;
-                }
-                
-              transplant.push({
-                field: name,
-                expr: 
-                  if (opt && !(isModel || isFunction))
-                    macro switch data.$name {
-                      case null: null;
-                      case v: v.value;
-                    }
-                  else
-                    macro data.$name,
-              });
-
-              lifted.push({
-                name: name,
-                pos: f.pos,
-                meta: meta,
-                kind: FProp('default', 'never', {
-                  if (isObservable || isModel || isFunction) t;
-                  else macro: tink.state.Observable<$t>;
-                }),
-              });              
+              });           
             }
             
             macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.PropView<$pt> {
-              public function new(data:$lt, render) {
-                super(data, function (data:$lt) return render(($obj : $pt)));
+              public function new(data:tink.state.Observable<$pt>, render) {
+                super(data, function (data:tink.state.Observable<$pt>) return render(data.value));
               }
             }; 
-            
+
           default:
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
 

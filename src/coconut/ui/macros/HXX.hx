@@ -36,17 +36,30 @@ class HXX {
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 
-    return 
-      if ((macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess()) cached(ret);
-      else ret;
+    return reconstruct(ret, (macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess());//TODO: this should really happen through hxx in a single pass
   }
-  static function cached(e:Expr) 
-    return switch e.map(cached) {
-      case create if (create.expr.match(ENew(_, _))):
-        macro @:pos(create.pos) cache.createView($create);
-      case v: v;
-    }    
+
+  static function reconstruct(e:Expr, cached:Bool) {
+    function rec(e:Expr) {
+      return switch e = e.map(rec) {
+        case macro new $view($o):
+          if (cached)
+            macro @:pos(e.pos) cache.createView($e);
+          else
+            macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
+        default: e;
+      }
+    }
+    return rec(e);
+  }
   #end
+  macro static public function liftIfNeedBe(e:Expr):Expr 
+    return
+      switch Context.getExpectedType() {
+        case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.toComplex() => t]):
+          macro @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
+        default: e;
+      }
 
   macro static public function observable(e:Expr) {
     var blank = e.pos.makeBlankType();
