@@ -29,11 +29,11 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
 
-    // s.set(5);
-    // Observable.updateAll();
+    s.set(5);
+    Observable.updateAll();
 
-    // assertEquals('5', q('.foo').innerHTML);
-    // assertEquals('5', q('.bar').innerHTML);
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
   }
   
 
@@ -57,10 +57,31 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('42', q('.baz').innerHTML);
   }  
 
+  function testPropViewReuse() {
+    var models = [for (i in 0...10) { foo: i, bar: i }];
+    var list = new ListModel({ items: models });
+    
+    var redraws = Example.redraws;
+
+    var before = Example.created.length;
+    mount(hxx('<ExampleListView {...list} />'));
+    assertEquals(before + 10, Example.created.length);
+
+    var before = Example.created.length;
+    list.items = models;
+    Observable.updateAll();
+    assertEquals(before, Example.created.length);
+
+    list.items = models.concat(models);
+    Observable.updateAll();
+    assertEquals(before + 10, Example.created.length);
+    assertEquals(redraws + 20, Example.redraws);    
+ }
+
   function testModelViewReuse() {
 
     var models = [for (i in 0...10) new Foo({ foo: i })];
-    var list = new FooList({ items: models });
+    var list = new ListModel({ items: models });
     
     var redraws = Example2.redraws;
 
@@ -77,7 +98,6 @@ class Tests extends haxe.unit.TestCase {
     Observable.updateAll();
     assertEquals(before + 10, Example2.created.length);
     assertEquals(redraws + 20, Example2.redraws);
-
     
   }
 
@@ -92,11 +112,7 @@ class Tests extends haxe.unit.TestCase {
 
 }
 
-class FooList implements Model {
-  @:editable var items:List<Foo>;
-}
-
-class FooListView extends coconut.ui.View<FooList> {
+class FooListView extends coconut.ui.View<ListModel<Foo>> {
   function render() '
     <div class="foo-list">
       <for {i in items}>
