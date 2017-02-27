@@ -20,9 +20,11 @@ class HXX {
   #if macro
   static public var options:Options;
   static public function parse(e:Expr) {
+
     if (options == null)
       e.reject('Either the renderer did not configure HXX properly, or no renderer is used');
-    return 
+
+    var ret = 
       tink.hxx.Parser.parse(
         e, 
         {
@@ -33,7 +35,32 @@ class HXX {
         }, 
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
+
+    return 
+      if ((macro this.__cachedModelView).typeof().isSuccess()) cached(ret);
+      else ret;
   }
+  static function cached(e:Expr) 
+    return switch e.map(cached) {
+      case { expr: ENew(cl, [a]), pos: pos }:
+        
+        var path = cl.pack.copy();
+        path.push(cl.name);
+
+        switch cl.sub {
+          case null: '';
+          case v: path.push(v);
+        }
+
+        var name = path.join('.');
+
+        if (Context.getType(name).isSubTypeOf(Context.getType('coconut.ui.tools.ModelView')).isSuccess())
+          macro __cachedModelView($a, $v{name}, $p{path}.new);
+        else
+          throw 'not implemented';
+        // ENew(cl, args).at(pos).log();
+      case v: v;
+    }    
   #end
 
   macro static public function observable(e:Expr) {

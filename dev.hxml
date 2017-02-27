@@ -2,4 +2,4 @@
 -lib coconut.vdom
 -lib coconut.ui
 -js bin\test.js
--main Test
+-main Tests
