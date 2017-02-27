@@ -21,37 +21,46 @@ class Tests extends haxe.unit.TestCase {
     document.body.appendChild(o.toElement());
   }
 
-  // function testModel() {
-  //   var model = new Foo({ foo: 4 });
+  function testModel() {
+    var model = new Foo({ foo: 4 });
 
-  //   mount(hxx('<Example2 {...model} />'));
+    var e = hxx('<Example2 {...model} />');
+    mount(e);
     
-  //   assertEquals('4', q('.foo').innerHTML);
-  //   assertEquals('4', q('.bar').innerHTML);
+    assertEquals('4', q('.foo').innerHTML);
+    assertEquals('4', q('.bar').innerHTML);
+    assertEquals('0', q('.baz').innerHTML);
 
-  //   model.foo = 5;
-  //   Observable.updateAll();
-  //   assertEquals('5', q('.foo').innerHTML);
-  //   assertEquals('5', q('.bar').innerHTML);
-  // }  
+    model.foo = 5;
+    Observable.updateAll();
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
+
+    e.baz = 42;
+    Observable.updateAll();
+    assertEquals('42', q('.baz').innerHTML);
+  }  
 
   function testModelViewReuse() {
 
     var models = [for (i in 0...10) new Foo({ foo: i })];
     var list = new FooList({ items: models });
+    
+    var redraws = Example2.redraws;
 
-    var before = Example2.created;
+    var before = Example2.created.length;
     mount(hxx('<FooListView {...list} />'));
-    assertEquals(before + 10, Example2.created);
+    assertEquals(before + 10, Example2.created.length);
 
-    var before = Example2.created;
+    var before = Example2.created.length;
     list.items = models;
     Observable.updateAll();
-    assertEquals(before, Example2.created);
+    assertEquals(before, Example2.created.length);
 
     list.items = models.concat(models);
     Observable.updateAll();
-    assertEquals(before + 10, Example2.created);
+    assertEquals(before + 10, Example2.created.length);
+    assertEquals(redraws + 20, Example2.redraws);
 
     
   }
