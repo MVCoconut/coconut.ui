@@ -29,11 +29,11 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
 
-    s.set(5);
-    Observable.updateAll();
+    // s.set(5);
+    // Observable.updateAll();
 
-    assertEquals('5', q('.foo').innerHTML);
-    assertEquals('5', q('.bar').innerHTML);
+    // assertEquals('5', q('.foo').innerHTML);
+    // assertEquals('5', q('.bar').innerHTML);
   }
   
 

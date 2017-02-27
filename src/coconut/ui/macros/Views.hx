@@ -62,7 +62,7 @@ class Views {
               transplant.push({
                 field: name,
                 expr: 
-                  if (opt && isObservable)
+                  if (opt && !(isModel || isFunction))
                     macro switch data.$name {
                       case null: null;
                       case v: v.value;
@@ -143,8 +143,6 @@ class Views {
         
       }).getFunction().sure()).publish();
 
-      var states = [];
-
       for (member in c)
         switch member.extractMeta(':state') {
           case Success(m):
@@ -158,24 +156,14 @@ class Views {
 
                 var get = 'get_' + member.name,
                     set = 'set_' + member.name,
-                    state =  '__coco_${member.name}__',
-                    get_state = 'get_$state';
-
-                states.push(state); 
+                    state =  '__coco_${member.name}__';
                 
                 add(macro class {
 
-                  @:noCompletion var $state(get, null):tink.state.State<$t>;
-                    @:noCompletion function $get_state()
-                      return switch this.$state {
-                        case null: 
-                          this.$state = new tink.state.State($e);
-                        case v: v;
-                      }
+                  @:noCompletion var $state(default, never):tink.state.State<$t> = new tink.state.State($e);
 
-                  @:noCompletion inline function $get():$t {
+                  @:noCompletion inline function $get():$t 
                     return this.$state.value;
-                  }
 
                   @:noCompletion inline function $set(param:$t) {
                     this.$state.set(param);
