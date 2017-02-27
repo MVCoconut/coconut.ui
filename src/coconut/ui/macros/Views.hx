@@ -20,11 +20,11 @@ class Views {
       
       var ret = 
         switch ctx.type.reduce() {
-          case TAnonymous(_.get().fields => fields) if (false):
+          case TAnonymous(_.get().fields => fields):
             var key = ctx.pos.makeBlankType();
 
             var plain = [],
-                lifted = (macro class { var key(default, never):$key; }).fields,
+                lifted = [],
                 transplant = [];
 
             var pt = TAnonymous(plain),
@@ -82,16 +82,16 @@ class Views {
               });              
             }
             
-            macro class $name extends coconut.ui.ViewBase<$lt, $pt> {
-              public function new(data:$lt, render:$pt->vdom.VNode) {
-                super(data, function (data) return $obj, coconut.ui.tools.Compare.shallow, render, data.key);
+            macro class $name extends coconut.ui.BaseView {
+              public function new(data:$lt, render) {
+                super(data, render);
               }
             }; 
           default:
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
 
             macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.ModelView {
-              public function new(data:$type, render:$type->vdom.VNode) {
+              public function new(data:$type, render) {
                 super(data, render);
               }
             }; 

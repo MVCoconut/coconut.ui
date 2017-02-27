@@ -21,6 +21,22 @@ class Tests extends haxe.unit.TestCase {
     document.body.appendChild(o.toElement());
   }
 
+  function testCustom() {
+    var s = new State(4);
+
+    mount(new Example({ foo: s, bar: s }));
+    
+    assertEquals('4', q('.foo').innerHTML);
+    assertEquals('4', q('.bar').innerHTML);
+
+    s.set(5);
+    Observable.updateAll();
+
+    assertEquals('5', q('.foo').innerHTML);
+    assertEquals('5', q('.bar').innerHTML);
+  }
+  
+
   function testModel() {
     var model = new Foo({ foo: 4 });
 

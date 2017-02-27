@@ -1,6 +1,5 @@
 package coconut.ui;
 
-//import vdom.Attr;
 import vdom.*;
 
 class BaseView extends coconut.vdom.Renderable {
