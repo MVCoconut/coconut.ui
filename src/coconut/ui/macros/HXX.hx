@@ -81,8 +81,6 @@ class HXX {
     return
       try {
         checkConst(t);
-        // trace(e.toString());
-        // trace(t.toString());
         Context.storeTypedExpr(t);
       }
       catch (error:Bool) 
