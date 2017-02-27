@@ -84,7 +84,7 @@ class Views {
             
             macro class $name extends coconut.ui.BaseView {
               public function new(data:$lt, render) {
-                super(data, render);
+                super(data, function (data:$lt) return render(($obj : $pt)));
               }
             }; 
           default:
