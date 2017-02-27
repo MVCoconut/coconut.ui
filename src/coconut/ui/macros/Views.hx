@@ -82,11 +82,12 @@ class Views {
               });              
             }
             
-            macro class $name extends coconut.ui.BaseView {
+            macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.PropView<$pt> {
               public function new(data:$lt, render) {
                 super(data, function (data:$lt) return render(($obj : $pt)));
               }
             }; 
+            
           default:
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
 
