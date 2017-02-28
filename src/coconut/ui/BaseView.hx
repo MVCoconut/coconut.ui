@@ -2,11 +2,11 @@ package coconut.ui;
 
 import vdom.*;
 
-class BaseView extends coconut.vdom.Renderable {
+class BaseView extends coconut.ui.Renderable {
   
-  var cache = new coconut.ui.tools.ViewCache();
+  @:noCompletion var cache = new coconut.ui.tools.ViewCache();
 
-  public function new<Data>(data:Data, render:Data->VNode) {
+  public function new<Data>(data:Data, render:Data->coconut.ui.RenderResult) {
     super(tink.state.Observable.auto(function () { 
       var ret = render(data); 
       cache.purge();
