@@ -8,8 +8,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"releasenote": "Enforce observability.",
-	"version": "0.4.0",
+	"releasenote": "Fix casing.",
+	"version": "0.4.1",
 	"url": "https://github.com/back2dos/coconut.ui/",
 	"dependencies": {
 		"coconut.data": "",
