@@ -31,13 +31,13 @@ class Compare {
     });
   }
 
-  static public function shallow<A:{}>(old:A, nu:A) {
+  static public function shallow<A:{}>(skipFunctions:Bool, old:A, nu:A) {
     if (nu == old) return true;
 
     for (f in Reflect.fields(nu)) {
       var nu = Reflect.field(nu, f),
           old = Reflect.field(old, f);
-
+      if (skipFunctions && Reflect.isFunction(old)) continue;
       if (old != nu) 
         switch [Std.instance(old, ConstObservable), Std.instance(nu, ConstObservable)] {
           case [null, _] | [_, null]: 

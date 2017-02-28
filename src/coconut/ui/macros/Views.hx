@@ -19,7 +19,7 @@ class Views {
           type = ctx.type.toComplex({ direct: true });
       
       var ret = 
-        switch ctx.type.reduce() {
+        switch ctx.type {
           case TAnonymous(_.get().fields => fields):
 
             var plain = [];
@@ -31,6 +31,11 @@ class Views {
                   name = f.name,
                   opt = f.meta.has(':optional');
               
+              switch coconut.data.macros.Models.check(f.type) {
+                case []:
+                case v: ctx.pos.error(v[0]+ ' for field $name');
+              }              
+
               var meta = if (opt) [{ name: ':optional', params: [], pos: f.pos }] else [];
               plain.push({
                 name: name,
@@ -48,7 +53,10 @@ class Views {
 
           default:
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
-
+            switch coconut.data.macros.Models.check(ctx.type) {
+              case []:
+              case v: ctx.pos.error(v[0]);
+            }
             macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.ModelView {
               public function new(data:$type, render) {
                 super(data, render);

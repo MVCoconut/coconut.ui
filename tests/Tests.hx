@@ -4,7 +4,7 @@ import tink.state.*;
 import js.Browser.*;
 import vdom.VDom.*;
 import coconut.data.*;
-import coconut.ui.macros.HXX.hxx;
+import coconut.Ui.hxx;
 using tink.CoreApi;
 import coconut.ui.tools.Compare;
 
@@ -80,6 +80,29 @@ class Tests extends haxe.unit.TestCase {
       setup();
     }
   }  
+
+  function testTodo() {
+    new TodoListView(null);
+    new TodoItemView({ description: 'foo', completed: true, onedit: function (_) {}, ontoggle: function (_) {}});
+
+    var desc = new State('test'),
+        done = new State(false);
+
+    mount(hxx('<TodoItemView completed={done} description={desc} onedit={desc.set} ontoggle={done.set} />'));
+    var toggle:js.html.InputElement = cast q('input[type="checkbox"]');
+    var edit:js.html.InputElement = cast q('input[type="text"]');
+    assertFalse(toggle.checked);
+    toggle.click();
+    assertTrue(done);
+    assertEquals('test', edit.value);
+    desc.set('foo');
+    assertEquals('test', edit.value);
+    Observable.updateAll();
+    assertEquals('foo', edit.value);
+    edit.value = "bar";
+    edit.dispatchEvent(new js.html.Event("change"));//gotta love this
+    assertEquals('bar', desc);
+  }
 
   function testPropViewReuse() {
     var states = [for (i in 0...10) new State(i)];
