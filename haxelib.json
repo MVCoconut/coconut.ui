@@ -8,8 +8,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"releasenote": "Overhauled view life cycles.",
-	"version": "0.3.0",
+	"releasenote": "Enforce observability.",
+	"version": "0.4.0",
 	"url": "https://github.com/back2dos/coconut.ui/",
 	"dependencies": {
 		"coconut.data": "",
