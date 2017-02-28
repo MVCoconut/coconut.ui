@@ -80,7 +80,7 @@ class HXX {
           switch f.get().kind {
             case FMethod(_):
             case FVar(_, AccNever | AccInline):
-            default:
+            case v:
               throw false;
           }
         case TField(_, _):

@@ -28,7 +28,9 @@ private class Stack<T> {
 private class Factory<Data:{}, View> {
   
   var render:Data->View;
-  var byData:Map<Data, Stack<View>> = new Map();
+  var stackByData:Map<Data, Stack<View>> = new Map();
+
+  var dataByKey:Map<{}, Any> = new Map();
 
   public function new(render)
     this.render = render;
@@ -37,13 +39,19 @@ private class Factory<Data:{}, View> {
     return null;
   }
 
+  public function forKey<A>(key:{}, f:Void->A):A 
+    return switch dataByKey[key] {
+      case null: dataByKey[key] = f();
+      case v: v;
+    }
+
   public function purge() 
-    for (s in byData) 
+    for (s in stackByData) 
       s.purge();
 
   public function make(data:Data):View {
-    var stack = switch byData[data] {
-      case null: byData[data] = new Stack(render.bind(data));
+    var stack = switch stackByData[data] {
+      case null: stackByData[data] = new Stack(render.bind(data));
       case v: v;
     }
 

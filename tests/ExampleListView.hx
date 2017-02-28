@@ -1,4 +1,4 @@
-class ExampleListView extends coconut.ui.View<ListModel<{ foo: Int, bar:Int }>> {
+class ExampleListView extends coconut.ui.View<ListModel<{ foo: tink.state.Observable<Int>, bar:Int }>> {
   function render() '
     <div class="foo-list">
       <for {i in items}>

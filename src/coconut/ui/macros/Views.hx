@@ -16,7 +16,7 @@ class Views {
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
       
       var name = ctx.name,
-          type = ctx.type.toComplex();
+          type = ctx.type.toComplex({ direct: true });
       
       var ret = 
         switch ctx.type.reduce() {
@@ -27,7 +27,7 @@ class Views {
             var pt = TAnonymous(plain);
             
             for (f in fields) {
-              var t = f.type.toComplex(),
+              var t = f.type.toComplex({ direct: true }),
                   name = f.name,
                   opt = f.meta.has(':optional');
               

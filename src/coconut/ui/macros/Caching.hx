@@ -21,10 +21,57 @@ class Caching {
 
           var name = path.join('.'),
               data = (macro @:privateAccess { var __x = null; new $cl(__x); __x; }).typeof().sure().reduce();
-
+          
           switch data {
             case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.toComplex() => t]):
-              throw t.toString();
+              
+              var fields = switch t {
+                case TAnonymous(fields): fields;
+                default: 
+                  throw 'assert';
+              }
+
+              var key = 
+                switch a {
+                  case macro coconut.ui.macros.HXX.merge($a{args}):
+                    switch args[0].expr {
+                      case EObjectDecl(fields):
+
+                        var key = null;
+
+                        for (i in 0...fields.length) 
+                          switch fields[i] {
+                            case { field: 'key', expr: e }: 
+                              key = e; 
+                              fields.splice(i, 1);
+                              break;
+                            default:
+                          }
+
+                        if (key == null)
+                          args[0].reject('missing key');
+
+                        key;
+
+                      default:
+                        throw 'assert';
+                    }
+                  default:
+                    throw 'assert';
+                }
+
+              macro {
+                var __f =  @:privateAccess $ethis.getFactory($v{name}, $p{path}.new);
+                var __s = __f.forKey($key, function () {
+                  var s = new tink.state.State<Void->$t>(null);
+                  var o = coconut.ui.tools.Compare.stabilize(tink.state.Observable.auto(function () return s.value()), coconut.ui.tools.Compare.shallow);
+                  return new tink.core.Pair(s, o);
+                });
+                @:privateAccess tink.state.Observable.stack.push(__s.a);//TODO: this is horrible
+                __s.a.set(function ():$t return $a);
+                @:privateAccess tink.state.Observable.stack.pop();
+                __f.make(__s.b);
+              }
             default:
               macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make($a);
           }
