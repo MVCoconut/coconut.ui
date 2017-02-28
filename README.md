@@ -204,14 +204,6 @@ One way to not have the problem of reassigning handlers is to make sure they are
 
 Another one is to simply have model based views in such heavy loops. Those do not require a `key` at all, because the model itself is a self-contained object with identity, that makes the mapping trivial.
 
-The last one is to instruct coconut to just reuse the functions: 
-
-```
-<TodoItemView key={@reusingFunctions todo} {...todo} ontoggle={todo.completed = event} onedit={todo.description = event} />`
-```
-
-Note that if the functions depend on *anything* other than the key, they will become stale and your UI will most likely expose non-sensical behavior.
-
 # Virtual DOM Based Rendering
 
 Currently the only renderer for `coconut.ui` is based on `virtual-dom`. Other VDOM libraries are being investigated.
