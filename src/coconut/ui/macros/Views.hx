@@ -16,83 +16,50 @@ class Views {
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
       
       var name = ctx.name,
-          type = ctx.type.toComplex();
+          type = ctx.type.toComplex({ direct: true });
       
       var ret = 
-        switch ctx.type.reduce() {
+        switch ctx.type {
           case TAnonymous(_.get().fields => fields):
-            var key = ctx.pos.makeBlankType();
 
-            var plain = [],
-                lifted = (macro class { var key(default, never):$key; }).fields,
-                transplant = [];
+            var plain = [];
 
-            var pt = TAnonymous(plain),
-                lt = TAnonymous(lifted),
-                obj = EObjectDecl(transplant).at();
-
-            var model = Context.getType('coconut.data.Model');
+            var pt = TAnonymous(plain);
             
             for (f in fields) {
-              var t = f.type.toComplex(),
+              var t = f.type.toComplex({ direct: true }),
                   name = f.name,
                   opt = f.meta.has(':optional');
               
+              switch coconut.data.macros.Models.check(f.type) {
+                case []:
+                case v: ctx.pos.error(v[0]+ ' for field $name');
+              }              
+
               var meta = if (opt) [{ name: ':optional', params: [], pos: f.pos }] else [];
               plain.push({
                 name: name,
                 pos: f.pos,
                 kind: FProp('default', 'never', t),
                 meta: meta,
-              });
-
-              var isModel = f.type.isSubTypeOf(model).isSuccess();
-
-              var isObservable = !isModel && {
-                var blank = f.pos.makeBlankType();
-                (macro ((null : Null<$t>) : tink.state.Observable.ObservableObject<$blank>).poll().value).typeof().isSuccess();
-              }
-
-              var isFunction = !isModel && !isObservable && 
-                switch f.type.reduce() {
-                  case TFun(_, _): true;
-                  default: false;
-                }
-                
-              transplant.push({
-                field: name,
-                expr: 
-                  if (opt && isObservable)
-                    macro switch data.$name {
-                      case null: null;
-                      case v: v.value;
-                    }
-                  else
-                    macro data.$name,
-              });
-
-              lifted.push({
-                name: name,
-                pos: f.pos,
-                meta: meta,
-                kind: FProp('default', 'never', {
-                  if (isObservable || isModel || isFunction) t;
-                  else macro: tink.state.Observable<$t>;
-                }),
-              });              
+              });           
             }
             
-            macro class $name extends coconut.ui.ViewBase<$lt, $pt> {
-              public function new(data:$lt, render:$pt->vdom.VNode) {
-                super(data, function (data) return $obj, coconut.ui.tools.Compare.shallow, render, data.key);
+            macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.PropView<$pt> {
+              public function new(data:tink.state.Observable<$pt>, render) {
+                super(data, function (data:tink.state.Observable<$pt>) return render(data.value));
               }
             }; 
+
           default:
             Context.typeof(macro @:pos(ctx.pos) ((null : Null<$type>) : coconut.data.Model));
-
-            macro class $name extends coconut.ui.ViewBase<$type, $type> {
-              public function new(data:$type, render:$type->vdom.VNode) {
-                super(data, function (data) return data, function (_, _) return false, render, data);
+            switch coconut.data.macros.Models.check(ctx.type) {
+              case []:
+              case v: ctx.pos.error(v[0]);
+            }
+            macro class $name extends coconut.ui.BaseView implements coconut.ui.tools.ModelView {
+              public function new(data:$type, render) {
+                super(data, render);
               }
             }; 
         }
@@ -143,8 +110,6 @@ class Views {
         
       }).getFunction().sure()).publish();
 
-      var states = [];
-
       for (member in c)
         switch member.extractMeta(':state') {
           case Success(m):
@@ -158,24 +123,14 @@ class Views {
 
                 var get = 'get_' + member.name,
                     set = 'set_' + member.name,
-                    state =  '__coco_${member.name}__',
-                    get_state = 'get_$state';
-
-                states.push(state); 
+                    state =  '__coco_${member.name}__';
                 
                 add(macro class {
 
-                  @:noCompletion var $state(get, null):tink.state.State<$t>;
-                    @:noCompletion function $get_state()
-                      return switch this.$state {
-                        case null: 
-                          this.$state = new tink.state.State($e);
-                        case v: v;
-                      }
+                  @:noCompletion var $state(default, never):tink.state.State<$t> = new tink.state.State($e);
 
-                  @:noCompletion inline function $get():$t {
+                  @:noCompletion inline function $get():$t 
                     return this.$state.value;
-                  }
 
                   @:noCompletion inline function $set(param:$t) {
                     this.$state.set(param);
@@ -186,96 +141,7 @@ class Views {
             }
             
           default:
-        }
-
-      // switch data {
-      //   case TAnonymous(_.get().fields => fields):
-
-      //     var model = Context.getType('coconut.data.Model');
-      //     var parts = [];
-          
-      //     for (f in fields)
-      //       if (f.type.isSubTypeOf(model).isSuccess()) {
-      //         for (sub in f.type.getClass().findField('observables').type.getFields().sure()) {
-      //           var name = f.name,
-      //               sub = sub.name;
-      //           parts.push(macro data.$name.observables.$sub);
-      //         }
-      //       }
-
-      //     if (parts.length > 0) {
-      //       var sum = macro (cast ${parts[0]} : tink.state.Observable<tink.core.Noise>);
-
-      //       for (i in 1...parts.length)
-      //         sum = macro $sum.combine(${parts[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
-
-      //       add(macro class {
-      //         @:noCompletion var __model_states:tink.state.Observable<tink.core.Noise>;
-      //       });
-      //       // postConstruct.push(macro trace("call!"));
-      //       postConstruct.push(macro this.__model_states = $sum);
-      //       states.push('__model_states');
-      //     }
-
-      //   default:
-      // }
-
-      switch states {
-        case []: null;
-        case v: 
-          
-          var sum = macro (cast $i{states[0]} : tink.state.Observable<tink.core.Noise>);
-          for (i in 1...states.length)
-            sum = macro $sum.combine($i{states[i]}, function (_, _) return tink.core.Noise.Noise.Noise);
-
-          add(macro class {
-            @:noCompletion var __coco_state_invalidate:tink.core.Callback.CallbackLink;
-            @:noCompletion var __coco_state_sum:tink.state.Observable<tink.core.Noise>;
-            @:noCompletion function __coco_state_sum_calculate() {
-              if (__coco_state_sum == null)
-                __coco_state_sum = $sum;
-              return __coco_state_sum;
-            }
-            @:noCompletion override function destroy() {
-              __coco_state_invalidate.dissolve();
-              super.destroy();
-            }
-            @:noCompletion override function __beforeExtract() {
-              __coco_state_invalidate.dissolve();
-              __coco_state_invalidate = __coco_state_sum_calculate().measure().becameInvalid.handle(__resetCache);
-            }
-          });
-
-      }
-
-      var copy =
-        switch states {
-          case []: [];
-          case v: 
-            [for (s in states) macro this.$s = that.$s].concat([
-              macro switch that.__coco_state_sum_calculate() {
-                case null:
-                case v: 
-                  this.__coco_state_sum = v;
-                  this.__coco_state_invalidate = v.measure().becameInvalid.handle(this.__resetCache);
-              }
-            ]);
-        }
-
-      if (c.hasMember('__copyCache'))
-        copy.push(macro this.__copyCache(that));
-
-      if (copy.length > 0)
-        for (f in (macro class {
-          override function update(old:{}, elt:js.html.Element) {
-            switch Std.instance(old, $i{c.target.name}) {
-              case null:
-              case that:
-                $b{copy};
-            }
-            return super.update(old, elt);
-          }
-        }).fields) c.addMember(f);      
+        }  
 
       var render = switch c.memberByName('render') {
         case Success(f): f;

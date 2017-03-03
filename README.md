@@ -10,185 +10,199 @@ class SomeView extends coconut.ui.View<SomeData> {
     <div>
       <!-- render the actual data -->
     </div>
-  '
-}
-```
-
-## Stateful Views
-
-Views consume the data they are to represent through the constructor. They may however define internal state, in which case we consider them "stateful".
-
-Example:
-
-```haxe
-class Counter extends coconut.ui.View<{ onsave:Int->Void }> {
-  @:state var count:Int = 10;
-  function render() '
-    <div class="counter">
-      <button onclick={count--}>-1</button>
-      <span>{count}</span>
-      <button onclick={count++}>+1</button>
-      <button onclick={onsave(count)}>Save</button>
-    </div>
   ';
 }
 ```
 
-Any change to `@:state` fields results in the view being scheduled for a redraw. As shown in the example above, if you do not give the `render` method a parameter, then the data is simply decomposed into the current scope as is the case with `onsave`.
+A function with just a string body is merely a syntactic shortcut for a function with `return hxx('<theString>')`. So if you want to be more explicit or do something else in your rendering function, you could write:
 
-### When to go Stateful?
+```haxe
+class SomeView extends coconut.ui.View<SomeData> {
+  function render(data:SomeData) {
+    trace('rendering!!!');
+    return hxx('
+      <div>
+        <!-- render the actual data -->
+      </div>
+    ');
+  }
+}
+```
 
-Truth be told, down the line you will probably always want to move state out of views. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
+Generally speaking, you should avoid producing side effects in the `render` method.
 
-The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested without the views. 
+The promise of `coconut.ui` is: whenever your data updates, your view will update also. This assumes that you [do not defeat coconut's ability to observe changes](https://github.com/MVCoconut/coconut.data#enforced-observability). In addition to that `coconut.ui` has a (probably overly complex) caching layer that reduces those updates to a minimum.
+
+Depending on what data they consume, views fall into one of two categories
+
+- **model based views**: a view is written against a coconut model. This makes it very easy for coconut to observe changes properly.
+- **property based views**: a view that just consumes a bunch of properties. It turns out that this is a lot trickier for coconut to handle in a way that is convenient to use.
 
 ## Property Based Views
 
-The `Counter` we created is a **stateful** view. It is also what we'll call **property based** as opposed to **model based** views. The former renders "a bunch of properties" of an anonymous object, while the latter is underpinned by a coconut model (i.e. an object implementing `coconut.data.Model`). The main reason we want property based views is that they are more flexible in that rather than having to construct a specific model, the user may just configure the view directly through setting the required properties. Providing that flexibility leaves us with a bit of a problem though. Consider the following view for a moment:
+Let's define a property based view (using `-lib coconut.vdom`):
 
 ```haxe
-class CounterList extends coconut.ui.View<{ title:String }> {
-  @:state var total:Int = 1;
+class TodoItemView extends View<{ description:String, completed:Bool, onedit:String->Void, ontoggle:Bool->Void }> {
   function render() '
-    <div class="counter-list">
-      <h1>{title}</h1>
-      <for {i in 0...total}>
-        <Counter onsave={function (count) total = count} />
-      </for>
+    <div class="todo-item">
+      <input type="checkbox" checked={completed} onchange={ontoggle(event.target.checked)} />
+      <input type="text" value={description} onchange={onedit(event.target.value)} />
     </div>
   ';
 }
 ```
 
-
-
-### Keys
-
-On occasion, views need to be recreated by their parent and because anonymous objects are, well, anonymous, coconut requires a bit of help to identify them to be able to associate the right anonymous object with the right property based view. This is done with keys:
-
-
-
-In this (rather pointless) example, we create a whole range of counters. Once we click "save" on one of them, the view's `total` gets updated and the `CounterList` must re-render - with a different amount of children. Notice that the only data a `Counter` gets is a callback, which in this case is even an anonymous function that gets created when the `Counter` is created, which means the only actual data given to the view changes *every time* the view must be updated from the parent component. This is where the `key` comes in. 
-
-Notice that the above version is quite inefficient, because it means that on every redraw, we create a new event handler, that happens to do the same thing, but ultimately it does mean that on the rendering layer the old handler needs to be deregistered and the new one must be attached. Instead we can optimize it like so:
+The above is basically unfolded into the following:
 
 ```haxe
-class CounterList extends coconut.ui.View<{ title:String }> {
-  @:state var total:Int = 1;
-  function render() '
-    <div class="counter-list">
-      <h1>{title}</h1>
-      <for {i in 0...total}>
-        <Counter key={i} onsave={saveTotal} />
-      </for>
-    </div>
-  ';
-  function saveTotal(v)
-    this.total = v;
+private typedef TodoItemViewData = { 
+  var description(default, never):String;
+  var completed(default, never):Bool;
+  function onedit(param:String):Void;
+  function ontoggle(param:Bool):Void;
+}
+
+class TodoItemView extends coconut.ui.BaseView {
+  public function new(o:tink.state.Observable<TodoItemViewData>) { /* some magic happens here */}
+  private function render(data:TodoItemViewData) {
+
+    var description = data.description,
+        completed = data.completed,
+        onedit = data.onedit,
+        ontoggle = data.ontoggle;
+
+    return hxx('
+      <div class="todo-item">
+        <input type="checkbox" checked={completed} onchange={ontoggle(event.target.checked)} />
+        <input type="text" value={description} onchange={onedit(event.target.value)} />
+      </div>
+    ');
+  }
 }
 ```
 
-### Observability
-
-In the example above you may wish for the title to change over time and for the UI to reflect that change. To look at how this is possible, let's take a closer look at the code `coconut.ui` generates:
+Notice how instead of just consuming the properties, an observable of those properties is taken in. This is what brings the view to life. You can still just instantiate the view with an anonymous object:
 
 ```haxe
-class CounterList extends coconut.ui.ViewBase {
-
-  //Here is what `@:state var total` becomes:
-
-    var total(get, set):Int;
-    var __coco_total = new tink.state.State(1);
-    function total_get() 
-      return __coco_total.value;
-
-    function total_set(param) {
-      __coco_total.set(param);
-      return param;
-    }
-
-  //The generated constructor. Notice the type of `data.title`
-
-    public function new(data:{ key:Key, title:tink.state.Observable<String> });
-
-  //And this is the full render function:
-
-    public function render(__data__:{ title:String }) {
-      var title = __data__.title;
-      return hxx('
-        <div class="counter-list">
-          <h1>{title}</h1>
-          <for {i in 0...total}>
-            <Counter key={i} onsave={saveTotal} />
-          </for>
-        </div>    
-      ');
-    }
-}
+new TodoItemView({ description: 'foo', completed: true, onedit: function (_) {}, ontoggle(_) {}})
 ```
 
-The code above is still a quite simplified version of what is actually being generated, but it's enough to illustrate a few things. The data being rendered and the data being consumed in the constructor are not quite the same. The former is lifted to become observable.
-
-That allows us to do this (with `-lib coconut.vdom`):
+This way the view's data will be a constant though: an anonymous object who's description is immutable. Here's an example of how we could make it come to life:
 
 ```haxe
 import js.Browser.*;
+import tink.state.State;
+import coconut.Ui.hxx;
 
-var title = new tink.state.State("Useless Example");
-document.appendChild(new CounterList({ key: "whatever", title: title }).toElement());
-title.set("Useless Example Indeed");
-tink.state.Observable.updateAll();//Ordinarily we'd have to wait for one frame for the changes to be applied, but let's just force them
-alert(document.querySelector(".counter-list>h1").innerHTML);//Will display "Useless Example Indeed"
+class Main {
+  static function main() {
+    var desc = new State('test'),
+        done = new State(false);
+
+    document.body.appendChild(
+      hxx('<TodoItemView completed={done} description={desc} onedit={desc.set} ontoggle={done.set} />').toElement()
+    );
+  }
+}
 ```
 
-### Rendering Models through Property Based Views
-
-If you wish to render a model (or multiple ones) through a property based view, it can be a bit arduous, but in HXX you can rely on the spread operator.
+Using `hxx` the data flow is properly wired up under the hood. That doesn't imply that you need to create your own states and observables though. We can modify the example above and feed true model into the view instead:
 
 ```haxe
-class TodoItemView extends coconut.ui.View<{ completed:Bool, description:String, important:Bool, assignee: Person }> {
+import js.Browser.*;
+import tink.state.State;
+import coconut.Ui.hxx;
+
+class TodoItem implements coconut.data.Model {
+  @:editable var completed:Bool = false;
+  @:editable var description:String;
+}
+
+class Main {
+  static function main() {
+    var todo = new TodoItem({ description: 'test' });
+
+    document.body.appendChild(
+      hxx('<TodoItemView ontoggle={todo.completed = event} onedit={todo.description = event} {...todo} />').toElement()
+    );
+  }
+}
+```
+
+Here we let the data flow into the view using the spread operator (`...`) while the events are explititly handled by modifying model properties.
+
+### When to use Property Based Views
+
+The most accurate answer to that is "it depends". It's also the least useful one.
+
+At the bottom line, property based views pose a couple of problems:
+
+1. There's quite a bit of heavy lifting to be done by the coconut macros to wire up the data flow in such a way that it works as expected.
+2. They may have to redraw even when their data did not effectively change. Because their data is always composed on the fly, it's not always easy to determine whether the recomposed data is equal to the last composed version. The renderer will still do its part to minimize effective updates, but 
+3. Because of the above and other subtleties, they may not always work entirely as expected.
+
+The advantage is that they are more easily fed with arbitrary data, which increases flexibility for whoever uses them.
+
+## Stateful Views
+
+Views consume the data they are to represent through the constructor. They may however define internal state, in which case we consider them "stateful". Example:
+
+```haxe
+class TodoItemView extends View<{ description:String, completed:Bool, onedit:String->Void, ontoggle:Bool->Void }> {
+  @:state var isEditing:Bool = false;
   function render() '
-    <div class="todo-item">
-      <! -- exercise for the reader -->
+    <div class="todo-item" data-editing={isEditing}>
+      <input type="checkbox" checked={completed} onchange={ontoggle(event.target.checked)} />
+      <input type="text" value={description} onchange={onedit(event.target.value)} onfocus={isEditing = true} onblur={isEditing = false}/>
     </div>
   ';
 }
-
-class TodoItem implements coconut.data.Model {
-  @:editable var done:Bool = @byDefault false;
-  @:editable var description:String;
-  @:editable var important:Bool = @byDefault false;
-  @:editable var assignee:Person = @byDefault Person.me;
-}
-
-var item = new TodoItem({ description: 'Shop groceries' });
-hxx('<TodoItemView key={item} {...item} completed={item.done} />');
 ```
 
-Here we're rendering a `TodoItem` through a slightly diverging property based view. We use the model itself as key, the spread operator to assign properties automatically and finally we deal with the discrepancy in naming between `completed` and `done` by assigning that field manually.
+Any change to `@:state` fields results in the view being scheduled for a redraw. 
 
-If the structure of the model completely matches entirely, you can pass the data directly using `hxx('<TodoItemView {...item} />')`.
+Just to dwell on nuances: in fact even the "stateless" version of `TodoItemView` was inherently stateful, because the input elements it contains are stateful by their very nature.
 
-As for combining two models, imagine the following setup:
+### When to go Stateful?
+
+Down the line you will always want to move state out of views. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
+
+The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested without the views. 
+
+## View Nesting and Keys
+
+Expanding on the todos, here is how we might define a todo list view:
 
 ```haxe
-class TodoItem implements coconut.data.Model {
-  @:editable var completed:Bool = @byDefault false;
-  @:editable var description:String;
+import coconut.data.*;
+
+class TodoList implements Model {
+  @:observable var items:List<TodoItem> = @byDefault new List();
 }
 
-class TodoMetaData implements coconut.data.Model {
-  @:editable var assignee:Person = @byDefault Person.me;
-  @:editable var important:Bool = @byDefault false;
+class TodoListView extends coconut.ui.View<TodoList> {
+  function render() '
+    <div class="todo-list">
+      <for {todo in items}>
+        <TodoItemView key={todo} {...todo} ontoggle={todo.completed = event} onedit={todo.description = event} />
+      </for>
+    </div>
+  ';
 }
-var item = new TodoItem({ description: 'Shop groceries' });
-var meta = new TodoMetaData();
-hxx('<TodoItemView key={item} {...item} {...metaDataFor(item)} />');
 ```
 
-### Properties vs. Models
+Everything except the `key` property should be clear from the things explained above. Let's ignore the `key` for the moment and consider how this view would rerender:
 
-Which one you chose is mostly a matter of *taste*. Model based views are slightly more predictable although hopefully you'll never know the difference. Property based views on the other hand are far more flexible, because they can be instantiated with all kinds of data.
+Whenever the underlying model changes, the view needs to construct `TodoItemView` children. Of course we don't want them to be created every time we rerender. Adding an item to a list with 1000 items would be potentially very expensive (in fact the cost is mitigated by the renderer, at least if it is `coconut.vdom`). We actually want to be able to reuse the same view again and again. The issue is though that while the children that should be renderered may change, the data that they should render can change at the same time. This is where the `key` comes into play: it allows coconut to understand which data belongs to which view. Upon rerendering, coconut will check if it already has a view of the required type for a given key and will reuse it, if it exists - potentially assigning new data to it. In this case, such an assignment occurs: `ontoggle={todo.completed = event}` is a shorthand for `ontoggle={function (event) todo.completed = event}`, meaning that every time the view is reused, it is assigned a new anonymous function.
+
+One way to not have the problem of reassigning handlers is to make sure they are the same. In this particular case you could define them as methods on the model itself and then use them like so:
+
+```
+<TodoItemView key={todo} {...todo} ontoggle={todo.toggleCompleted} onedit={todo.editDescription} />
+```
+
+Another one is to simply have model based views in such heavy loops. Those do not require a `key` at all, because the model itself is a self-contained object with identity, that makes the mapping trivial.
 
 # Virtual DOM Based Rendering
 

@@ -20,9 +20,11 @@ class HXX {
   #if macro
   static public var options:Options;
   static public function parse(e:Expr) {
+
     if (options == null)
       e.reject('Either the renderer did not configure HXX properly, or no renderer is used');
-    return 
+
+    var ret = 
       tink.hxx.Parser.parse(
         e, 
         {
@@ -33,8 +35,31 @@ class HXX {
         }, 
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
+
+    return reconstruct(ret, (macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess());//TODO: this should really happen through hxx in a single pass
+  }
+
+  static function reconstruct(e:Expr, cached:Bool) {
+    function rec(e:Expr) {
+      return switch e = e.map(rec) {
+        case macro new $view($o):
+          if (cached)
+            macro @:pos(e.pos) cache.createView($e);
+          else
+            macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
+        default: e;
+      }
+    }
+    return rec(e);
   }
   #end
+  macro static public function liftIfNeedBe(e:Expr):Expr 
+    return
+      switch Context.getExpectedType() {
+        case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.toComplex() => t]):
+          macro @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
+        default: e;
+      }
 
   macro static public function observable(e:Expr) {
     var blank = e.pos.makeBlankType();
@@ -55,7 +80,7 @@ class HXX {
           switch f.get().kind {
             case FMethod(_):
             case FVar(_, AccNever | AccInline):
-            default:
+            case v:
               throw false;
           }
         case TField(_, _):
@@ -69,8 +94,6 @@ class HXX {
     return
       try {
         checkConst(t);
-        // trace(e.toString());
-        // trace(t.toString());
         Context.storeTypedExpr(t);
       }
       catch (error:Bool) 
