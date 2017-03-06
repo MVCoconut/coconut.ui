@@ -16,7 +16,7 @@ class Views {
     return BuildCache.getType('coconut.ui.View', function (ctx:BuildContext):TypeDefinition {
       
       var name = ctx.name,
-          type = ctx.type.toComplex({ direct: true });
+          type = ctx.type.toComplex();
       
       var ret = 
         switch ctx.type.reduce() {
@@ -27,7 +27,7 @@ class Views {
             var pt = TAnonymous(plain);
             
             for (f in fields) {
-              var t = f.type.toComplex({ direct: true }),
+              var t = f.type.toComplex(),
                   name = f.name,
                   opt = f.meta.has(':optional');
               
@@ -154,7 +154,7 @@ class Views {
 
           impl.args.push({
             name: '__data__',
-            type: data.toComplex({ direct: true }),
+            type: data.toComplex(),
           });
           
           var statements = [
@@ -173,7 +173,7 @@ class Views {
 
         case [v]:
           if (v.type == null)
-            v.type = data.toComplex({ direct: true });
+            v.type = data.toComplex();
           else 
             render.pos.getOutcome(v.type.toType(render.pos).sure().isSubTypeOf(data));
         case v: 
