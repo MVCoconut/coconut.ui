@@ -41,14 +41,20 @@ class HXX {
 
   static function reconstruct(e:Expr, cached:Bool) {
     function rec(e:Expr) {
-      return switch e = e.map(rec) {
-        case macro new $view($o):
-          if (cached)
-            macro @:pos(e.pos) cache.createView($e);
-          else
-            macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
-        default: e;
-      }
+      return 
+        switch e {
+          case macro tink.hxx.Merge.complexAttribute($_) if (cached):
+            e.map(reconstruct.bind(_, false));
+          case _.map(rec) => e:
+            switch e {
+              case macro new $view($o):
+                if (cached)
+                  macro @:pos(e.pos) cache.createView($e);
+                else
+                  macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
+              default: e;
+            }
+        }
     }
     return rec(e);
   }
