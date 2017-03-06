@@ -19,7 +19,7 @@ class Views {
           type = ctx.type.toComplex({ direct: true });
       
       var ret = 
-        switch ctx.type {
+        switch ctx.type.reduce() {
           case TAnonymous(_.get().fields => fields):
 
             var plain = [];

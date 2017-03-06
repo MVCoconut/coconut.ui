@@ -36,7 +36,7 @@ class HXX {
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 
-    return reconstruct(ret, (macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess());//TODO: this should really happen through hxx in a single pass
+    return reconstruct(ret, (macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess());//TODO: this should really happen through HXX in a single pass
   }
 
   static function reconstruct(e:Expr, cached:Bool) {
@@ -106,7 +106,6 @@ class HXX {
 
   macro static public function merge(primary:Expr, rest:Array<Expr>)
     return tink.hxx.Merge.mergeObjects(primary, rest, {
-      fixField: function (e) return e,
       genField: function (ctx) {
         return
           if (ctx.expected.reduce().toString().startsWith('tink.state.Observable<')) {
@@ -134,6 +133,6 @@ class HXX {
       },
     });
 
-  macro static public function hxx(e:Expr)
+  macro static public function hxx(e:Expr) 
     return parse(e);
 }

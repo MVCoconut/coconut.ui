@@ -23,7 +23,7 @@ class Caching {
               data = (macro @:privateAccess { var __x = null; new $cl(__x); __x; }).typeof().sure().reduce();
           
           switch data {
-            case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.toComplex() => t]):
+            case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable' }, [_.reduce().toComplex() => t]):
               
               var fields = switch t {
                 case TAnonymous(fields): fields;
@@ -62,20 +62,23 @@ class Caching {
                 default:
               }
               
-              if (key == null) 
-                a.reject('missing key');
-              macro {
-                var __f =  @:privateAccess $ethis.getFactory($v{name}, $p{path}.new);
-                var __s = __f.forKey($key, function () {
-                  var s = new tink.state.State<Void->$t>(null);
-                  var o = coconut.ui.tools.Compare.stabilize(tink.state.Observable.auto(function () return s.value()), coconut.ui.tools.Compare.shallow.bind($func));
-                  return new tink.core.Pair(s, o);
-                });
-                @:privateAccess tink.state.Observable.stack.push(__s.a);//TODO: this is horrible
-                __s.a.set(function ():$t return $a);
-                @:privateAccess tink.state.Observable.stack.pop();
-                __f.make(__s.b);
+              if (key == null) {
+                // a.reject('missing key');
+                macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make($a);
               }
+              else
+                macro {
+                  var __f =  @:privateAccess $ethis.getFactory($v{name}, $p{path}.new);
+                  var __s = __f.forKey($key, function () {
+                    var s = new tink.state.State<Void->$t>(null);
+                    var o = coconut.ui.tools.Compare.stabilize(tink.state.Observable.auto(function () return s.value()), coconut.ui.tools.Compare.shallow.bind($func));
+                    return new tink.core.Pair(s, o);
+                  });
+                  @:privateAccess tink.state.Observable.stack.push(__s.a);//TODO: this is horrible
+                  __s.a.set(function ():$t return $a);
+                  @:privateAccess tink.state.Observable.stack.pop();
+                  __f.make(__s.b);
+                }
             default:
               macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make($a);
           }
