@@ -18,7 +18,6 @@ class Caching {
             case v: path.push(v);
           }
 
-
           var name = path.join('.'),
               data = (macro @:privateAccess { var __x = null; new $cl(__x); __x; }).typeof().sure().reduce();
           
@@ -28,7 +27,12 @@ class Caching {
               var fields = switch t {
                 case TAnonymous(fields): fields;
                 default: 
-                  throw 'assert';
+                  switch a {
+                    case macro coconut.ui.macros.HXX.merge(${ { expr: EObjectDecl([]) } }, $v):
+                      return macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make(coconut.ui.macros.HXX.liftIfNeedBe($a));
+                    default: 
+                      a.log().reject();
+                  }
               }
 
               var func = macro false;
@@ -62,10 +66,8 @@ class Caching {
                 default:
               }
               
-              if (key == null) {
-                // a.reject('missing key');
-                macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make($a);
-              }
+              if (key == null) 
+                macro @:privateAccess $ethis.getFactory($v{name}, $p{path}.new).make(coconut.ui.macros.HXX.liftIfNeedBe($a));
               else
                 macro {
                   var __f =  @:privateAccess $ethis.getFactory($v{name}, $p{path}.new);
