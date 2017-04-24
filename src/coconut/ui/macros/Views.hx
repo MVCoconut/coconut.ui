@@ -7,6 +7,7 @@ import haxe.macro.Context;
 import haxe.macro.Expr;
 
 using haxe.macro.Tools;
+using StringTools;
 using tink.MacroApi;
 using tink.CoreApi;
 
@@ -85,30 +86,42 @@ class Views {
 
   static function buildClass():Array<Field> {
     return ClassBuilder.run([function (c:ClassBuilder) {
-      
-      var data =           
-        switch c.target.superClass.t.get().constructor.get().type.reduce() {
-          case TFun(_[1].t.reduce() => TFun(_[0].t => ret, _), _): ret;
-          default: throw "super class constructor has unexpected shape";
+
+      if (!c.target.meta.has(':tink'))
+        c.target.meta.add(':tink', [], haxe.macro.Context.currentPos());
+
+      var superClass = c.target.superClass.t.get();
+      var hasSuperClass = false;
+      var data =   
+        switch superClass.fields.get().filter(function (f) return f.name == 'render') {
+          case [render]:
+            hasSuperClass = true;
+            switch render.type {
+              case TFun([_.t => t], _): t;
+              default: throw 'assert';
+            }
+          case []:
+            switch c.target.superClass.t.get().constructor.get().type.reduce() {
+              case TFun(_[1].t.reduce() => TFun(_[0].t => ret, _), _): ret;
+              default: throw "super class constructor has unexpected shape";
+            }
+          default: 
+            throw 'unreachable';
         }
 
       function add(t:TypeDefinition)
         for (f in t.fields)
           c.addMember(f);
 
-      if (!c.target.meta.has(':tink'))
-        c.target.meta.add(':tink', [], haxe.macro.Context.currentPos());
-
-      if (c.hasConstructor())
-        c.getConstructor().toHaxe().pos.error('Custom constructors not allowed on views');
       
-      var postConstruct = [];
+      if (!hasSuperClass) {
+        if (c.hasConstructor())
+          c.getConstructor().toHaxe().pos.error('Custom constructors not allowed on views');
 
-      c.getConstructor((macro function (data) {
-        super(data, render);
-        $b{postConstruct};
-        
-      }).getFunction().sure()).publish();
+        c.getConstructor((macro function (data) {
+          super(data, render);
+        }).getFunction().sure()).publish();
+      }
 
       for (member in c)
         switch member.extractMeta(':state') {
@@ -145,7 +158,9 @@ class Views {
 
       var render = switch c.memberByName('render') {
         case Success(f): f;
-        case Failure(_): c.target.pos.error('View requires render method');
+        case Failure(_): 
+          if (hasSuperClass) return;
+          c.target.pos.error('View requires render method');
       }
       var impl = render.getFunction().sure();
 
