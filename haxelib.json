@@ -10,7 +10,7 @@
 	],
 	"releasenote": "Various bugfixes.",
 	"version": "0.5.1",
-	"url": "https://github.com/back2dos/coconut.ui/",
+	"url": "https://github.com/MVCoconut/coconut.ui/",
 	"dependencies": {
 		"coconut.data": "",
 		"tink_hxx": "",
