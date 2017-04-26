@@ -13,6 +13,7 @@
 	"url": "https://github.com/back2dos/coconut.ui/",
 	"dependencies": {
 		"coconut.data": "",
+		"tink_hxx": "",
 		"tink_lang": ""
 	}
 }

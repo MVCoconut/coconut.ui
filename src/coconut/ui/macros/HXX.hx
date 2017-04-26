@@ -52,6 +52,8 @@ class HXX {
                   macro @:pos(e.pos) cache.createView($e);
                 else
                   macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
+              case macro super($o):
+                macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));
               default: e;
             }
         }
