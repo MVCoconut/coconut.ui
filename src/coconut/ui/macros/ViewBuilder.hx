@@ -15,8 +15,6 @@ class ViewBuilder {
         for (f in t.fields)
           c.addMember(f);
       
-      if (c.hasConstructor())
-        c.getConstructor().toHaxe().pos.error('Custom constructors not allowed for views');
 
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], c.target.pos);
@@ -31,9 +29,15 @@ class ViewBuilder {
         root = next.t.get();
       }
 
-      var isRoot = superClass.module == 'coconut.ui.View';
-      if (isRoot && !c.hasOwnMember('render'))
-        c.target.pos.error('Missing render function');
+      var isRoot = superClass == root;
+      if (isRoot) {
+
+        if (!c.hasOwnMember('render'))
+          c.target.pos.error('Missing render function');
+
+        if (c.hasConstructor())
+          c.getConstructor().toHaxe().pos.error('Custom constructors not supported for direct subclasses of coconut.ui.View');
+      } 
 
       var rawType =
         switch root.fields.get().filter(function (f) return f.name == 'render') {
