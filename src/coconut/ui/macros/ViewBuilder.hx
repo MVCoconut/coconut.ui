@@ -91,9 +91,10 @@ class ViewBuilder {
 
       function make(input:ComplexType, renderer, data, getFields) {
         makeRender(data, getFields);
-        c.getConstructor((macro function (data:$input) {
-          super(data, $renderer);
-        }).getFunction().sure()).publish();        
+        if (isRoot)
+          c.getConstructor((macro function (data:$input) {
+            super(data, $renderer);
+          }).getFunction().sure()).publish();        
       }
 
       function process(type:Type, isParam:Bool)

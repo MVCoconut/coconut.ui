@@ -3,6 +3,7 @@ package ;
 import tink.state.*;
 import js.Browser.*;
 import vdom.VDom.*;
+import coconut.ui.*;
 import coconut.data.*;
 import coconut.Ui.hxx;
 using tink.CoreApi;
@@ -177,5 +178,39 @@ class FooListView extends coconut.ui.View<ListModel<Foo>> {
         <Example2 {...i} />
       </for>
     </div>
+  ';
+}
+
+typedef WindowConfig = { 
+  var className(default, never):String;
+  var title(default, never):RenderResult;
+  var content(default, never):RenderResult;
+  var parts(default, never):Iterable<Int>;
+}
+
+class Window<C:WindowConfig> extends View<C> {
+  @:signal var closed;
+  function render() '
+    <div class={className}>
+      <for {p in parts}>
+      </for>
+    </div>
+  ';
+}
+
+class Lift extends View<{ foo: Iterable<String> }> {
+  override function render(data) '
+    <div>{[for (v in data.foo) v].join("-")}</div>
+  ';
+}
+
+class Sub extends Window<WindowConfig> {
+  function foo()
+    _closed.trigger(Noise);
+}
+
+class SubSub extends Sub {
+  override function render() '
+    <div class={"test"}></div>
   ';
 }
