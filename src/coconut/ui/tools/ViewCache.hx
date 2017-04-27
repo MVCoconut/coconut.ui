@@ -35,10 +35,6 @@ private class Factory<Data:{}, View> {
   public function new(render)
     this.render = render;
 
-  public function adhoc<T:(Data, { var key(default, null):{}; })>(v:T):View {
-    return null;
-  }
-
   public function forKey<A>(key:{}, f:Void->A):A 
     return switch dataByKey[key] {
       case null: dataByKey[key] = f();
