@@ -39,6 +39,22 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
   
+  function testCache() {
+    var s = new State('42');
+    mount(hxx('
+      <Example5 data={s}>
+        <renderer>
+          <Example4 value={data} />
+        </renderer>
+      </Example5>
+    '));
+    var id = q('.example4').getAttribute('data-id');
+    assertEquals('42', q('.example4').innerHTML);
+    s.set('321');
+    Observable.updateAll();
+    assertEquals('321', q('.example4').innerHTML);
+    assertEquals(id, q('.example4').getAttribute('data-id'));
+  }
 
   function testModel() {
     var model = new Foo({ foo: 4 });

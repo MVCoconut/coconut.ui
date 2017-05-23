@@ -1,16 +1,14 @@
 package coconut.ui;
 
-import vdom.*;
-
 class BaseView extends coconut.ui.Renderable {
   
-  @:noCompletion var cache = new coconut.ui.tools.ViewCache();
+  @:noCompletion var __coco__cache = new coconut.ui.tools.ViewCache();
+  
+  public var id(default, null):Int = idCounter++; static var idCounter = 0;
 
   public function new<Data>(data:Data, render:Data->coconut.ui.RenderResult) {
     super(tink.state.Observable.auto(function () { 
-      var ret = render(data); 
-      cache.purge();
-      return ret;
+      return __coco__cache.cached(render.bind(data));
     }));
   }
 }

@@ -36,30 +36,22 @@ class HXX {
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 
-    return reconstruct(ret, (macro (cache : coconut.ui.tools.ViewCache)).typeof().isSuccess());//TODO: this should really happen through HXX in a single pass
+      
+    function rec(e:Expr) return switch e = e.map(rec) {
+      case macro new $view($o):
+        macro @:pos(e.pos) coconut.ui.tools.ViewCache.create($e);
+      case macro super($o):
+        macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));      
+      case macro tink.hxx.Merge.complexAttribute($_):
+        macro {
+          var __coco_cache = coconut.ui.tools.ViewCache.current;
+          $e;
+        }      
+      default: e;
+    }
+    return rec(ret);//TODO: this should really happen through HXX in a single pass
   }
 
-  static function reconstruct(e:Expr, cached:Bool) {
-    function rec(e:Expr) {
-      return 
-        switch e {
-          case macro tink.hxx.Merge.complexAttribute($_) if (cached):
-            e.map(reconstruct.bind(_, false));
-          case _.map(rec) => e:
-            switch e {
-              case macro new $view($o):
-                if (cached)
-                  macro @:pos(e.pos) cache.createView($e);
-                else
-                  macro @:pos(e.pos) new $view(coconut.ui.macros.HXX.liftIfNeedBe($o));
-              case macro super($o):
-                macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));
-              default: e;
-            }
-        }
-    }
-    return rec(e);
-  }
   #end
   macro static public function liftIfNeedBe(e:Expr):Expr 
     return

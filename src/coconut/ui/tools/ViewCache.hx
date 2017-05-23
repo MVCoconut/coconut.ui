@@ -1,5 +1,9 @@
 package coconut.ui.tools;
 
+#if macro
+import haxe.macro.Expr;
+using tink.MacroApi;
+#end
 private class Stack<T> {
   
   var counter = 0;
@@ -57,9 +61,24 @@ private class Factory<Data:{}, View> {
 
 class ViewCache {
   
+  static var stack = new Array<{ cache: ViewCache }>();
+  static public var current(get, never):ViewCache;
+
+  static inline function get_current()
+    return stack[stack.length - 1].cache;
+
   var __cache = new Map<String, Factory<Dynamic, Dynamic>>();
 
-  @:noCompletion public function purge()
+  public function cached<T>(f:Void->T):T {
+    var o = { cache: this };
+    stack.push(o);
+    var ret = f();
+    stack.remove(o);
+    this.purge();
+    return ret;
+  }
+
+  @:noCompletion function purge()
     for (f in __cache) 
       f.purge();
 
@@ -70,8 +89,23 @@ class ViewCache {
       case null: __cache[cls] = new Factory<Dynamic, Dynamic>(make);
       case v: v;
     }
+  #if macro
+  static function with(e:Expr, cb:TypePath->Expr->Expr) 
+    return switch e.expr {
+      case ENew(cl, [arg]): cb(cl, arg);
+      default: e.reject();
+    }
+  #end
+  macro static public function create(view) {
+    return with(view, function (cl, arg) return
+      switch (macro (__coco__cache:coconut.ui.tools.ViewCache)).typeof() {
+        case Success(_): coconut.ui.macros.Caching.createView(macro __coco__cache, cl, arg);
+        default: macro new $cl(coconut.ui.macros.HXX.liftIfNeedBe($arg));
+      }
+    );
+  }
   
-  macro public function createView(ethis, view)
-    return coconut.ui.macros.Caching.createView(ethis, view);
+  // macro public function createView(ethis, view)
+    // return coconut.ui.macros.Caching.createView(ethis, view);
 
 }
