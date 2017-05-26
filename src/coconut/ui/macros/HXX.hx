@@ -39,7 +39,7 @@ class HXX {
       );
 
     var interceptClass = 
-      if (Reflect.hasField(options, 'interceptClass')) //Testing against null directly yields `Can't create closure : value is not a function`
+      if (Reflect.field(options, 'interceptClass') != null) //Testing against null directly yields `Can't create closure : value is not a function`
         options.interceptClass
       else
         function (_) return None;
