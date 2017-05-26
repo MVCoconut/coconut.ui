@@ -32,7 +32,7 @@ class HXX {
         {
           child: options.child,
           customAttributes: options.customAttributes,
-          flatten: if (Reflect.hasField(options, 'flatten')) options.flatten else null,
+          flatten: if (Reflect.field(options, 'flatten') != null) options.flatten else null,
           merger: macro coconut.ui.macros.HXX.merge,
         }, 
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
