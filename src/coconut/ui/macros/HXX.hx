@@ -7,12 +7,14 @@ import haxe.macro.Expr;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
+using tink.CoreApi;
 using StringTools;
 
 typedef Options = {
   var child(default, null):ComplexType;
   @:optional var customAttributes(default, null):String;
   @:optional var flatten(default, null):Expr->Expr;
+  @:optional var interceptClass(default, null):{ path: TypePath, pos:Position, arg:Expr }->Option<Expr>;
 }
 #end
 
@@ -36,10 +38,18 @@ class HXX {
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 
-      
+    var interceptClass = 
+      if (Reflect.hasField(options, 'interceptClass')) //Testing against null directly yields `Can't create closure : value is not a function`
+        options.interceptClass
+      else
+        function (_) return None;
+
     function rec(e:Expr) return switch e = e.map(rec) {
       case macro new $view($o):
-        macro @:pos(e.pos) coconut.ui.tools.ViewCache.create($e);
+        switch interceptClass({ pos: e.pos, path: view, arg: o }) {
+          case None: macro @:pos(e.pos) coconut.ui.tools.ViewCache.create($e);
+          case Some(v): v;
+        }
       case macro super($o):
         macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));      
       case macro tink.hxx.Merge.complexAttribute($_):
