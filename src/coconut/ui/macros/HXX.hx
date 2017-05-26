@@ -4,23 +4,17 @@ package coconut.ui.macros;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import tink.hxx.Generator;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
 using tink.CoreApi;
 using StringTools;
-
-typedef Options = {
-  var child(default, null):ComplexType;
-  @:optional var customAttributes(default, null):String;
-  @:optional var flatten(default, null):Expr->Expr;
-  @:optional var interceptClass(default, null):{ path: TypePath, pos:Position, arg:Expr }->Option<Expr>;
-}
 #end
 
 class HXX {
   #if macro
-  static public var options:Options;
+  static public var options:GeneratorOptions;
   static public function parse(e:Expr) {
 
     if (options == null)
@@ -33,23 +27,18 @@ class HXX {
           child: options.child,
           customAttributes: options.customAttributes,
           flatten: if (Reflect.field(options, 'flatten') != null) options.flatten else null,
-          merger: macro coconut.ui.macros.HXX.merge,
+          instantiate: if (Reflect.field(options, 'instantiate') != null) function (o) return options.instantiate(o) else null, //In some regards Haxe is just so broken I want to cry
+          merger: switch options.merger {
+            case null: macro coconut.ui.macros.HXX.merge;
+            case v: v;
+          },
         }, 
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 
-    var interceptClass = 
-      if (Reflect.field(options, 'interceptClass') != null) //Testing against null directly yields `Can't create closure : value is not a function`
-        options.interceptClass
-      else
-        function (_) return None;
-
     function rec(e:Expr) return switch e = e.map(rec) {
       case macro new $view($o):
-        switch interceptClass({ pos: e.pos, path: view, arg: o }) {
-          case None: macro @:pos(e.pos) coconut.ui.tools.ViewCache.create($e);
-          case Some(v): v;
-        }
+        macro @:pos(e.pos) coconut.ui.tools.ViewCache.create($e);
       case macro super($o):
         macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));      
       case macro tink.hxx.Merge.complexAttribute($_):
