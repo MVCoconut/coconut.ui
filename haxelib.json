@@ -8,8 +8,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"releasenote": "Improved caching. Simplified implementation. Support view inheritance.",
-	"version": "0.6.0",
+	"releasenote": "Add extensions points for use with react.",
+	"version": "0.6.1",
 	"url": "https://github.com/MVCoconut/coconut.ui/",
 	"dependencies": {
 		"tink_hxx": "",
