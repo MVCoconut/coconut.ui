@@ -1,5 +1,7 @@
 package coconut.ui.tools;
 
+using tink.CoreApi;
+
 #if macro
 import haxe.macro.Expr;
 using tink.MacroApi;
@@ -59,23 +61,73 @@ private class Factory<Data:{}, View> {
   }
 }
 
-class ViewCache {
+#if js
+@:native('WeakMap')
+extern private class WeakMap<K:{}, V> {
   
-  static var stack = new Array<{ cache: ViewCache }>();
-  static public var current(get, never):ViewCache;
+  function new() {}
+  function get(key:K):Null<V>;
+  function set(key:K, value:V):Void;
 
-  static inline function get_current()
-    return stack[stack.length - 1].cache;
+  static function __init__():Void {
+    //this whole madness is really here just for pre ES2015 versions of phantomjs
+    if (untyped __js__("typeof WeakMap") != 'undefined') return;
+    var counter = 0;
+    inline function key(o:Dynamic) {
+      if (o == null) return 0;
+      if (o.__hx_key__ == null)
+        return o.__hx_key__ = ++counter;
+      return o.__hx_key__;
+    }
+
+    var cls:Dynamic = function () {};
+    cls.prototype = {
+      get: function (k:Dynamic) {
+        return js.Lib.nativeThis[key(k)];
+      },
+      set: function (k:Dynamic, v:Dynamic) {
+        js.Lib.nativeThis[key(k)] = v;
+      }
+    }
+    
+    untyped js.Browser.window.WeakMap = cls;
+  }
+}
+#elseif macro
+private class WeakMap<K:{}, V> {
+  public function new() throw "Something is rotten in the state of Denmark!";
+  public function get(key:K) return null;
+  public function set(key:K, value:V) {}
+}
+#else
+  typedef WeakMap<K:{}, V> = haxe.ds.WeakMap<K, V>;//No idea if this works well enough
+#end
+
+class ViewCache {
+  #if !macro
+  static var stack = new Array<Ref<ViewCache>>();
+  static var roots = new WeakMap();
+  static public function get() 
+    return
+      switch stack {
+        case []:
+          new ViewCache();
+        case v:
+          v[v.length - 1].value;
+      }
 
   var __cache = new Map<String, Factory<Dynamic, Dynamic>>();
-
+  
   public function cached<T>(f:Void->T):T {
-    var o = { cache: this };
-    stack.push(o);
-    var ret = f();
-    stack.remove(o);
+    if (stack.length > 0 && stack[stack.length - 1] == this) return f();
+    var entry = Ref.to(this);
+    stack.push(entry);
+    var ret = 
+      try Success(f())
+      catch (e:Dynamic) Failure(e);
+    stack.remove(entry);
     this.purge();
-    return ret;
+    return ret.sure();
   }
 
   @:noCompletion function purge()
@@ -89,7 +141,7 @@ class ViewCache {
       case null: __cache[cls] = new Factory<Dynamic, Dynamic>(make);
       case v: v;
     }
-  #if macro
+  #else
   static function with(e:Expr, cb:TypePath->Expr->Expr) 
     return switch e.expr {
       case ENew(cl, [arg]): cb(cl, arg);
@@ -97,15 +149,10 @@ class ViewCache {
     }
   #end
   macro static public function create(view) {
-    return with(view, function (cl, arg) return
-      switch (macro (__coco__cache:coconut.ui.tools.ViewCache)).typeof() {
-        case Success(_): coconut.ui.macros.Caching.createView(macro __coco__cache, cl, arg);
-        default: macro new $cl(coconut.ui.macros.HXX.liftIfNeedBe($arg));
-      }
+    return with(
+      view, 
+      coconut.ui.macros.Caching.createView.bind(macro coconut.ui.tools.ViewCache.get())
     );
   }
-  
-  // macro public function createView(ethis, view)
-    // return coconut.ui.macros.Caching.createView(ethis, view);
 
 }

@@ -43,7 +43,7 @@ class HXX {
         macro @:pos(e.pos) super(coconut.ui.macros.HXX.liftIfNeedBe($o));      
       case macro tink.hxx.Merge.complexAttribute($_):
         macro {
-          var __coco_cache = coconut.ui.tools.ViewCache.current;
+          var __coco_cache = coconut.ui.tools.ViewCache.get();
           $e;
         }      
       default: e;

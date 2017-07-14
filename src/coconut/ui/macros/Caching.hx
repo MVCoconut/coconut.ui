@@ -1,10 +1,19 @@
 package coconut.ui.macros;
 
+import haxe.macro.Context;
 import haxe.macro.Expr;
 using haxe.macro.Tools;
 using tink.MacroApi;
 
 class Caching {
+
+  static public function getCache() {
+    var scope =
+      if ((macro this).typeof().isSuccess()) macro this;
+      else Context.getLocalType().getID().resolve();
+    return 
+      macro coconut.ui.tools.ViewCache.get($scope);  
+  }
 
   static public function createView(ethis:Expr, cl:TypePath, a:Expr) {
     var path = cl.pack.copy();
