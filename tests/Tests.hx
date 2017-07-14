@@ -41,11 +41,16 @@ class Tests extends haxe.unit.TestCase {
   }
   
   function testCache() {
+    
     var s = new State('42');
+
+    function render(value:String)
+      return hxx('<Example4 key={this} value={value} />');
+
     mount(hxx('
-      <Example5 data={s}>
+      <Example5 data={s.value}>
         <renderer>
-          <Example4 value={data} />
+          {render(data)}
         </renderer>
       </Example5>
     '));

@@ -106,7 +106,6 @@ private class WeakMap<K:{}, V> {
 class ViewCache {
   #if !macro
   static var stack = new Array<Ref<ViewCache>>();
-  static var roots = new WeakMap();
   static public function get() 
     return
       switch stack {
