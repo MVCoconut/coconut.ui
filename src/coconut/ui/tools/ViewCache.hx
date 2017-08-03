@@ -71,26 +71,27 @@ extern private class WeakMap<K:{}, V> {
 
   static function __init__():Void {
     //this whole madness is really here just for pre ES2015 versions of phantomjs
-    if (untyped __js__("typeof WeakMap") != 'undefined') return;
-    var counter = 0;
-    inline function key(o:Dynamic) {
-      if (o == null) return 0;
-      if (o.__hx_key__ == null)
-        return o.__hx_key__ = ++counter;
-      return o.__hx_key__;
-    }
-
-    var cls:Dynamic = function () {};
-    cls.prototype = {
-      get: function (k:Dynamic) {
-        return js.Lib.nativeThis[key(k)];
-      },
-      set: function (k:Dynamic, v:Dynamic) {
-        js.Lib.nativeThis[key(k)] = v;
+    if (untyped __js__("typeof WeakMap") == 'undefined') {
+      var counter = 0;
+      inline function key(o:Dynamic) {
+        if (o == null) return 0;
+        if (o.__hx_key__ == null)
+          return o.__hx_key__ = ++counter;
+        return o.__hx_key__;
       }
+
+      var cls:Dynamic = function () {};
+      cls.prototype = {
+        get: function (k:Dynamic) {
+          return js.Lib.nativeThis[key(k)];
+        },
+        set: function (k:Dynamic, v:Dynamic) {
+          js.Lib.nativeThis[key(k)] = v;
+        }
+      }
+      
+      untyped js.Browser.window.WeakMap = cls;
     }
-    
-    untyped js.Browser.window.WeakMap = cls;
   }
 }
 #elseif macro
