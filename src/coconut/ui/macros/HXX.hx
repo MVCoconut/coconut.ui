@@ -4,7 +4,7 @@ package coconut.ui.macros;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
-import tink.hxx.Generator;
+import tink.hxx.Generator.GeneratorOptions;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
@@ -19,20 +19,28 @@ class HXX {
 
     if (options == null)
       e.reject('Either the renderer did not configure HXX properly, or no renderer is used');
+    
+    var options:GeneratorOptions = {
+      child: options.child,
+      customAttributes: options.customAttributes,
+      flatten: if (Reflect.field(options, 'flatten') != null) options.flatten else null,
+      instantiate: if (Reflect.field(options, 'instantiate') != null) function (o) return options.instantiate(o) else null, //In some regards Haxe is just so broken I want to cry
+      merger: switch options.merger {
+        case null: macro coconut.ui.macros.HXX.merge;
+        case v: v;
+      },
+    };
+
+    return 
+      Generator.generate(
+        options,
+        tink.hxx.Parser.parseRoot(e, { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ })
+      );//.log();
 
     var ret = 
       tink.hxx.Parser.parse(
         e, 
-        {
-          child: options.child,
-          customAttributes: options.customAttributes,
-          flatten: if (Reflect.field(options, 'flatten') != null) options.flatten else null,
-          instantiate: if (Reflect.field(options, 'instantiate') != null) function (o) return options.instantiate(o) else null, //In some regards Haxe is just so broken I want to cry
-          merger: switch options.merger {
-            case null: macro coconut.ui.macros.HXX.merge;
-            case v: v;
-          },
-        }, 
+        options, 
         { defaultExtension: 'hxx', noControlStructures: false, defaultSwitchTarget: macro __data__ }
       );
 

@@ -40,7 +40,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
   
-  function testCache() {
+  /*function testCache() {
     
     var s = new State('42');
 
@@ -60,8 +60,8 @@ class Tests extends haxe.unit.TestCase {
     Observable.updateAll();
     assertEquals('321', q('.example4').innerHTML);
     assertEquals(id, q('.example4').getAttribute('data-id'));
-  }
-
+  }*/
+  
   function testModel() {
     var model = new Foo({ foo: 4 });
 
@@ -81,7 +81,7 @@ class Tests extends haxe.unit.TestCase {
     Observable.updateAll();
     assertEquals('42', q('.baz').innerHTML);
   }  
-
+  
   function testModelInCustom() {
     
     var variants = [
@@ -103,6 +103,7 @@ class Tests extends haxe.unit.TestCase {
       setup();
     }
   }  
+  
 
   function testTodo() {
     new TodoListView(null);
@@ -126,7 +127,7 @@ class Tests extends haxe.unit.TestCase {
     edit.dispatchEvent(new js.html.Event("change"));//gotta love this
     assertEquals('bar', desc);
   }
-
+  /*
   function testPropViewReuse() {
     var states = [for (i in 0...10) new State(i)];
     var models = [for (s in states) { foo: s.observe() , bar: s.value }];
@@ -157,8 +158,8 @@ class Tests extends haxe.unit.TestCase {
     Observable.updateAll();    
 
     assertEquals(redraws + 22, Example.redraws);    
- }
-
+  }
+  
   function testModelViewReuse() {
 
     var models = [for (i in 0...10) new Foo({ foo: i })];
@@ -181,7 +182,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(redraws + 20, Example2.redraws);
     
   }
-
+  */
   static function main() {
     var runner = new haxe.unit.TestRunner();
     runner.add(new Tests());
