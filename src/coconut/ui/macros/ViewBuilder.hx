@@ -96,10 +96,13 @@ class ViewBuilder {
 
       function make(input:ComplexType, renderer, data, getFields) {
         makeRender(data, getFields);
-        if (isRoot)
-          c.getConstructor((macro function (data:$input) {
+        if (isRoot) {
+          var ctor = c.getConstructor((macro function (data:$input) {
             super(data, $renderer);
-          }).getFunction().sure()).publish();        
+          }).getFunction().sure());
+          ctor.init('__cocodata', c.target.pos, Value(macro data), {bypass: true});
+          ctor.publish();
+        }
       }
 
       function process(type:Type, isParam:Bool)
@@ -129,10 +132,24 @@ class ViewBuilder {
               getPublicFields.bind(type)
             );
             
+            if(isRoot)
+              add(macro class {
+                @:noCompletion var __cocodata(default, never):tink.state.Observable<$data>;
+                var data(get, never):$data;
+                inline function get_data() return __cocodata.value;
+              });
+            
           case v:
             v.isSubTypeOf(Context.getType('coconut.data.Model')).sure();
             var data = checked(v).toComplex();
             make(data, macro render, data, getPublicFields.bind(v));
+            
+            if(isRoot)
+              add(macro class {
+                @:noCompletion var __cocodata(default, never):$data;
+                var data(get, never):$data;
+                inline function get_data() return __cocodata;
+              });
         }
 
       process(rawType, false);
