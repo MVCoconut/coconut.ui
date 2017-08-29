@@ -5,6 +5,8 @@ import tink.hxx.Node;
 import tink.hxx.Generator;
 import haxe.macro.Expr;
 import haxe.macro.Type;
+
+using tink.CoreApi;
 using tink.MacroApi;
 using StringTools;
 
@@ -38,7 +40,8 @@ class Generator {
 
       var attributes = [],
           custom = [],
-          splats = [];
+          splats = [],
+          key = None;
 
       var obj = EObjectDecl(attributes).at(n.name.pos);
 
@@ -49,22 +52,26 @@ class Generator {
           case v: v;
         }
 
-        if (a.indexOf('-') == -1) {
-          attributes.push({ 
-            field: a, 
-            expr: 
-              switch placeholder.field(a, name.pos).typeof().sure() {
-                case t: 
-                  var ct = t.toComplex();
+        if (a.indexOf('-') == -1) 
+          switch placeholder.field(a, name.pos).typeof() {
+            case Success(t): 
+              
+              var ct = t.toComplex();
+
+              attributes.push({ 
+                field: a, 
+                expr:
                   if ((macro ($value : $ct)).typeof().isSuccess())
                     value;
                   else if ((macro (function (_) {} : $ct)).typeof().isSuccess())
                     macro @:pos(value.pos) function (event) $value;
                   else 
-                    value;
-              }
-          });
-        }
+                    value
+              });
+            case Failure(e): 
+               if (a == 'key') key = Some(value);
+               else e.throwSelf();
+          }
         else custom.push({ name: name, value: value });
       }
 
@@ -107,7 +114,13 @@ class Generator {
       }
 
       switch [attributes, splats] {
-        case [[], [v]] if (!attr.reduce().match(TAnonymous(_))): obj = v;
+        case [[], [v]]:
+          obj = 
+            if (!attr.reduce().match(TAnonymous(_))) v;
+            else macro @:pos(v.pos) {
+              var __model__ = $v;
+              tink.hxx.Merge.objects($obj, __model__);
+            }
         case [_, []]:
         case [_, v]: 
           var args = [obj].concat(splats);
@@ -136,8 +149,6 @@ class Generator {
           macro @:pos(n.name.pos) $p{n.name.value.split('.')}($a{args});
     }
 
-    var type = n.name.value.resolve().typeof().sure();
-    
     return switch n.name.value.resolve().typeof().sure() {
       case TFun([{ t: attr }, { t: children }], _): 
         generate(attr, children);              
@@ -171,6 +182,10 @@ class Generator {
       case CFor(head, body): 
         gen.flatten(c.pos, [macro @:pos(c.pos) for ($head) ${flatten(body)}]);
     }
+
+  function instantiate(key:Option<Expr>, attributes:Expr, children:Option<Expr>) {
+
+  }
 
   function root(root:Children):Expr
     return switch root.value {
