@@ -2,3 +2,4 @@
 extraParams.hxml
 -cp src
 -lib coconut.data
+-lib tink_anon

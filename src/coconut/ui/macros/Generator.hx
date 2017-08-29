@@ -2,6 +2,8 @@ package coconut.ui.macros;
 
 #if macro
 import tink.hxx.Node;
+import tink.hxx.StringAt;
+import tink.hxx.Attribute;
 import tink.hxx.Generator;
 import haxe.macro.Expr;
 import haxe.macro.Type;
@@ -22,6 +24,22 @@ class Generator {
       if (c == null) null;
       else gen.flatten(c.pos, [for (c in c.value) child(c)]);
 
+  function makeAttribute(name:StringAt, value:Expr)
+    return {
+      name: switch name.value {
+        case 'class': 'className';
+        case 'for': 'htmlFor';
+        case v: v;
+      },
+      pos: name.pos,
+      getValue: function (_) 
+        return 
+          if (!value.typeof().isSuccess() && (macro function (event) $value).typeof().isSuccess()) 
+            macro function (event) $value
+          else
+            value
+    };
+
   function node(n:Node, pos:Position) {
     function generate(attr:Type, ?children:Type, ?withNew:Bool) {
       var lift =
@@ -32,100 +50,58 @@ class Generator {
           default:
             false;
         }
+      
+      var fields = [for (f in attr.getFields().orUse([])) if (tink.Anon.isPublicField(f)) f.name => f];
 
-      var placeholder = {
-        var ct = attr.toComplex();
-        macro (null : $ct);
-      }
+      var splats = [
+        for (a in n.attributes) switch a {
+          case Splat(e): e;
+          default: continue;
+        }
+      ];
 
-      var attributes = [],
-          custom = [],
-          splats = [],
-          key = None;
+      
+      var key = None,
+          custom = [];
 
-      var obj = EObjectDecl(attributes).at(n.name.pos);
-
-      function add(name:tink.hxx.StringAt, value:Expr) {
+      var attributes = {
         
-        var a = switch name.value {
-          case 'class': 'className';
-          case v: v;
+        var ret = [];
+
+        function set(name, value) {
+          if (name.value == 'key') 
+            key = Some(value);
+          else if (name.value.indexOf('-') == -1) 
+            ret.push(makeAttribute(name, value));
+          else 
+            custom.push(new NamedWith(name, value));
+        }
+        
+        for (a in n.attributes) switch a {
+          case Regular(name, value): set(name, value);
+          case Empty(name): set(name, macro @:pos(name.pos) true);
+          default: continue;
         }
 
-        if (a.indexOf('-') == -1) 
-          switch placeholder.field(a, name.pos).typeof() {
-            case Success(t): 
-              
-              var ct = t.toComplex();
-
-              attributes.push({ 
-                field: a, 
-                expr:
-                  if ((macro ($value : $ct)).typeof().isSuccess())
-                    value;
-                  else if ((macro (function (_) {} : $ct)).typeof().isSuccess())
-                    macro @:pos(value.pos) function (event) $value;
-                  else 
-                    value
-              });
-            case Failure(e): 
-               if (a == 'key') key = Some(value);
-               else e.throwSelf();
-          }
-        else custom.push({ name: name, value: value });
+        ret;
       }
 
-      for (a in n.attributes)
-        switch a {
-          case Splat(e):
-            splats.push(e);
-          case Empty(name): 
-            add(name, macro true);
-          case Regular(name, value):
-            if (name.value == 'key') continue;
-            add(name, value);
+      var obj = 
+        switch [attributes, splats] {
+          case [[], [v]] if (!(attr.reduce().match(TAnonymous(_)))):
+            v;
+          default:
+            tink.Anon.mergeParts(
+              attributes, 
+              splats,
+              function (name) return switch fields[name] {
+                case null: Failure(new Error('Superflous field `$name`'));
+                case f: Success(Some(f.type));
+              },
+              attr.toComplex()
+            );
         }
-
-      if (children == null && n.children != null) {
-        for (c in n.children.value) {
-          switch c.value {
-            case CNode(n):
-              switch [n.attributes, placeholder.field(n.name.value, n.name.pos).typeof().sure()] {
-                case [_, TFun(_, _)]: n.name.pos.errorExpr('No support for functions yet');
-                case [[], _]:
-                  attributes.push({ 
-                    field: n.name.value, 
-                    expr: switch n.children {
-                      // case null: n.name.pos.error('Empty');
-                      case v: flatten(v);
-                    } 
-                  });
-                case [v, t]:
-                  (switch v[0] {
-                    case Splat(e): e.pos;
-                    case Empty(n) | Regular(n, _): n.pos; 
-                  }).error('Complex attribute of type $t may not have attributes');
-              }
-            case CText(_.value.trim().length => 0):
-            default: 
-              c.pos.error('Complex attribute expected');
-          }
-        }
-      }
-
-      switch [attributes, splats] {
-        case [[], [v]]:
-          obj = 
-            if (!attr.reduce().match(TAnonymous(_))) v;
-            else macro @:pos(v.pos) {
-              var __model__ = $v;
-              tink.hxx.Merge.objects($obj, __model__);
-            }
-        case [_, []]:
-        case [_, v]: 
-          var args = [obj].concat(splats);
-          obj = macro tink.hxx.Merge.objects($a{args});
-      }
+      
 
       if (lift)
         obj = {
@@ -170,7 +146,7 @@ class Generator {
     return switch c.value {
       case CExpr(e): e;
       case CText(s): s.value.toExpr(s.pos);
-      case CNode(n): node(n, c.pos);
+      case CNode(n): node.bind(n, c.pos).bounce(c.pos);
       case CSwitch(target, cases): 
         ESwitch(target, [for (c in cases) {
           values: c.values,
