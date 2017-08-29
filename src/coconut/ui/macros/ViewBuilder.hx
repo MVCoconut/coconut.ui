@@ -132,21 +132,24 @@ class ViewBuilder {
               getPublicFields.bind(type)
             );
             
-            add(macro class {
-              @:noCompletion var __cocodata(default, never):tink.state.Observable<$data>;
-              var data(get, never):$data;
-              inline function get_data() return __cocodata.value;
-            });
+            if(isRoot)
+              add(macro class {
+                @:noCompletion var __cocodata(default, never):tink.state.Observable<$data>;
+                var data(get, never):$data;
+                inline function get_data() return __cocodata.value;
+              });
             
           case v:
             v.isSubTypeOf(Context.getType('coconut.data.Model')).sure();
             var data = checked(v).toComplex();
             make(data, macro render, data, getPublicFields.bind(v));
-            add(macro class {
-              @:noCompletion var __cocodata(default, never):$data;
-              var data(get, never):$data;
-              inline function get_data() return __cocodata;
-            });
+            
+            if(isRoot)
+              add(macro class {
+                @:noCompletion var __cocodata(default, never):$data;
+                var data(get, never):$data;
+                inline function get_data() return __cocodata;
+              });
         }
 
       process(rawType, false);
