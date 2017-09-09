@@ -110,36 +110,6 @@ class HXX {
           macro @:pos(e.pos) tink.state.Observable.auto(function () return $e);
   }
 
-
-  macro static public function merge(primary:Expr, rest:Array<Expr>)
-    return tink.hxx.Merge.mergeObjects(primary, rest, {
-      genField: function (ctx) {
-        return
-          if (ctx.expected.reduce().toString().startsWith('tink.state.Observable<')) {
-            var ct = ctx.expected.toComplex();
-            var e = ctx.original;
-            macro @:pos(e.pos) (coconut.ui.macros.HXX.observable($e) : $ct);
-          }
-          else ctx.getDefault();
-      },
-      decomposeSingle: function (src, expected, decompose) {
-        return
-          switch expected.reduce() {
-            case TAnonymous(_.get().fields => fields):              
-              return 
-                if ((macro ($src : coconut.data.Model)).typeof().isSuccess()) {
-                  var parts = [macro __model__, macro { key: __model__ }];
-                  macro {
-                    var __model__ = $src;
-                    ${decompose.bind(parts).bounce()};
-                  }
-                }
-                else decompose([src]);
-            default: src;
-          }
-      },
-    });
-
   macro static public function hxx(e:Expr) 
     return parse(e);
 }
