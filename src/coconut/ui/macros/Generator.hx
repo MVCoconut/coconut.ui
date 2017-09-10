@@ -4,7 +4,6 @@ package coconut.ui.macros;
 import tink.hxx.Node;
 import tink.hxx.StringAt;
 import tink.hxx.Attribute;
-import tink.hxx.Generator;
 import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
@@ -17,15 +16,15 @@ using StringTools;
 
 class Generator {
   
-  var gen:tink.hxx.Generator;
+  public function new() {}
 
-  function new(gen)
-    this.gen = gen;
+  function block(pos:Position, statements:Array<Expr>)
+    return statements.toArray(pos);
 
   function flatten(c:Children) 
     return 
       if (c == null) null;
-      else gen.flatten(c.pos, [for (c in normalize(c.value)) child(c, flatten)]);
+      else block(c.pos, [for (c in normalize(c.value)) child(c, flatten)]);
 
   function mangle(attrs:Array<Part>, custom:Array<NamedWith<StringAt, Expr>>, children:Option<Expr>, fields:Map<String, ClassField>) {
     switch custom {
@@ -57,12 +56,22 @@ class Generator {
         case v: v;
       },
       pos: name.pos,
-      getValue: function (_) 
+      getValue: function (expected:Option<Type>) 
         return 
           if (!value.typeof().isSuccess() && (macro function (event) $value).typeof().isSuccess()) 
             macro function (event) $value
           else
-            value
+            switch expected {
+              case Some(_.getID() => 'tink.state.Observable'):
+                if ((macro {
+                  function fake<T>(o:tink.state.Observable.ObservableObject<T>) {}
+                  fake($value);
+                }).typeof().isSuccess())
+                  value;
+                else 
+                  macro @:pos(value.pos) tink.state.Observable.auto(function () return $value);
+              default: value;
+            }
     };
 
   function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
@@ -343,15 +352,13 @@ class Generator {
     return s.substring(pos, max);
   }  
 
-  function root(root:Children):Expr
+  public function root(root:Children):Expr
     return switch root.value {
       case []: root.pos.error('Empty HXX');
       case [v]: child(v, this.root);
       case v: v[1].pos.error('Only one element allowed here');
     }
 
-  static public function generate(options, root)
-    return new Generator(options).root(root);
 }
 
 enum TagArgs {

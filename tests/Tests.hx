@@ -24,6 +24,19 @@ class Tests extends haxe.unit.TestCase {
     document.body.appendChild(o.toElement());
   }
 
+  function testNested() {
+    var s = new State('foo');
+
+    mount(hxx('<Nestor plain="yohoho" inner={s.value} />'));
+    var beforeOuter = Nestor.redraws,
+        beforeInner = Example4.redraws;
+    
+    s.set('bar');
+    Observable.updateAll();
+    assertEquals(beforeOuter, Nestor.redraws);
+    assertEquals(beforeInner + 1, Example4.redraws);
+  }
+
   function testCustom() {
     var s = new State(4);
 
@@ -250,4 +263,19 @@ class SubSub extends Sub {
   override function render() '
     <div class={"test"}></div>
   ';
+}
+
+class Nestor extends View<{ plain:String, inner: Observable<String> }> {
+  
+  static public var redraws(default, null):Int = 0;
+
+  function render() {
+    redraws++;
+    return @hxx '
+      <div class="nestor">
+        <span class="plain">{plain}</span>
+        <Example4 key={this} value={inner} />
+      </div>
+    ';
+  }
 }
