@@ -1,5 +1,6 @@
 package coconut.ui.tools;
 
+import tink.state.*;
 using tink.CoreApi;
 
 #if macro
@@ -135,7 +136,10 @@ class ViewCache {
       f.purge();
 
   public function new() {}
-
+  
+  static public function stable<T:{}>(s:State<Observable<T>>) {
+    return Compare.stabilize(s.observe().flatten(), Compare.shallow.bind(false));
+  }
   private function getFactory<Data:{}, View>(cls:String, make:Data->View):Factory<Data, View> 
     return cast switch __cache[cls] {
       case null: __cache[cls] = new Factory<Dynamic, Dynamic>(make);

@@ -12,10 +12,11 @@ class ViewBuilder {
   static function build() {
     return ClassBuilder.run([function (c:ClassBuilder) {
       
-      function add(t:TypeDefinition)
+      function add(t:TypeDefinition) {
         for (f in t.fields)
           c.addMember(f);
-      
+        return t.fields;
+      }
 
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], c.target.pos);
@@ -95,7 +96,9 @@ class ViewBuilder {
       }
 
       function make(input:ComplexType, renderer, data, getFields) {
+        
         makeRender(data, getFields);
+        
         if (isRoot) {
           var ctor = c.getConstructor((macro function (data:$input) {
             super(data, $renderer);
@@ -103,6 +106,57 @@ class ViewBuilder {
           ctor.init('__cocodata', c.target.pos, Value(macro data), {bypass: true});
           ctor.publish();
         }
+
+        var path = c.target.name.asTypePath(),
+            fq = c.target.pack.concat([c.target.name]).join('.');        
+
+        function withParams(fields:Array<Field>) 
+          switch fields {
+            case [{ kind: FFun(f) }]:
+              f.params = [for (p in c.target.params) { 
+                name: p.name, 
+                constraints: switch p.t {
+                  case TInst(_.get() => { kind: KTypeParameter(constraints) }, _):
+                    [for (c in constraints) c.toComplex()];
+                  default: throw 'assert';
+                },
+              }];
+            default:
+          }
+
+        switch input {
+          case macro : tink.state.Observable<$_>:
+
+            withParams(add(macro class {
+              static public function forKey(key:{}, data:$input) {
+                var factory = @:privateAccess coconut.ui.tools.ViewCache.get().getFactory($v{fq}, $i{c.target.name}.new);
+                
+                var alreadyCreated = true;
+                
+                var link = factory.forKey(key, function () {
+                  alreadyCreated = false;
+                  var state = new tink.state.State(data);
+                  return new tink.core.Pair(state, coconut.ui.tools.ViewCache.stable(state));
+                });
+                
+                if (alreadyCreated) {
+                  @:privateAccess tink.state.Observable.stack.push(null);//TODO: this is horrible
+                  link.a.set(data);
+                  @:privateAccess tink.state.Observable.stack.pop();
+                }
+
+                return factory.make(link.b);
+              }
+            }));
+          default: 
+            withParams(add(macro class {
+              static public function forData(data:$input) {
+                var factory = @:privateAccess coconut.ui.tools.ViewCache.get().getFactory($v{fq}, $i{c.target.name}.new);
+                return factory.make(data);
+              }
+            }));
+        }
+
       }
 
       function process(type:Type, isParam:Bool)

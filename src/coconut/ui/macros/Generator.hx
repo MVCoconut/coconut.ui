@@ -5,6 +5,7 @@ import tink.hxx.Node;
 import tink.hxx.StringAt;
 import tink.hxx.Attribute;
 import tink.hxx.Generator;
+import haxe.macro.Context;
 import haxe.macro.Expr;
 import haxe.macro.Type;
 import tink.anon.Macro.*;
@@ -24,14 +25,14 @@ class Generator {
   function flatten(c:Children) 
     return 
       if (c == null) null;
-      else gen.flatten(c.pos, [for (c in c.value) child(c, flatten)]);
+      else gen.flatten(c.pos, [for (c in normalize(c.value)) child(c, flatten)]);
 
   function mangle(attrs:Array<Part>, custom:Array<NamedWith<StringAt, Expr>>, children:Option<Expr>, fields:Map<String, ClassField>) {
     switch custom {
       case []:
       default:
         var pos = custom[0].name.pos;
-        attrs.concat([
+        attrs = attrs.concat([
           makeAttribute({ value: 'attributes', pos: pos }, EObjectDecl([for (a in custom) { field: a.name.value, expr: a.value }]).at(pos)) 
         ]);
     }
@@ -65,7 +66,15 @@ class Generator {
     };
 
   function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
-    return invoke(name, isClass, [attr].concat(children.toArray()), name.pos);
+    return switch key {
+      case None:
+        invoke(name, isClass, [attr].concat(children.toArray()), name.pos);
+      case Some(key):
+        if (children != None)
+          name.pos.error('Key handling for views with children not yet implemented');
+
+        [name.value, 'forKey'].drill(key.pos).call([key, attr], key.pos);  
+    }
 
   function invoke(name:StringAt, isClass:Bool, args:Array<Expr>, pos:Position)
     return 
@@ -78,7 +87,13 @@ class Generator {
     return tag(n, getTag(n.name), pos);
 
   function plain(name:StringAt, isClass:Bool, arg:Expr, pos:Position)
-    return invoke(name, isClass, [arg], pos);
+    return 
+      switch [isClass, '${name.value}.forData'] {
+        case [true, factory] if (factory.resolve().typeof().isSuccess()):
+          invoke({ value: factory, pos: name.pos }, false, [arg], pos);
+        default:
+          invoke(name, isClass, [arg], pos);
+      }
 
   function tag(n:Node, tag:Tag, pos:Position) {
     var lift = false,
@@ -275,8 +290,58 @@ class Generator {
       case CIf(cond, cons, alt): 
         macro @:pos(c.pos) if ($cond) ${flatten(cons)} else ${flatten(alt)};
       case CFor(head, body): 
-        gen.flatten(c.pos, [macro @:pos(c.pos) for ($head) ${flatten(body)}]);
+        flatten({ 
+          pos: c.pos, 
+          value: [{ pos: c.pos, value: CExpr(macro @:pos(c.pos) for ($head) ${flatten(body)})}] 
+        });
     }
+
+  function normalize(children:Array<Child>) 
+    return switch children {
+      case null: [];
+      default:
+        [for (c in children) switch c.value {
+          case CText(s):
+            switch trimString(s.value) {
+              case '': continue;
+              case v: { value: CText({ pos: s.pos, value: v }), pos: c.pos };
+            }
+          default: c;
+        }];
+    }
+
+  static public function trimString(s:String) {
+    
+    var pos = 0,
+        max = s.length,
+        leftNewline = false,
+        rightNewline = false;
+
+    while (pos < max) {
+      switch s.charCodeAt(pos) {
+        case '\n'.code | '\r'.code: leftNewline = true;
+        case v:
+          if (v > 32) break;
+      }
+      pos++;
+    }
+    
+    while (max > pos) {
+      switch s.charCodeAt(max-1) {
+        case '\n'.code | '\r'.code: rightNewline = true;
+        case v:
+          if (v > 32) break;
+      }
+      max--;
+    }
+        
+    if (!leftNewline) 
+      pos = 0;
+    if (!rightNewline)
+      max = s.length;
+      
+    return s.substring(pos, max);
+  }  
 
   function root(root:Children):Expr
     return switch root.value {

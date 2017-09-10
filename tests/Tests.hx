@@ -40,6 +40,18 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
   
+  function testOnlyCache() {
+    var s = new State('42');
+    var cache = new coconut.ui.tools.ViewCache();
+    function make()
+      return Example4.forKey(this, Observable.auto(function () return {
+        value: Std.string(Math.random())
+      }));
+
+    assertFalse(make() == make());
+    assertTrue(cache.cached(make) == cache.cached(make));
+  }
+
   function testCache() {
     
     var s = new State('42');
@@ -62,7 +74,6 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('321', q('.example4').innerHTML);
     assertEquals(id, q('.example4').getAttribute('data-id'));
     
-    // trace(q('.example5').outerHTML);
   }
   
   function testModel() {
@@ -130,7 +141,7 @@ class Tests extends haxe.unit.TestCase {
     edit.dispatchEvent(new js.html.Event("change"));//gotta love this
     assertEquals('bar', desc);
   }
-  /*
+  
   function testPropViewReuse() {
     var states = [for (i in 0...10) new State(i)];
     var models = [for (s in states) { foo: s.observe() , bar: s.value }];
@@ -185,7 +196,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(redraws + 20, Example2.redraws);
     
   }
-  */
+  
   static function main() {
     var runner = new haxe.unit.TestRunner();
     runner.add(new Tests());
