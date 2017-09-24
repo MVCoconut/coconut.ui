@@ -265,6 +265,14 @@ class SubSub extends Sub {
   ';
 }
 
+class CtorSub extends Sub {
+  // public function new() {
+  //   @hxx '
+  //     <super class="super" title="yo" content="yeah" parts={[0,1,2]} />
+  //   ';
+  // }
+}
+
 class Nestor extends View<{ plain:String, inner: Observable<String> }> {
   
   static public var redraws(default, null):Int = 0;

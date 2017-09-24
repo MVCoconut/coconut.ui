@@ -3,10 +3,6 @@ package coconut.ui.tools;
 import tink.state.*;
 using tink.CoreApi;
 
-#if macro
-import haxe.macro.Expr;
-using tink.MacroApi;
-#end
 private class Stack<T> {
   
   var counter = 0;
@@ -95,18 +91,11 @@ extern private class WeakMap<K:{}, V> {
     }
   }
 }
-#elseif macro
-private class WeakMap<K:{}, V> {
-  public function new() throw "Something is rotten in the state of Denmark!";
-  public function get(key:K) return null;
-  public function set(key:K, value:V) {}
-}
 #else
-  typedef WeakMap<K:{}, V> = haxe.ds.WeakMap<K, V>;//No idea if this works well enough
+typedef WeakMap<K:{}, V> = haxe.ds.WeakMap<K, V>;//No idea if this works well enough
 #end
 
 class ViewCache {
-  #if !macro
   static var stack = new Array<Ref<ViewCache>>();
   static public function get() 
     return
@@ -145,18 +134,6 @@ class ViewCache {
       case null: __cache[cls] = new Factory<Dynamic, Dynamic>(make);
       case v: v;
     }
-  #else
-  static function with(e:Expr, cb:TypePath->Expr->Expr) 
-    return switch e.expr {
-      case ENew(cl, [arg]): cb(cl, arg);
-      default: e.reject();
-    }
-  #end
-  macro static public function create(view) {
-    return with(
-      view, 
-      coconut.ui.macros.Caching.createView.bind(macro coconut.ui.tools.ViewCache.get())
-    );
-  }
+
 
 }

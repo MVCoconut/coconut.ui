@@ -1,1 +1,4 @@
-{"version":"3.4.0","resolveLibs":null}
+{
+  "version": "3.4.2",
+  "resolveLibs": "scoped"
+}

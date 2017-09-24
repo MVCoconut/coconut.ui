@@ -38,14 +38,19 @@ class Generator {
 
     return {
       attrs: attrs,
-      children: children,
-      attrType: ComplexType.TAnonymous([for (f in fields) {
-        name: f.name,
-        pos: f.pos,
-        meta: f.meta.get(),
-        kind: FProp('default', 'never', f.type.toComplex()),
-      }])    
+      children: children, 
     }
+  }
+
+  function liftAsFunction(value:Expr, expected:Type) {
+    var ct = expected.toComplex();
+    ct = macro : $ct->Void;
+    return (
+      function () return
+        if (!value.is(ct) && (macro function (event) $value).is(ct)) 
+          macro function (event) $value
+        else value
+    ).bounce();
   }
 
   function makeAttribute(name:StringAt, value:Expr):Part
@@ -58,20 +63,24 @@ class Generator {
       pos: name.pos,
       getValue: function (expected:Option<Type>) 
         return 
-          if (!value.typeof().isSuccess() && (macro function (event) $value).typeof().isSuccess()) 
-            macro function (event) $value
-          else
-            switch expected {
-              case Some(_.getID() => 'tink.state.Observable'):
+          switch expected {
+            case Some(_.getID() => 'tink.state.Observable'):
+              (function () return
                 if ((macro {
                   function fake<T>(o:tink.state.Observable.ObservableObject<T>) {}
                   fake($value);
                 }).typeof().isSuccess())
                   value;
                 else 
-                  macro @:pos(value.pos) tink.state.Observable.auto(function () return $value);
-              default: value;
-            }
+                  macro @:pos(value.pos) tink.state.Observable.auto(function () return $value)
+              ).bounce();
+            case Some(_.reduce() => TAbstract(_.get() => { pack: ['tink', 'core'], name: 'Callback' }, [t])):
+              liftAsFunction(value, t);
+            case Some(_.reduce() => TFun([{ t: t }], _.getID() => 'Void')):
+              liftAsFunction(value, t);
+            default: 
+              value;
+          }
     };
 
   function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
@@ -107,7 +116,8 @@ class Generator {
   function tag(n:Node, tag:Tag, pos:Position) {
     var lift = false,
         children = null,
-        fields = null;
+        fields = null,
+        fieldsType = null;
 
     switch tag.args {
       case PlainArg(t):
@@ -120,15 +130,17 @@ class Generator {
             n.name.pos.error('<${n.name.value}/> must have exactly one spread and no other attributes');
         }
         
-      case JustAttributes(a, l):
+      case JustAttributes(a, t, l):
+
+        lift = l;
+        fieldsType = t;
+        fields = a;
+
+      case Full(a, t, l, c):
 
         lift = l;
         fields = a;
-
-      case Full(a, l, c):
-
-        lift = l;
-        fields = a;
+        fieldsType = t;
         children = c;      
     }
     
@@ -196,7 +208,11 @@ class Generator {
                         return $body;
                       }
                     case [l, l2] if (l == l2):
-                      throw 'not implemented';
+                      body.func([for (i in 0...l) { 
+                        name: declaredArgs[i].value, 
+                        type: requiredArgs[0].t.toComplex(),
+                      }]).asExpr();
+                      //throw 'not implemented';
                     case [l1, l2]:
                       if (l2 > l1) declaredArgs[l1].pos.error('too many arguments');
                       else n.name.pos.error('not enough arguments');
@@ -218,6 +234,8 @@ class Generator {
       case v: Some(flatten(v));
     }, fields);
 
+    var attrType = fieldsType.toComplex();
+
     var obj = 
       mergeParts(
         mangled.attrs, 
@@ -226,27 +244,24 @@ class Generator {
           case null: Failure(new Error('Superflous field `$name`'));
           case f: Success(Some(f.type));
         },
-        mangled.attrType
+        attrType
       );
 
     if (lift)
-      obj = {
-        var ct = mangled.attrType;
-        macro @:pos(n.name.pos) tink.state.Observable.auto(function ():$ct return $obj);
-      }
+      obj = macro @:pos(n.name.pos) tink.state.Observable.auto(function ():$attrType return $obj);
 
     return instantiate(n.name, tag.isClass, key, obj, mangled.children);
   }
 
   function getTag(name:StringAt) {
 
-    function anon(anon:AnonType, lift:Bool, children:Type) {
+    function anon(anon:AnonType, t, lift:Bool, children:Type) {
       var fields = [for (f in anon.fields) f.name => f];
       return 
         if (children == null)
-          JustAttributes(fields, lift);
+          JustAttributes(fields, t, lift);
         else
-          Full(fields, lift, children);
+          Full(fields, t, lift, children);
     }
 
     function mk(t:Type, ?children:Type, isClass:Bool)
@@ -256,19 +271,43 @@ class Generator {
           case TAbstract(_.get() => { pack: ['tink', 'state'], name: 'Observable'}, [t]):
             switch t.reduce() {
               case TAnonymous(a):
-                anon(a.get(), true, children);
+                anon(a.get(), t, true, children);
               default:
                 throw 'assert';
             }
           case TAnonymous(a):
-            anon(a.get(), false, children);
+            anon(a.get(), t, false, children);
           default:
             PlainArg(t);
         }
       }
 
     return 
-      switch name.value.resolve(name.pos).typeof().sure() {
+      if (name.value == 'super')
+        switch Context.getLocalClass() {
+          case null:
+            name.pos.error('not a class');
+          case cl:
+            switch cl.get().superClass {
+              case null: 
+                name.pos.error('no super class');
+              case _.t.get().constructor => c:
+                switch c {
+                  case null: 
+                    name.pos.error('super class has no constructor');
+                  case r:
+                    switch r.get().type.reduce() {
+                      case TFun([{ t: a }, { t: c }], _): 
+                        mk(a, c, false);
+                      case TFun([{ t: a }], _): 
+                        mk(a, false);              
+                      case v: 
+                        name.pos.error('super class constructor has HXX-incompatible type $v');              
+                    }
+                }
+            }
+        }      
+      else switch name.value.resolve(name.pos).typeof().sure() {
         case TFun([{ t: a }, { t: c }], _): 
           mk(a, c, false);
         case TFun([{ t: a }], _): 
@@ -289,7 +328,8 @@ class Generator {
     return switch c.value {
       case CExpr(e): e;
       case CText(s): s.value.toExpr(s.pos);
-      case CNode(n): node.bind(n, c.pos).bounce(c.pos);
+      // case CNode(n): node.bind(n, c.pos).bounce(c.pos);
+      case CNode(n): node(n, c.pos);
       case CSwitch(target, cases): 
         ESwitch(target, [for (c in cases) {
           values: c.values,
@@ -297,13 +337,16 @@ class Generator {
           expr: flatten(c.children)
         }], null).at(c.pos);
       case CIf(cond, cons, alt): 
-        macro @:pos(c.pos) if ($cond) ${flatten(cons)} else ${flatten(alt)};
+        macro @:pos(c.pos) if ($cond) ${flatten(cons)} else ${if (alt == null) emptyElse() else flatten(alt)};
       case CFor(head, body): 
         flatten({ 
           pos: c.pos, 
           value: [{ pos: c.pos, value: CExpr(macro @:pos(c.pos) for ($head) ${flatten(body)})}] 
         });
     }
+
+  function emptyElse()
+    return macro null;
 
   function normalize(children:Array<Child>) 
     return switch children {
@@ -363,8 +406,8 @@ class Generator {
 
 enum TagArgs {
   PlainArg(t:Type);
-  JustAttributes(fields:Map<String, ClassField>, lift:Bool);
-  Full(fields:Map<String, ClassField>, lift:Bool, children:Type);
+  JustAttributes(fields:Map<String, ClassField>, fieldsType:Type, lift:Bool);
+  Full(fields:Map<String, ClassField>, fieldsType:Type, lift:Bool, children:Type);
 }
 
 typedef Tag = {
