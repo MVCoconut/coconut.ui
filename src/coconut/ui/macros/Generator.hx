@@ -42,17 +42,6 @@ class Generator {
     }
   }
 
-  function liftAsFunction(value:Expr, expected:Type) {
-    var ct = expected.toComplex();
-    ct = macro : $ct->Void;
-    return (
-      function () return
-        if (!value.is(ct) && (macro function (event) $value).is(ct)) 
-          macro function (event) $value
-        else value
-    ).bounce();
-  }
-
   function makeAttribute(name:StringAt, value:Expr):Part
     return {
       name: switch name.value {
@@ -74,10 +63,24 @@ class Generator {
                 else 
                   macro @:pos(value.pos) tink.state.Observable.auto(function () return $value)
               ).bounce();
-            case Some(_.reduce() => TAbstract(_.get() => { pack: ['tink', 'core'], name: 'Callback' }, [t])):
-              liftAsFunction(value, t);
-            case Some(_.reduce() => TFun([{ t: t }], _.getID() => 'Void')):
-              liftAsFunction(value, t);
+            case Some(_.reduce() => t):
+              function liftAsFunction(wrapped:Expr) {
+                var ct = t.toComplex();
+                return (
+                  function () return
+                    if (!value.is(ct) && wrapped.is(ct)) wrapped
+                    else value
+                ).bounce();
+              }            
+              switch t {
+                case TAbstract(_.get() => { pack: ['tink', 'core'], name: 'Callback' }, [_]):
+                  liftAsFunction(macro function (event) $value);
+                case TFun([_], _.getID() => 'Void'):
+                  liftAsFunction(macro function (event) $value);
+                case TFun([], _.getID() => 'Void'):
+                  liftAsFunction(macro function () $value);
+                default: value;
+              }
             default: 
               value;
           }
@@ -199,7 +202,7 @@ class Generator {
                     case Regular(name, _):
                       name.pos.error('Invalid attribute on complex property');
                   }];
-                  var body = flatten(n.children);
+                  var body = flatten.bind(n.children).bounce();
                   switch [requiredArgs.length, declaredArgs.length] {
                     case [1, 0]:
                       var ct = requiredArgs[0].t.toComplex();
@@ -283,7 +286,7 @@ class Generator {
       }
 
     return 
-      if (name.value == 'super')
+      if (name.value == 'super' && false)
         switch Context.getLocalClass() {
           case null:
             name.pos.error('not a class');

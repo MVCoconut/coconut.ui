@@ -106,6 +106,34 @@ class ViewBuilder {
           ctor.init('__cocodata', c.target.pos, Value(macro data), {bypass: true});
           ctor.publish();
         }
+        else {
+          if (c.hasConstructor()) {
+            var ctor = (c.getConstructor().toHaxe():Member);
+            var func = ctor.getFunction().sure();
+
+            @:privateAccess c.constructor = null;
+            
+            var fields = ComplexType.TAnonymous([for (f in func.args) {
+              name: f.name,
+              pos: ctor.pos,
+              kind: FProp('default', 'never', f.type, null),
+              meta: if (f.opt) [{ name: ':optional', params: [], pos: ctor.pos }] else []
+            }]);
+
+            input = macro : tink.state.Observable<$fields>;
+            var nu = 'new';
+            var ctor = c.getConstructor((macro function (__data__:$input) {
+              super(tink.state.Observable.auto(function ():$data {
+                tink.Anon.splat(__data__.value);
+                function $nu(args:$data) return args;
+                return ${func.expr};
+              }));
+            }).getFunction().sure());
+           
+            //throw fields.toString();
+          }
+          //c.target.pos.error(input.toString());
+        }
 
         var path = c.target.name.asTypePath(),
             fq = c.target.pack.concat([c.target.name]).join('.');        
