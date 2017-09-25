@@ -97,7 +97,7 @@ typedef WeakMap<K:{}, V> = haxe.ds.WeakMap<K, V>;//No idea if this works well en
 
 class ViewCache {
   static var stack = new Array<Ref<ViewCache>>();
-  static public function get() 
+  static function get() 
     return
       switch stack {
         case []:
@@ -105,6 +105,29 @@ class ViewCache {
         case v:
           v[v.length - 1].value;
       }
+
+  static function modelView<T:coconut.data.Model, V>(className:String, model:T, create:T->V):V 
+    return get().getFactory(className, create).make(model);
+  
+  static function propView<T:{}, V>(key:{}, className:String, data:Observable<T>, create:Observable<T>->V):V {
+    var factory = get().getFactory(className, create);
+    
+    var alreadyCreated = true;
+    
+    var link = factory.forKey(key, function () {
+      alreadyCreated = false;
+      var state = new tink.state.State(data);
+      return new tink.core.Pair(state, coconut.ui.tools.ViewCache.stable(state));
+    });
+    
+    if (alreadyCreated) {
+      @:privateAccess tink.state.Observable.stack.push(null);//TODO: this is horrible
+      link.a.set(data);
+      @:privateAccess tink.state.Observable.stack.pop();
+    }
+
+    return factory.make(link.b);
+  }
 
   var __cache = new Map<String, Factory<Dynamic, Dynamic>>();
   
@@ -126,7 +149,7 @@ class ViewCache {
 
   public function new() {}
   
-  static public function stable<T:{}>(s:State<Observable<T>>) {
+  static function stable<T:{}>(s:State<Observable<T>>) {
     return Compare.stabilize(s.observe().flatten(), Compare.shallow.bind(false));
   }
   private function getFactory<Data:{}, View>(cls:String, make:Data->View):Factory<Data, View> 
