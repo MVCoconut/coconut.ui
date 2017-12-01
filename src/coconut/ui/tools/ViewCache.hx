@@ -33,16 +33,29 @@ private class Factory<Data:{}, View> {
   var render:Data->View;
   var stackByData:Map<Data, Stack<View>> = new Map();
 
-  var dataByKey:Map<{}, Any> = new Map();
+  var dataByString = new Map<String, Dynamic>();
+  var dataByObject = new Map<{}, Dynamic>();
 
   public function new(render)
     this.render = render;
 
   public function forKey<A>(key:{}, f:Void->A):A 
-    return switch dataByKey[key] {
-      case null: dataByKey[key] = f();
-      case v: v;
-    }
+    return
+      if (Std.is(key, String)) {
+        var key:String = cast key,
+            cache = dataByString;
+        switch cache[key] {
+          case null: cache[key] = f();
+          case v: v;
+        }    
+      }
+      else {
+        var cache = dataByObject;
+        switch cache[key] {
+          case null: cache[key] = f();
+          case v: v;
+        } 
+      }
 
   public function purge() 
     for (s in stackByData) 

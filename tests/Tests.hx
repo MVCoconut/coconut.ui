@@ -70,7 +70,7 @@ class Tests extends haxe.unit.TestCase {
     var s = new State('42');
 
     function render(value:String)
-      return hxx('<Example4 key={this} value={value} />');
+      return hxx('<Example4 key={"42"} value={value} />');
 
     mount(hxx('
       <Example5 data={s.value}>
