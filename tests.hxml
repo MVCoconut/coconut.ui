@@ -1,3 +1,3 @@
 -cp tests
 -lib coconut.vdom
--main Playground
+-main Tests

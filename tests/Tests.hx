@@ -26,8 +26,8 @@ class Tests extends haxe.unit.TestCase {
 
   function testNested() {
     var s = new State('foo');
-
-    mount(hxx('<Nestor plain="yohoho" inner={s.value} />'));
+    var foobar = new FooBar();
+    mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
     var beforeOuter = Nestor.redraws,
         beforeInner = Example4.redraws;
     
@@ -53,17 +53,17 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
   
-  function testOnlyCache() {
-    var s = new State('42');
-    var cache = new coconut.ui.tools.ViewCache();
-    function make()
-      return Example4.forKey(this, Observable.auto(function () return {
-        value: Std.string(Math.random())
-      }));
+  // function testOnlyCache() {
+  //   var s = new State('42');
+  //   var cache = new coconut.ui.tools.ViewCache();
+  //   function make()
+  //     return Example4.forKey(this, Observable.auto(function () return {
+  //       value: Std.string(Math.random())
+  //     }));
 
-    assertFalse(make() == make());
-    assertTrue(cache.cached(make) == cache.cached(make));
-  }
+  //   assertFalse(make() == make());
+  //   assertTrue(cache.cached(make) == cache.cached(make));
+  // }
 
   function testCache() {
     
@@ -213,6 +213,7 @@ class Tests extends haxe.unit.TestCase {
   static function main() {
     var runner = new haxe.unit.TestRunner();
     runner.add(new Tests());
+    
     travix.Logger.exit(
       if (runner.run()) 0
       else 500
@@ -236,6 +237,12 @@ typedef WindowConfig = {
   var title(default, never):RenderResult;
   var content(default, never):RenderResult;
   var parts(default, never):Iterable<Int>;
+}
+
+class Container extends View<{ ?className:String, children: RenderResult }> {
+  function render() '
+    <div class={className}>{children}</div>
+  ';
 }
 
 class Window<C:WindowConfig> extends View<C> {
@@ -265,25 +272,35 @@ class SubSub extends Sub {
   ';
 }
 
-class CtorSub extends Sub {
-  // public function new() {
-  //   @hxx '
-  //     <super class="super" title="yo" content="yeah" parts={[0,1,2]} />
-  //   ';
-  // }
+// class CtorSub extends Sub { //TODO: this should be made to compile
+//   public function new() {
+//     @hxx '
+//       <super class="super" title="yo" content="yeah" parts={[0,1,2]} />
+//     ';
+//   }
+// }
+
+class FooBar {
+  public function new() {}
+  public function foo() {}
+  public function bar() {}
 }
 
-class Nestor extends View<{ plain:String, inner: Observable<String> }> {
+class Nestor extends View<{ plain:String, inner: Observable<String>, foo:Void->Void, bar:Void->Void }> {
   
   static public var redraws(default, null):Int = 0;
 
   function render() {
     redraws++;
     return @hxx '
-      <div class="nestor">
+      <Div class="nestor">
         <span class="plain">{plain}</span>
         <Example4 key={this} value={inner} />
-      </div>
+      </Div>
     ';
   }
+
+  static function Div(attr, ?children)
+    return div(attr, children);
+
 }
