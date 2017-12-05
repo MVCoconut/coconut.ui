@@ -171,7 +171,7 @@ class ViewBuilder {
                 
                 add(macro class {
 
-                  @:noCompletion var $state(default, never):tink.state.State<$t> = new tink.state.State($e);
+                  @:noCompletion var $state(default, never):tink.state.State<$t> = @:pos(e.pos) new tink.state.State($e);
 
                   @:noCompletion inline function $get():$t 
                     return this.$state.value;
