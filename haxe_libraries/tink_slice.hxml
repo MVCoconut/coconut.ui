@@ -1,0 +1,5 @@
+# @install: lix --silent download "haxelib:tink_slice#0.1.0" into tink_slice/0.1.0/haxelib
+-D tink_slice=0.1.0
+-cp ../../tink/slice/src
+
+-lib tink_core

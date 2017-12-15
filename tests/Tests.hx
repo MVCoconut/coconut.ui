@@ -37,6 +37,35 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(beforeInner + 1, Example4.redraws);
   }
 
+  function testSlot() {
+    var s = new coconut.ui.tools.Slot(),
+        s1 = new State(0),
+        s2 = new State(1000);
+    var log = [];
+    s.observe().bind(log.push);
+    s.setData(42);
+    assertEquals('', log.join(','));
+    Observable.updateAll();
+    assertEquals('42', log.join(','));
+    s.setData(0);
+    Observable.updateAll();
+    assertEquals('42,0', log.join(','));
+    s.setData(s1);
+    Observable.updateAll();
+    assertEquals('42,0', log.join(','));
+    s1.set(1000);
+    Observable.updateAll();
+    assertEquals('42,0,1000', log.join(','));
+    s.setData(s2);
+    Observable.updateAll();
+    assertEquals('42,0,1000', log.join(','));    
+
+    s1.set(1001);
+    s2.set(1002);
+    Observable.updateAll();
+    assertEquals('42,0,1000,1002', log.join(','));    
+  }  
+
   function testCustom() {
     var s = new State(4);
 
