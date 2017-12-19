@@ -5,6 +5,7 @@ class Example extends coconut.ui.View {
   @:attribute var foo:tink.state.Observable<Int>;
   @:attribute var bar:Int;
   @:attribute var opt:Float = .5;
+  @:attribute @:skipCheck var arr:Array<Int> = [];
   
   static public var redraws = 0;
   static public var created(default, null):Array<Example> = [];

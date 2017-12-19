@@ -9,6 +9,12 @@ using haxe.macro.Tools;
 using tink.MacroApi;
 
 class ViewBuilder {
+  static function check(pos:Position, type:Type)
+    switch coconut.data.macros.Models.check(type) {
+      case []: 
+      case v: pos.error(v.join('\n'));
+    }
+
   static function build() {
     return ClassBuilder.run([function (c:ClassBuilder) {
       
@@ -36,7 +42,22 @@ class ViewBuilder {
                 for (f in fields) 
                   c.addMember(f).addMeta(':$name');
               default:
-                group.pos.error('not implemented');
+                
+                var defaults = 
+                  switch m.expr {
+                    case null: new Map();
+                    case { expr: EObjectDecl(fields) }: [for (f in fields) f.field => f.expr];
+                    case v: v.reject('object literal expected');
+                  }
+                for (f in m.type.toType().sure().getFields().sure()) {
+                  check(f.pos, f.type);
+                  c.addMember({
+                    pos: f.pos,
+                    name: f.name,
+                    kind: FVar(f.type.toComplex(), defaults[f.name]),
+                    meta: f.meta.get(),
+                  }).addMeta(':$name').addMeta(':skipCheck');
+                }
             }
             c.removeMember(group);
           default:
@@ -51,8 +72,15 @@ class ViewBuilder {
           for (t in tags)
             switch m.extractMeta(':$t') {
               case Success(_):
+
                 if (m.kind.match(FProp(_, _, _, _)))
                   m.pos.error('$name cannot be property');
+
+                if (!m.extractMeta(':skipCheck').isSuccess())
+                  switch m.kind {
+                    case FVar(t, _): check(m.pos, t.toType().sure());
+                    default:
+                  }
                 ret.push(m);
               default:
             }
@@ -173,7 +201,7 @@ class ViewBuilder {
               if (f.expr == null) null
               else f.asExpr(a.pos)
             );
-          default: a.pos.error('not implemented'); 
+          default: a.pos.error('attributes cannot be properties'); 
         }
       }
 
