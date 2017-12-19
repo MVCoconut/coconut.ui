@@ -14,17 +14,24 @@ using tink.CoreApi;
 
 class Generator extends tink.hxx.Generator {
   
-  override function complexAttribute(n:Node) {
-    var ret = super.complexAttribute(n);
+  override function complexAttribute(n:Node) 
+    return unboxValues(super.complexAttribute(n));
+
+  static function unboxValues(f:Option<Type>->Expr):Option<Type>->Expr 
     return function (expected:Option<Type>) return {
       switch expected {
         case Some(TAbstract(_.get() => { module: 'coconut.data.Value' }, [t])):
-          ret(Some(t));
+          f(Some(t));
         default: 
-          ret(expected);
+          f(expected);
       }
-    }
-  }
+    }  
+
+  override function makeAttribute(name:StringAt, value:Expr):Part {
+    var ret = super.makeAttribute(name, value);
+    @:privateAccess ret.getValue = unboxValues(ret.getValue);
+    return ret;
+  } 
 
   override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
     return {
