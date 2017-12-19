@@ -5,37 +5,39 @@ import tink.hxx.StringAt;
 import haxe.macro.Expr;
 import haxe.macro.Context;
 import haxe.macro.Type;
+import tink.hxx.Node;
+import tink.anon.Macro.Part;
+
 
 using tink.MacroApi;
 using tink.CoreApi;
 
 class Generator extends tink.hxx.Generator {
+  
+  override function complexAttribute(n:Node) {
+    var ret = super.complexAttribute(n);
+    return function (expected:Option<Type>) return {
+      switch expected {
+        case Some(TAbstract(_.get() => { module: 'coconut.data.Value' }, [t])):
+          ret(Some(t));
+        default: 
+          ret(expected);
+      }
+    }
+  }
 
   override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
-    return switch key {
-      case None: 
-        super.instantiate(name, isClass, key, attr, children);
-      case Some(key):
-        if (children != None)
-          name.pos.error('Key handling for views with children not yet implemented');
-
-        macro @:pos(name.pos) @:privateAccess coconut.ui.tools.ViewCache.propView(
-          $key, 
+    return {
+      var init = macro $i{name.value}.__init;
+      if (init.typeof().isSuccess())
+        macro @:pos(name.pos) coconut.ui.tools.ViewCache.mk(
           $v{Context.getType(name.value).getID()},
-          $attr,
-          $i{name.value}.new
+          ${key.or(macro null)},
+          $init,
+          $attr
         );
-    }
-
-  override function plain(name:StringAt, isClass:Bool, arg:Expr, pos:Position)
-    return 
-      if (isClass) 
-        macro @:pos(name.pos) @:privateAccess coconut.ui.tools.ViewCache.modelView(
-          $v{Context.getType(name.value).getID()},
-          $arg,
-          $i{name.value}.new          
-        )
-      else super.plain(name, isClass, arg, pos);
-  
+      else      
+        super.instantiate(name, isClass, key, attr, children);
+    }  
 }
 #end

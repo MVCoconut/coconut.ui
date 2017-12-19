@@ -7,9 +7,6 @@ import coconut.ui.*;
 import coconut.data.*;
 import coconut.Ui.hxx;
 using tink.CoreApi;
-import coconut.ui.tools.Compare;
-
-// import Test;
 
 class Tests extends haxe.unit.TestCase {
 
@@ -28,17 +25,22 @@ class Tests extends haxe.unit.TestCase {
     var s = new State('foo');
     var foobar = new FooBar();
     mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
+    
+    Observable.updateAll();
+    
     var beforeOuter = Nestor.redraws,
         beforeInner = Example4.redraws;
-    
+
     s.set('bar');
+    
     Observable.updateAll();
+    
     assertEquals(beforeOuter, Nestor.redraws);
     assertEquals(beforeInner + 1, Example4.redraws);
   }
 
   function testSlot() {
-    var s = new coconut.ui.tools.Slot(),
+    var s = new coconut.ui.tools.Slot(this),
         s1 = new State(0),
         s2 = new State(1000);
     var log = [];
@@ -82,7 +84,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
   
-  // function testOnlyCache() {
+  // function _testOnlyCache() {
   //   var s = new State('42');
   //   var cache = new coconut.ui.tools.ViewCache();
   //   function make()
@@ -98,7 +100,7 @@ class Tests extends haxe.unit.TestCase {
     
     var s = new State('42');
 
-    function render(value:String)
+    function render(value:String):RenderResult
       return hxx('<Example4 key={"42"} value={value} />');
 
     mount(hxx('
@@ -121,7 +123,7 @@ class Tests extends haxe.unit.TestCase {
   function testModel() {
     var model = new Foo({ foo: 4 });
 
-    var e = hxx('<Example2 {...model} />');
+    var e = hxx('<Example2 model={model} />');
     mount(e);
     
     assertEquals('4', q('.foo').innerHTML);
@@ -162,8 +164,6 @@ class Tests extends haxe.unit.TestCase {
   
 
   function testTodo() {
-    new TodoListView(null);
-    new TodoItemView({ description: 'foo', completed: true, onedit: function (_) {}, ontoggle: function (_) {}});
 
     var desc = new State('test'),
         done = new State(false);
@@ -192,7 +192,7 @@ class Tests extends haxe.unit.TestCase {
     var redraws = Example.redraws;
 
     var before = Example.created.length;
-    mount(hxx('<ExampleListView {...list} />'));
+    mount(hxx('<ExampleListView list={list} />'));
     assertEquals(before + 10, Example.created.length);
 
     var before = Example.created.length;
@@ -224,7 +224,7 @@ class Tests extends haxe.unit.TestCase {
     var redraws = Example2.redraws;
 
     var before = Example2.created.length;
-    mount(hxx('<FooListView {...list} />'));
+    mount(hxx('<FooListView list={list} />'));
     assertEquals(before + 10, Example2.created.length);
 
     var before = Example2.created.length;
@@ -251,55 +251,56 @@ class Tests extends haxe.unit.TestCase {
 
 }
 
-class FooListView extends coconut.ui.View<ListModel<Foo>> {
+class FooListView extends coconut.ui.View {
+  @:attr var list:ListModel<Foo>;
   function render() '
     <div class="foo-list">
-      <for {i in items}>
-        <Example2 {...i} />
+      <for {i in list.items}>
+        <Example2 model={i} />
       </for>
     </div>
   ';
 }
 
-typedef WindowConfig = { 
-  var className(default, never):String;
-  var title(default, never):RenderResult;
-  var content(default, never):RenderResult;
-  var parts(default, never):Iterable<Int>;
-}
+// typedef WindowConfig = { 
+//   var className(default, never):String;
+//   var title(default, never):RenderResult;
+//   var content(default, never):RenderResult;
+//   var parts(default, never):Iterable<Int>;
+// }
 
-class Container extends View<{ ?className:String, children: RenderResult }> {
-  function render() '
-    <div class={className}>{children}</div>
-  ';
-}
+// class Container extends View<{ ?className:String, children: RenderResult }> {
+//   function render() '
+//     <div class={className}>{children}</div>
+//   ';
+// }
 
-class Window<C:WindowConfig> extends View<C> {
-  @:signal var closed;
-  function render() '
-    <div class={className}>
-      <for {p in parts}>
-      </for>
-    </div>
-  ';
-}
+// class Window<C:WindowConfig> extends View<C> {
+//   @:signal var closed;
+//   function render() '
+//     <div class={className}>
+//       <for {p in parts}>
+//       </for>
+//     </div>
+//   ';
+// }
 
-class Lift extends View<{ foo: Iterable<String> }> {
-  override function render(data) '
-    <div>{[for (v in data.foo) v].join("-")}</div>
-  ';
-}
+// class Lift extends View<{ foo: Iterable<String> }> {
+//   override function render(data) '
+//     <div>{[for (v in data.foo) v].join("-")}</div>
+//   ';
+// }
 
-class Sub extends Window<WindowConfig> {
-  function foo()
-    _closed.trigger(Noise);
-}
+// class Sub extends Window<WindowConfig> {
+//   function foo()
+//     _closed.trigger(Noise);
+// }
 
-class SubSub extends Sub {
-  override function render() '
-    <div class={"test"}></div>
-  ';
-}
+// class SubSub extends Sub {
+//   override function render() '
+//     <div class={"test"}></div>
+//   ';
+// }
 
 // class CtorSub extends Sub { //TODO: this should be made to compile
 //   public function new() {
@@ -313,23 +314,4 @@ class FooBar {
   public function new() {}
   public function foo() {}
   public function bar() {}
-}
-
-class Nestor extends View<{ plain:String, inner: Observable<String>, foo:Void->Void, bar:Void->Void }> {
-  
-  static public var redraws(default, null):Int = 0;
-
-  function render() {
-    redraws++;
-    return @hxx '
-      <Div class="nestor">
-        <span class="plain">{plain}</span>
-        <Example4 key={this} value={inner} />
-      </Div>
-    ';
-  }
-
-  static function Div(attr, ?children)
-    return div(attr, children);
-
 }

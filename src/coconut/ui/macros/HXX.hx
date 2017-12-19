@@ -4,6 +4,7 @@ package coconut.ui.macros;
   #error
 #end
 import haxe.macro.Expr;
+using tink.MacroApi;
 
 class HXX {
   static public var generator = new Generator();

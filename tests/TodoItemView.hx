@@ -1,4 +1,5 @@
-class TodoItemView extends coconut.ui.View<{ description:String, completed:Bool, ontoggle:Bool->Void, onedit:String->Void }> {
+class TodoItemView extends coconut.ui.View {
+  var attributes:{ description:String, completed:Bool, ontoggle:Bool->Void, onedit:String->Void };
   function render() '
     <div class="todo-item">
       <input type="checkbox" checked={completed} onchange={ontoggle(event.target.checked)} />

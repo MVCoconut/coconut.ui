@@ -1,5 +1,6 @@
 
-class Example2 extends coconut.ui.View<Foo> {
+class Example2 extends coconut.ui.View {
+  @:attribute var model:Foo;
   static public var redraws = 0;
   static public var created(default, null):Array<Example2> = [];
   
@@ -9,8 +10,8 @@ class Example2 extends coconut.ui.View<Foo> {
   function render() '
     <div>
       {redraws++}
-      <span class="foo">{foo}</span>
-      <span class="bar">{bar}</span>
+      <span class="foo">{model.foo}</span>
+      <span class="bar">{model.bar}</span>
       <span class="baz">{baz}</span>
     </div>
   ';

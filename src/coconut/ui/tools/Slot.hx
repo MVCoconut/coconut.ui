@@ -6,11 +6,18 @@ import tink.state.Observable;
 using tink.CoreApi;
 
 class Slot<T> implements ObservableObject<T> {
+  
   var data:Observable<T>;
   var last:Pair<T, FutureTrigger<Noise>>;
   var link:CallbackLink;
+  var owner:{};
 
-  public function new() {}
+  public var value(get, never):T;
+    inline function get_value()
+      return observe().value;
+
+  public function new(owner) 
+    this.owner = owner;
   
   public function poll() {
     if (last == null) {
@@ -30,15 +37,29 @@ class Slot<T> implements ObservableObject<T> {
   public function observe():Observable<T>
     return this;
 
-  public function setData(data) {
+  public function setData(data:Observable<T>) {
     this.data = data;
     if (last != null) {
       link.dissolve();
+      @:privateAccess Observable.stack.push(null);
       var m = data.measure();
-      if (m.value != last.a)
-        last.b.trigger(Noise);
-      else
-        link = m.becameInvalid.handle(last.b.trigger);
+      @:privateAccess Observable.stack.pop();
+      function compare<A>(after:A, before:A) 
+        if (before != after) 
+          last.b.trigger(Noise);
+        else 
+          link = m.becameInvalid.handle(last.b.trigger);
+
+      if (Std.is(m.value, ObservableObject)) {//TODO: this is a bit too late to avoid such effects
+        var nu:Observable<Any> = cast m.value,
+            old:Observable<Any> = cast last.a;
+        compare(nu.value, old.value);
+      }
+      else compare(m.value, last.a);
     }
+  }
+
+  @:keep function toString() {
+    return 'Slot($owner)';
   }
 }

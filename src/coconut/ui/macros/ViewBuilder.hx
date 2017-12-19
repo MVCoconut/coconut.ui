@@ -21,175 +21,206 @@ class ViewBuilder {
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], c.target.pos);
 
-      var superClass = c.target.superClass.t.get();
-      var root = superClass;
-      var params = c.target.superClass.params;
-      
-      while (root.module != 'coconut.ui.View') {
-        var next = root.superClass;
-        params = [for (p in next.params) p.applyTypeParameters(root.params, params)];
-        root = next.t.get();
+      function scrape(name:String, ?aliases:Array<String>) {
+        var ret = [];
+
+        switch c.memberByName('${name}s') {
+          case Success(group):
+            var m = group.getVar(true).sure();
+
+            if (m.expr != null) 
+              m.expr.reject('initialization not allowed here');
+
+            switch m.type {
+              case TAnonymous(fields):
+                for (f in fields) 
+                  c.addMember(f).addMeta(':$name');
+              default:
+                group.pos.error('not implemented');
+            }
+            c.removeMember(group);
+          default:
+        }
+
+        var tags = [name].concat(switch aliases {
+          case null: [];
+          case v: v;
+        });
+
+        for (m in c)
+          for (t in tags)
+            switch m.extractMeta(':$t') {
+              case Success(_):
+                if (m.kind.match(FProp(_, _, _, _)))
+                  m.pos.error('$name cannot be property');
+                ret.push(m);
+              default:
+            }
+
+        return ret;
       }
 
-      var isRoot = superClass == root;
-      if (isRoot) {
+      var defaultValues = [],
+          defaults = '__DEFAULTS';
 
-        if (!c.hasOwnMember('render'))
-          c.target.pos.error('Missing render function');
+      c.addMember({
+        name: defaults,
+        meta: [{ name: ':nocompletion', params: [], pos: c.target.pos }],
+        kind: FProp('default', 'never', null, EObjectDecl(defaultValues).at(c.target.pos)),
+        access: [AStatic],
+        pos: c.target.pos,
+      });
 
+      var slots = [],
+          initSlots = [],
+          slotFields = [];
+
+      c.addMember({
+        name: '__slots',
+        meta: [{ name: ':nocompletion', params: [], pos: c.target.pos }],
+        kind: FProp('default', 'never', TAnonymous(slotFields), EObjectDecl(slots).at(c.target.pos)),
+        access: [],
+        pos: c.target.pos,
+      });
+
+      var pseudoData = [],
+          attributes = [];
+
+      {
+        var attributes = TAnonymous(attributes);
         if (c.hasConstructor())
-          c.getConstructor().toHaxe().pos.error('Custom constructors not supported for direct subclasses of coconut.ui.View');
-      } 
+          c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
+        c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) super(render)).getFunction().sure()).isPublic = false;
 
-      var rawType =
-        switch root.fields.get().filter(function (f) return f.name == 'render') {
-          case [v]: 
-            switch v.type.applyTypeParameters(root.params, params).reduce() {
-              case TFun([{ t: type }], _): type;
+        var self = Context.getLocalType().toComplexType();
+        var params = switch self {
+          case TPath(t): t.params;
+          default: throw 'assert';
+        }
+        c.addMembers(macro class {
+          @:noCompletion static public function __init(attributes:$attributes, ?inst:$self):$self {
+            if (inst == null)
+              inst = ${c.target.name.instantiate([macro attributes], params)};
+            $b{initSlots};
+            return inst;
+          }
+          @:keep function toString() {
+            return $v{c.target.name};
+          }
+        })[0].getFunction().sure().params = [for (p in c.target.params) {
+          name: p.name,
+          constraints: {
+            switch p.t {
+              case TInst(_.get() => { kind: KTypeParameter(constraints) }, _):
+                [for (c in constraints) c.toComplex()];
               default: throw 'assert';
             }
-          default: throw 'assert';
-        }      
+          }
+        }];
+      }
 
-      function checked(type, ?f) 
-        return 
-          switch coconut.data.macros.Models.check(type) {
-            case []: type;
-            case _[0] => error: c.target.pos.error(if (f == null) error else f(error));
+      for (a in scrape('attribute', ['attr'])) {
+        function add(type:ComplexType, expr:Expr) {
+          var optional = expr != null,
+              name = a.name;
+
+          var data = macro @:pos(a.pos) attributes.$name;
+
+          if (optional) {
+            defaultValues.push({ field: a.name, expr: expr });//TODO: consider making this readonly
+            data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
+            expr.typeof().sure();
           }
 
-      function getPublicFields(type:Type)
-        return [for (f in type.getFields().sure()) if (f.isPublic) f.name];
+          initSlots.push(macro @:pos(a.pos) inst.__slots.$name.setData($data));
 
-      function makeRender(ct:ComplexType, getFields:Void->Array<String>) {
-        switch c.memberByName('render') {
-          case Success(f): 
-            var impl = f.getFunction().sure();
-            if (isRoot)
-              f.overrides = true;
-              
-            if (impl.expr == null)
-              f.pos.error('function body required');
+          slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot(this) });
+          slotFields.push({
+            name: a.name,
+            pos: a.pos,
+            kind: FVar(macro : coconut.ui.tools.Slot<$type>)
+          });
 
-            if (impl.args.length == 0) {
-              
-              impl.args.push('__data__'.toArg());
+          a.kind = FProp('get', 'never', type, null);
+          a.isPublic = true;
 
-              var statements = [
-                if (impl.expr.getString().isSuccess()) 
-                  macro @:pos(impl.expr.pos) return hxx(${impl.expr});
-                else
-                  impl.expr
-              ];
-
-              for (name in getFields())
-                statements.unshift(macro var $name = __data__.$name);
-
-              impl.expr = statements.toBlock(impl.expr.pos);
-            } 
-
-
-            if (impl.args[0].type == null)
-              impl.args[0].type = ct;
-          default:
-        }
-      }
-
-      function make(input:ComplexType, renderer, data, getFields) {
-        
-        makeRender(data, getFields);
-        
-        if (isRoot) {
-          var ctor = c.getConstructor((macro function (data:$input) {
-            super(data, $renderer);
-          }).getFunction().sure());
-          ctor.init('__cocodata', c.target.pos, Value(macro data), {bypass: true});
-          ctor.publish();
+          attributes.push({
+            name: a.name,
+            pos: a.pos,
+            kind: FVar(macro : coconut.data.Value<$type>),
+            meta: if (optional) [{ name: ':optional', params: [], pos: a.pos }] else [],
+          });
+          
+          pseudoData.push(a);
+          
+          c.addMember(Member.getter(name, a.pos, macro return this.__slots.$name.value, type));
         }
 
-      }
-
-      function process(type:Type, isParam:Bool)
-        switch type.reduce() {
-          case TInst(_.get().kind => KTypeParameter(constraints), _) if (!isParam):
-            switch constraints {
-              case []: c.target.pos.error('Cannot render unconstrainted type parameter `${type.toString()}`');
-              case [v]: process(v, true);
-              default: c.target.pos.error('Too many constraints for `${type.toString()}`');
-            }
-          case TAnonymous(a):
-            var data =               
-              if (isParam) {
-                checked(type, function (s) return 'Bad constraint for `${rawType.toString()}` because $s').toComplex();
-              }
-              else TAnonymous([for (f in a.get().fields) {
-                name: f.name, 
-                pos: f.pos, 
-                kind: FProp('default', 'never', checked(f.type).toComplex()),
-                meta: f.meta.get(),
-              }]);
-
-            make(
-              macro : tink.state.Observable<$data>,
-              macro function (data:tink.state.Observable<$data>) return render(data.value),
-              data,
-              getPublicFields.bind(type)
+        switch a.kind {
+          case FVar(null, _):
+            a.pos.error('type required');//TODO: infer if possible
+          case FVar(t, e):
+            add(t, e);
+          case FFun(f):
+            add(
+              TFunction(
+                [for (a in f.args) if (a.opt) TOptional(a.type) else a.type], //TODO: apparently how optional arguments are dealt with doesn't work properly
+                switch f.ret {
+                  case null: macro : Void;
+                  case v: v;
+                }
+              ),//TODO: rewrite this to be Callback when suitable
+              if (f.expr == null) null
+              else f.asExpr(a.pos)
             );
-            
-            if(isRoot)
-              add(macro class {
-                @:noCompletion var __cocodata(default, never):tink.state.Observable<$data>;
-                var data(get, never):$data;
-                inline function get_data() return __cocodata.value;
-              });
-            
-          case v:
-            v.isSubTypeOf(Context.getType('coconut.data.Model')).sure();
-            var data = checked(v).toComplex();
-            make(data, macro render, data, getPublicFields.bind(v));
-            
-            if(isRoot)
-              add(macro class {
-                @:noCompletion var __cocodata(default, never):$data;
-                var data(get, never):$data;
-                inline function get_data() return __cocodata;
-              });
+          default: a.pos.error('not implemented'); 
         }
+      }
 
-      process(rawType, false);
+      var renderer = switch c.memberByName('render') {
+        case Success(m): 
+          m.getFunction().sure();
+        default:
+          c.target.pos.error('missing field render');
+      }
 
-      for (member in c)
-        switch member.extractMeta(':state') {
-          case Success(m):
+      switch renderer.args {
+        case []:
+        case [{ type: null, name: name}]:
+          renderer.args = [];
+          
+          if (renderer.expr.getString().isSuccess())
+            renderer.expr = macro return @hxx ${renderer.expr};//it's not particular nice to duplicate this logic with tink_lang
 
-            switch member.getVar(true).sure() {
-              case { type: null }: member.pos.error('Field requires type');
-              case { expr: null }: member.pos.error('Field requires initial value');
-              case { expr: e, type: t }:
-                
-                member.kind = FProp('get', 'set', t);
+          renderer.expr = macro @:pos(renderer.expr.pos) {
+            var $name = this;
+            ${renderer.expr};
+          }
+        case [_]:
+          c.memberByName('render').sure().pos.error('argument should not be specified');
+        default:
+      }
 
-                var get = 'get_' + member.name,
-                    set = 'set_' + member.name,
-                    state =  '__coco_${member.name}__';
-                
-                add(macro class {
+      for (s in scrape('state')) {
+        var v = s.getVar(true).sure();
+        if (v.expr == null)
+          s.pos.error('@:state requires initial value');
+        var t = v.type;
+        var internal = '__coco_${s.name}',
+            get = 'get_${s.name}',
+            set = 'set_${s.name}';
 
-                  @:noCompletion var $state(default, never):tink.state.State<$t> = new tink.state.State($e);
+        c.addMembers(macro class {
+          @:noCompletion private var $internal:tink.state.State<$t> = new tink.state.State(${v.expr});
+          inline function $get():$t return $i{internal}.value;
+          inline function $set(param:$t) {
+            $i{internal}.set(param);
+            return param;
+          }
+        });
+        s.kind = FProp('get', 'set', t, null);
+      }
 
-                  @:noCompletion inline function $get():$t 
-                    return this.$state.value;
-
-                  @:noCompletion inline function $set(param:$t) {
-                    this.$state.set(param);
-                    return param;
-                  }
-
-                });
-            }
-            
-          default:
-        }        
     }]);
   }
 }
