@@ -2,7 +2,9 @@ package ;
 
 class Example extends coconut.ui.View {
 
-  @:attribute var foo:tink.state.Observable<Int>;
+  @:attribute(
+    comparator = function (a, b) return a.value == b.value
+  ) var foo:tink.state.Observable<Int>;
   @:attribute var bar:Int;
   @:attribute var opt:Float = .5;
   @:attribute @:skipCheck var arr:Array<Int> = [];

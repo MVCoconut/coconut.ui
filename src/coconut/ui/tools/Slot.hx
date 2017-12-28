@@ -11,13 +11,19 @@ class Slot<T> implements ObservableObject<T> {
   var last:Pair<T, FutureTrigger<Noise>>;
   var link:CallbackLink;
   var owner:{};
+  var compare:T->T->Bool;
 
   public var value(get, never):T;
     inline function get_value()
       return observe().value;
 
-  public function new(owner) 
+  public function new(owner, ?compare) {
     this.owner = owner;
+    this.compare = switch compare {
+      case null: function (a, b) return a == b;
+      case v: v;
+    }
+  }
   
   public function poll() {
     if (last == null) {
@@ -44,18 +50,11 @@ class Slot<T> implements ObservableObject<T> {
       @:privateAccess Observable.stack.push(null);
       var m = data.measure();
       @:privateAccess Observable.stack.pop();
-      function compare<A>(after:A, before:A) 
-        if (before != after) 
-          last.b.trigger(Noise);
-        else 
-          link = m.becameInvalid.handle(last.b.trigger);
-
-      if (Std.is(m.value, ObservableObject)) {//TODO: this is a bit too late to avoid such effects
-        var nu:Observable<Any> = cast m.value,
-            old:Observable<Any> = cast last.a;
-        compare(nu.value, old.value);
-      }
-      else compare(m.value, last.a);
+      
+      if (compare(m.value, last.a))
+        link = m.becameInvalid.handle(last.b.trigger);
+      else
+        last.b.trigger(Noise);
     }
   }
 

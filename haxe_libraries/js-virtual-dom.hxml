@@ -1,5 +1,5 @@
-# @install: lix --silent download "haxelib:js-virtual-dom#0.9.2" into js-virtual-dom/0.9.2/haxelib
--D js-virtual-dom=0.9.2
--cp ${HAXESHIM_LIBCACHE}/js-virtual-dom/0.9.2/haxelib/src
+# @install: lix --silent download "https://github.com/back2dos/js-virtual-dom/archive/8b51cb9997ca521e9b801336184d2623bfe1ab4c.tar.gz" into js-virtual-dom/0.9.3/github/8b51cb9997ca521e9b801336184d2623bfe1ab4c
+-D js-virtual-dom=0.9.3
+-cp ${HAXESHIM_LIBCACHE}/js-virtual-dom/0.9.3/github/8b51cb9997ca521e9b801336184d2623bfe1ab4c/src
 
 -lib tink_core

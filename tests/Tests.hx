@@ -2,7 +2,7 @@ package ;
 
 import tink.state.*;
 import js.Browser.*;
-import vdom.VDom.*;
+//import vdom.VDom.*;
 import coconut.ui.*;
 import coconut.data.*;
 import coconut.Ui.hxx;
@@ -285,11 +285,12 @@ class FooListView extends coconut.ui.View {
 //   ';
 // }
 
-// class Lift extends View<{ foo: Iterable<String> }> {
-//   override function render(data) '
-//     <div>{[for (v in data.foo) v].join("-")}</div>
-//   ';
-// }
+class Lift extends View {
+  @:attribute var foo:Iterable<String>;
+  function render(data) '
+    <div>{[for (v in data.foo) v].join("-")}</div>
+  ';
+}
 
 // class Sub extends Window<WindowConfig> {
 //   function foo()

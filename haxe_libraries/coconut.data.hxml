@@ -1,6 +1,6 @@
-# @install: lix --silent download "https://github.com/MVCoconut/coconut.data/archive/a96451d3928e7f99b103e67c0de8e4c0f5fe71fb.tar.gz" into coconut.data/0.5.2/github/a96451d3928e7f99b103e67c0de8e4c0f5fe71fb
+# @install: lix --silent download "https://github.com/MVCoconut/coconut.data/archive/7b500874d37731901041d48dbbca9f1079abf6eb.tar.gz" into coconut.data/0.5.2/github/7b500874d37731901041d48dbbca9f1079abf6eb
 -D coconut.data=0.5.2
--cp ${HAXESHIM_LIBCACHE}/coconut.data/0.5.2/github/a96451d3928e7f99b103e67c0de8e4c0f5fe71fb/src
+-cp ${HAXESHIM_LIBCACHE}/coconut.data/0.5.2/github/7b500874d37731901041d48dbbca9f1079abf6eb/src
 
 -lib tink_state
 -lib tink_lang

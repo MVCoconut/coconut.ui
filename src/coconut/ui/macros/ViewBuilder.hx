@@ -28,8 +28,6 @@ class ViewBuilder {
         c.target.meta.add(':tink', [], c.target.pos);
 
       function scrape(name:String, ?aliases:Array<String>) {
-        var ret = [];
-
         switch c.memberByName('${name}s') {
           case Success(group):
             var m = group.getVar(true).sure();
@@ -68,11 +66,21 @@ class ViewBuilder {
           case v: v;
         });
 
+        var ret = [];
+
         for (m in c)
           for (t in tags)
             switch m.extractMeta(':$t') {
-              case Success(_):
+              case Success(t):
 
+                var comparator = macro @:pos(t.pos) null;
+                for (p in t.params) {
+                  switch p {
+                    case macro comparator = $f: 
+                      comparator = f;
+                    default: p.reject();
+                  }
+                }
                 if (m.kind.match(FProp(_, _, _, _)))
                   m.pos.error('$name cannot be property');
 
@@ -81,7 +89,10 @@ class ViewBuilder {
                     case FVar(t, _): check(m.pos, t.toType().sure());
                     default:
                   }
-                ret.push(m);
+                ret.push({
+                  member: m,
+                  comparator: comparator,
+                });
               default:
             }
 
@@ -147,7 +158,9 @@ class ViewBuilder {
         }];
       }
 
-      for (a in scrape('attribute', ['attr'])) {
+      for (attr in scrape('attribute', ['attr'])) {
+        var a = attr.member,
+            comparator = attr.comparator;
         function add(type:ComplexType, expr:Expr) {
           var optional = expr != null,
               name = a.name;
@@ -162,7 +175,7 @@ class ViewBuilder {
 
           initSlots.push(macro @:pos(a.pos) inst.__slots.$name.setData($data));
 
-          slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot(this) });
+          slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type>(this, ${attr.comparator}) });
           slotFields.push({
             name: a.name,
             pos: a.pos,
@@ -176,7 +189,7 @@ class ViewBuilder {
             name: a.name,
             pos: a.pos,
             kind: FVar(macro : coconut.data.Value<$type>),
-            meta: if (optional) [{ name: ':optional', params: [], pos: a.pos }] else [],
+            meta: if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else [],
           });
           
           pseudoData.push(a);
@@ -229,7 +242,8 @@ class ViewBuilder {
         default:
       }
 
-      for (s in scrape('state')) {
+      for (state in scrape('state')) {
+        var s = state.member;
         var v = s.getVar(true).sure();
         if (v.expr == null)
           s.pos.error('@:state requires initial value');
@@ -239,7 +253,7 @@ class ViewBuilder {
             set = 'set_${s.name}';
 
         c.addMembers(macro class {
-          @:noCompletion private var $internal:tink.state.State<$t> = new tink.state.State(${v.expr});
+          @:noCompletion private var $internal:tink.state.State<$t> = @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.comparator});
           inline function $get():$t return $i{internal}.value;
           inline function $set(param:$t) {
             $i{internal}.set(param);

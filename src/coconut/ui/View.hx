@@ -3,7 +3,7 @@ package coconut.ui;
 import tink.state.Observable;
 
 @:autoBuild(coconut.ui.macros.ViewBuilder.build())
-class View extends coconut.ui.Renderable {
+class View extends Renderer {
   
   @:noCompletion var __coco__cache = new coconut.ui.tools.ViewCache();
   

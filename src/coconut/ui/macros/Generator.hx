@@ -35,8 +35,8 @@ class Generator extends tink.hxx.Generator {
 
   override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
     return {
-      var init = macro $i{name.value}.__init;
-      if (init.typeof().isSuccess())
+      var init = macro @:pos(name.pos) ${name.value.resolve()}.__init;
+      if (isClass && init.typeof().isSuccess())
         macro @:pos(name.pos) coconut.ui.tools.ViewCache.mk(
           $v{Context.getType(name.value).getID()},
           ${key.or(macro null)},
