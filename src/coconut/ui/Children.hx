@@ -1,5 +1,6 @@
 package coconut.ui;
 
+@:pure
 abstract Children(Array<RenderResult>) from Array<RenderResult> {
   public var length(get, never):Int;
     inline function get_length()
