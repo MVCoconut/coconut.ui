@@ -88,12 +88,10 @@ class ViewCache {
     if (stack.length > 0 && stack[stack.length - 1] == this) return f();
     var entry = Ref.to(this);//wrapping in entry to allow for reentrancy (no idea if that's needed though)
     stack.push(entry);
-    var ret = 
-      try Success(f())
-      catch (e:Dynamic) Failure(e);
-    stack.remove(entry);
-    this.purge();
-    return ret.sure();
+    return Error.tryFinally(f, function () {
+      stack.remove(entry);
+      this.purge();
+    });
   }
 
   inline function purge()
