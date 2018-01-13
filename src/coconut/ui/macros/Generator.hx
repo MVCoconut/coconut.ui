@@ -18,14 +18,25 @@ class Generator extends tink.hxx.Generator {
     return unboxValues(super.complexAttribute(n));
 
   static function unboxValues(f:Option<Type>->Expr):Option<Type>->Expr 
-    return function (expected:Option<Type>) return {
+    return function (expected:Option<Type>) return 
       switch expected {
         case Some(TAbstract(_.get() => { module: 'coconut.data.Value' }, [t])):
           f(Some(t));
         default: 
           f(expected);
       }
-    }  
+
+  static function unboxValue(t:Type)
+    return switch t {
+      case TAbstract(_.get() => { module: 'coconut.data.Value' }, [t]): Some(t);
+      default: None; 
+    }
+
+  override function makeChildren(c:Children, ct:ComplexType, root:Bool)
+    return super.makeChildren(c, switch unboxValue(ct.toType().sure()) {
+      case Some(v): v.toComplex();
+      case None: ct;
+    }, root);
 
   override function makeAttribute(name:StringAt, value:Expr):Part {
     var ret = super.makeAttribute(name, value);
