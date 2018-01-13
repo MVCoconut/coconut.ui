@@ -47,13 +47,14 @@ class Slot<T> implements ObservableObject<T> {
     this.data = data;
     if (last != null) {
       link.dissolve();
-      
-      var m = Observable.untracked(data.measure);
-      
-      if (compare(m.value, last.a))
-        link = m.becameInvalid.handle(last.b.trigger);
-      else
-        last.b.trigger(Noise);
+      if (data != null) {
+        var m = Observable.untracked(data.measure);
+        
+        if (compare(m.value, last.a))
+          link = m.becameInvalid.handle(last.b.trigger);
+        else
+          last.b.trigger(Noise);
+      }      
     }
   }
 

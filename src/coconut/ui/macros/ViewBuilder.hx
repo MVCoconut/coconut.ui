@@ -100,13 +100,16 @@ class ViewBuilder {
       }
 
       var defaultValues = [],
-          defaults = '__DEFAULTS';
+          defaults = MacroApi.tempName('defaults'),
+          defaultFields = [];
 
       c.addMember({
         name: defaults,
         meta: [{ name: ':nocompletion', params: [], pos: c.target.pos }],
-        kind: FProp('default', 'never', null, EObjectDecl(defaultValues).at(c.target.pos)),
-        access: [AStatic],
+        kind: {
+          var ct = TAnonymous(defaultFields);
+          FProp('default', 'never', ct, macro {(${EObjectDecl(defaultValues).at(c.target.pos)}:$ct);});
+        },
         pos: c.target.pos,
       });
 
@@ -136,16 +139,22 @@ class ViewBuilder {
           case TPath(t): t.params;
           default: throw 'assert';
         }
+        var init = MacroApi.tempName('init');
         c.addMembers(macro class {
           @:noCompletion static public function __init(attributes:$attributes, ?inst:$self):$self {
             if (inst == null)
               inst = ${c.target.name.instantiate([macro attributes], params)};
-            $b{initSlots};
+            
+            inst.$init(attributes);
             return inst;
           }
           @:keep function toString() {
             return $v{c.target.name};
           }
+          
+          @:noCompletion function $init(attributes:$attributes)
+            $b{initSlots};
+          
         })[0].getFunction().sure().params = [for (p in c.target.params) {
           name: p.name,
           constraints: {
@@ -168,12 +177,16 @@ class ViewBuilder {
           var data = macro @:pos(a.pos) attributes.$name;
 
           if (optional) {
+            defaultFields.push({
+              name: a.name,
+              pos: expr.pos,
+              kind: FProp('default', 'never', type)
+            });
             defaultValues.push({ field: a.name, expr: expr });//TODO: consider making this readonly
             data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
-            expr.typeof().sure();
           }
 
-          initSlots.push(macro @:pos(a.pos) inst.__slots.$name.setData($data));
+          initSlots.push(macro @:pos(a.pos) this.__slots.$name.setData($data));
 
           slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type>(this, ${attr.comparator}) });
           slotFields.push({
