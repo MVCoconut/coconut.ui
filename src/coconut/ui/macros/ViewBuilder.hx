@@ -180,7 +180,7 @@ class ViewBuilder {
             defaultFields.push({
               name: a.name,
               pos: expr.pos,
-              kind: FProp('default', 'never', type)
+              kind: FProp('default', 'never', macro : coconut.data.Value<$type>)
             });
             defaultValues.push({ field: a.name, expr: expr });//TODO: consider making this readonly
             data = macro @:pos(data.pos) $data.or($i{defaults}.$name);

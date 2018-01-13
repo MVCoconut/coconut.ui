@@ -29,6 +29,8 @@ class Generator extends tink.hxx.Generator {
   static function unboxValue(t:Type)
     return switch t {
       case TAbstract(_.get() => { module: 'coconut.data.Value' }, [t]): Some(t);
+      case TAbstract(_.get() => { pack: [], name: 'Null' }, [t]): unboxValue(t);
+      case TType(_.get() => { pack: [], name: 'Null' }, [t]): unboxValue(t);
       default: None; 
     }
 
