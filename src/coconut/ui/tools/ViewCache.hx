@@ -83,18 +83,19 @@ class ViewCache {
       }
 
   var __cache = new Map<String, Registry<Dynamic, Dynamic>>();
-  
+  var retainCount = 0;
   public function cached<T>(f:Void->T):T {
     if (stack.length > 0 && stack[stack.length - 1] == this) return f();
     var entry = Ref.to(this);//wrapping in entry to allow for reentrancy (no idea if that's needed though)
     stack.push(entry);
+    retainCount++;
     return Error.tryFinally(f, function () {
       stack.remove(entry);
-      this.purge();
+      if (--retainCount == 0) this.purge();
     });
   }
 
-  inline function purge()
+  inline function purge() 
     for (f in __cache) 
       f.purge();
 

@@ -142,14 +142,14 @@ class ViewBuilder {
         var init = MacroApi.tempName('init');
         c.addMembers(macro class {
           @:noCompletion static public function __init(attributes:$attributes, ?inst:$self):$self {
-            if (inst == null)
+            if (inst == null) 
               inst = ${c.target.name.instantiate([macro attributes], params)};
             
             inst.$init(attributes);
             return inst;
           }
           @:keep function toString() {
-            return $v{c.target.name};
+            return $v{c.target.name}+'#'+this.id;
           }
           
           @:noCompletion function $init(attributes:$attributes)
