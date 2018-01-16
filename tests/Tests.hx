@@ -5,6 +5,7 @@ import js.Browser.*;
 //import vdom.VDom.*;
 import coconut.ui.*;
 import coconut.data.*;
+import coconut.data.Value;
 import coconut.Ui.hxx;
 using tink.CoreApi;
 
@@ -45,11 +46,11 @@ class Tests extends haxe.unit.TestCase {
         s2 = new State(1000);
     var log = [];
     s.observe().bind(log.push);
-    s.setData(42);
+    s.setData(Observable.const(42));
     assertEquals('', log.join(','));
     Observable.updateAll();
     assertEquals('42', log.join(','));
-    s.setData(0);
+    s.setData(Observable.const(0));
     Observable.updateAll();
     assertEquals('42,0', log.join(','));
     s.setData(s1);
