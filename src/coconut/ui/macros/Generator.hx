@@ -20,8 +20,11 @@ class Generator extends tink.hxx.Generator {
   static function unboxValues(f:Option<Type>->Expr):Option<Type>->Expr 
     return function (expected:Option<Type>) return 
       switch expected {
-        case Some(TAbstract(_.get() => { module: 'coconut.data.Value' }, [t])):
-          f(Some(t));
+        case Some(t):
+          f(switch unboxValue(t) {
+            case None: Some(t);
+            case v: v;
+          });
         default: 
           f(expected);
       }
@@ -41,6 +44,7 @@ class Generator extends tink.hxx.Generator {
     }, root);
 
   override function makeAttribute(name:StringAt, value:Expr):Part {
+    // throw name;
     var ret = super.makeAttribute(name, value);
     @:privateAccess ret.getValue = unboxValues(ret.getValue);
     return ret;
