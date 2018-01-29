@@ -4,7 +4,7 @@ class Example4 extends coconut.ui.View {
   function render() {
     redraws++;
     return @hxx '
-      <div class="example4" data-id={""+id}>{value}</div>
+      <div class="example4" data-id={""+viewId}>{value}</div>
     ';
   }
 }
