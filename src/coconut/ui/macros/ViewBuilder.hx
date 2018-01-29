@@ -32,11 +32,11 @@ class ViewBuilder {
           case Success(group):
             var m = group.getVar(true).sure();
 
-            if (m.expr != null) 
-              m.expr.reject('initialization not allowed here');
-
             switch m.type {
               case TAnonymous(fields):
+                if (m.expr != null) 
+                  m.expr.reject('initialization not allowed here');
+                  
                 for (f in fields) 
                   c.addMember(f).addMeta(':$name');
               default:
@@ -52,7 +52,10 @@ class ViewBuilder {
                   c.addMember({
                     pos: f.pos,
                     name: f.name,
-                    kind: FVar(f.type.toComplex(), defaults[f.name]),
+                    kind: FVar(f.type.toComplex(), switch defaults[f.name] {
+                      case null: if (f.meta.has(':optional')) macro null else null;
+                      case v: v;
+                    }),
                     meta: f.meta.get(),
                   }).addMeta(':$name').addMeta(':skipCheck');
                 }
@@ -149,7 +152,7 @@ class ViewBuilder {
             return inst;
           }
           @:keep function toString() {
-            return $v{c.target.name}+'#'+this.id;
+            return $v{c.target.name}+'#'+this.viewId;
           }
           
           @:noCompletion function $init(attributes:$attributes)

@@ -10,7 +10,7 @@ class View extends Renderer implements Renderable {
   
   @:noCompletion var __coco__cache = new coconut.ui.tools.ViewCache();
   
-  @:keep public var id(default, null):Int = idCounter++; static var idCounter = 0;
+  @:keep public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
 
   public function new(render:Void->coconut.ui.RenderResult, ?pos:haxe.PosInfos) {
     var last:Option<RenderResult> = None;
