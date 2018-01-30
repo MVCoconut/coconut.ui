@@ -1,6 +1,0 @@
--cp tests
--lib coconut.vdom
--lib coconut.ui
--js bin\test.js
-#-main Tests
-ExampleListView
