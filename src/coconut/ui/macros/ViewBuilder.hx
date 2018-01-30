@@ -27,6 +27,10 @@ class ViewBuilder {
       if (!c.target.meta.has(':tink'))
         c.target.meta.add(':tink', [], c.target.pos);
 
+      switch c.target.superClass.t.get() {
+        case { pack: ['coconut', 'ui'], name: 'View' }:
+        default: c.target.pos.error('Subclassing views is currently not supported');
+      }
       function scrape(name:String, ?aliases:Array<String>) {
         switch c.memberByName('${name}s') {
           case Success(group):
