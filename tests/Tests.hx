@@ -217,6 +217,11 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(redraws + 22, Example.redraws);    
   }
   
+  function testRootSwitch() {
+    mount(hxx('<MyView />'));
+    assertEquals('One', q('div').innerHTML);
+  }
+
   function testModelViewReuse() {
 
     var models = [for (i in 0...10) new Foo({ foo: i })];
