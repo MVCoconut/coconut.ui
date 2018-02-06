@@ -1,6 +1,9 @@
 # Coconut UI Layer
 
-This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It cannot do that on its own though, but requires a rendering backend, of which there's currently exactly one: [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom).
+This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It cannot do that on its own though, but requires a rendering backend, of which there are currently two: 
+
+- [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom)
+- [`coconut.react`](https://github.com/MVCoconut/coconut.react)
 
 Coconut views use [HXX](https://github.com/haxetink/tink_hxx#readme) to describe their internal structure, which is primarily driven from their `render` method. This is what a view basically looks like:
 
@@ -45,7 +48,7 @@ class Stepper extends coconut.ui.View {
 
 In general, you should avoid producing side effects in the `render` method.
 
-The promise of `coconut.ui` is: whenever your data updates, your view will update also. This assumes that you [do not defeat coconut's ability to observe changes](https://github.com/MVCoconut/coconut.data#enforced-observability). In addition to that `coconut.ui` has a (probably overly complex) caching layer that reduces those updates to a minimum.
+The promise of `coconut.ui` is: whenever your data updates, your view will update also. This assumes that you [do not defeat coconut's ability to observe changes](https://github.com/MVCoconut/coconut.data#enforced-observability).
 
 Every view has a number of attributes and states. If you have a passing familiarity with React, you can roughly think of the attributes being the props and the states being the state.
 
