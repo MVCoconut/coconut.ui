@@ -1,23 +1,23 @@
 {
 	"name": "coconut.ui",
-	"license": "MIT",
+	"classPath": "src",
+	"dependencies": {
+		"tink_anon": "",
+		"tink_lang": "",
+		"tink_hxx": "",
+		"coconut.data": ""
+	},
+	"url": "https://github.com/MVCoconut/coconut.ui/",
+	"contributors": [
+		"back2dos"
+	],
+	"version": "0.7.0",
+	"releasenote": "General overhaul.",
 	"tags": [
 		"ui",
 		"coconut",
 		"cross",
 		"reactive"
 	],
-	"classPath": "src",
-	"contributors": [
-		"back2dos"
-	],
-	"releasenote": "Add extensions points for use with react.",
-	"version": "0.6.1",
-	"url": "https://github.com/MVCoconut/coconut.ui/",
-	"dependencies": {
-		"tink_hxx": "",
-		"coconut.data": "",
-		"tink_lang": "",
-		"tink_anon": ""
-	}
+	"license": "MIT"
 }
