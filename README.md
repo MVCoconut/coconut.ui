@@ -1,5 +1,7 @@
 # Coconut UI Layer
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MVCoconut/Lobby)
+
 This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It cannot do that on its own though, but requires a rendering backend, of which there are currently two: 
 
 - [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom)
