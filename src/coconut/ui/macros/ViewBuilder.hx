@@ -56,10 +56,7 @@ class ViewBuilder {
                   c.addMember({
                     pos: f.pos,
                     name: f.name,
-                    kind: FVar(f.type.toComplex(), switch defaults[f.name] {
-                      case null: if (f.meta.has(':optional')) macro null else null;
-                      case v: v;
-                    }),
+                    kind: FVar(f.type.toComplex(), defaults[f.name]),
                     meta: f.meta.get(),
                   }).addMeta(':$name').addMeta(':skipCheck');
                 }
@@ -178,9 +175,11 @@ class ViewBuilder {
         var a = attr.member,
             comparator = attr.comparator;
         function add(type:ComplexType, expr:Expr) {
-          var optional = expr != null,
+          var optional = a.extractMeta(':optional').isSuccess() || expr != null,
               name = a.name;
 
+          if (optional && expr == null)
+            expr = macro @:pos(a.pos) null;
           var data = macro @:pos(a.pos) attributes.$name;
 
           if (optional) {
@@ -214,7 +213,13 @@ class ViewBuilder {
           
           pseudoData.push(a);
           
-          c.addMember(Member.getter(name, a.pos, macro return this.__slots.$name.value, type));
+          var getter = 'get_$name';
+
+          c.addMembers(macro class {
+            inline function $getter():$type
+              return return this.__slots.$name.value;
+          });
+          
         }
 
         switch a.kind {

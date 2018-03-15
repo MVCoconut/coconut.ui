@@ -1,3 +1,4 @@
+-dce full
 -cp tests
 -lib coconut.vdom
 -main Tests
