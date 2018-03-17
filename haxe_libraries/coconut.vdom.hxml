@@ -1,9 +1,9 @@
-# @install: lix --silent download "https://github.com/MVCoconut/coconut.vdom/archive/9b05ed972a05f4673917d04d313dec5976c57d15.tar.gz" into coconut.vdom/0.4.2/github/9b05ed972a05f4673917d04d313dec5976c57d15
--D coconut.vdom=0.4.2
--cp ${HAXESHIM_LIBCACHE}/coconut.vdom/0.4.2/github/9b05ed972a05f4673917d04d313dec5976c57d15/src
+# @install: lix --silent download "https://github.com/MVCoconut/coconut.vdom/archive/61b4a3c6d5be324d76136391bd24e89d0a16c2c5.tar.gz" into coconut.vdom/0.5.0/github/61b4a3c6d5be324d76136391bd24e89d0a16c2c5
+-D coconut.vdom=0.5.0
+-cp ${HAXESHIM_LIBCACHE}/coconut.vdom/0.5.0/github/61b4a3c6d5be324d76136391bd24e89d0a16c2c5/src
 --macro coconut.vdom.macros.Setup.all()
--lib tink_hxx
--lib tink_state
--lib coconut.ui
 -lib tink_csss
+-lib tink_hxx
 -lib js-virtual-dom
+-lib coconut.ui
+-lib tink_state

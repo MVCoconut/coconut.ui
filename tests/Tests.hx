@@ -317,12 +317,6 @@ class Lift extends View {
 //   }
 // }
 
-class FooBar {
-  public function new() {}
-  public function foo() {}
-  public function bar() {}
-}
-
 class MyView extends View {
   function render() '
     <switch ${int()}>
