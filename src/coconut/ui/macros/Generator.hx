@@ -44,9 +44,19 @@ class Generator extends tink.hxx.Generator {
     }, root);
 
   override function makeAttribute(name:StringAt, value:Expr):Part {
-    // throw name;
+    
     var ret = super.makeAttribute(name, value);
-    @:privateAccess ret.getValue = unboxValues(ret.getValue);
+    var f = unboxValues(ret.getValue);
+    
+    if (Context.defined('display') && value.has(function (e) return e.expr.match(EDisplay(_, _)))) {
+      var raw = f;
+      f = function (t) {
+        var ret = raw(t);
+        return macro @:pos(ret.pos) ($ret:Dynamic);
+      }
+    }
+
+    @:privateAccess ret.getValue = f;
     return ret;
   } 
 
