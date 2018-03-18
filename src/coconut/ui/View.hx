@@ -16,7 +16,6 @@ class View extends Renderer implements Renderable {
     var last:Option<RenderResult> = None;
     super(Observable.auto(function () return { 
       if (!shouldViewUpdate() && last != None) {
-        trace('skip $this');
         last.force();
       }
       else {
@@ -26,7 +25,7 @@ class View extends Renderer implements Renderable {
       }
     }));
   }
-
+  
   @:noCompletion function shouldViewUpdate():Bool return true;
 
   @:noCompletion inline public function getRenderResult():RenderResult 
