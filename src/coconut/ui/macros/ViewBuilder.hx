@@ -151,8 +151,8 @@ class ViewBuilder {
           @:noCompletion static public function __init(attributes:$attributes, ?inst:$self):$self {
             if (inst == null) 
               inst = ${c.target.name.instantiate([macro attributes], params)};
-            
-            inst.$init(attributes);
+            else
+              inst.$init(attributes);
             return inst;
           }
           @:keep function toString() {
