@@ -57,8 +57,7 @@ class Slot<T> implements ObservableObject<T> {
       }      
     }
   }
-
-  @:keep function toString() {
+  #if debug @:keep #end
+  function toString() 
     return 'Slot($owner)';
-  }
 }
