@@ -124,7 +124,7 @@ class Tests extends haxe.unit.TestCase {
   function testModel() {
     var model = new Foo({ foo: 4 });
 
-    var e = hxx('<Example2 model={model} />');
+    var e = new Example2({ model: model });
     mount(e);
     
     assertEquals('4', q('.foo').innerHTML);

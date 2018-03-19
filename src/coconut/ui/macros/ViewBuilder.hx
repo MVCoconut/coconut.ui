@@ -133,17 +133,20 @@ class ViewBuilder {
           attributes = [];
 
       {
-        var attributes = TAnonymous(attributes);
+        var attributes = TAnonymous(attributes),
+            init = MacroApi.tempName('init');
         if (c.hasConstructor())
           c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
-        c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) super(render)).getFunction().sure()).isPublic = false;
+        c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) {
+          this.$init(data);
+          super(render);
+        }).getFunction().sure()).isPublic = true;
 
         var self = Context.getLocalType().toComplexType();
         var params = switch self {
           case TPath(t): t.params;
           default: throw 'assert';
         }
-        var init = MacroApi.tempName('init');
         c.addMembers(macro class {
           @:noCompletion static public function __init(attributes:$attributes, ?inst:$self):$self {
             if (inst == null) 
