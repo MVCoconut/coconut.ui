@@ -60,18 +60,19 @@ class Generator extends tink.hxx.Generator {
     return ret;
   } 
 
-  override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>)
-    return {
-      var init = macro @:pos(name.pos) ${name.value.resolve()}.__init;
-      if (isClass && init.typeof().isSuccess())
-        macro @:pos(name.pos) coconut.ui.tools.ViewCache.mk(
-          $v{Context.getType(name.value).getID()},
-          ${key.or(macro null)},
-          $init,
-          $attr
-        );
-      else      
-        super.instantiate(name, isClass, key, attr, children);
-    }  
+  override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>) {
+    if (isClass) {
+      var t = Context.getType(name.value);
+      if (Context.unify(t, Context.getType('coconut.ui.View'))) 
+        return 
+          macro @:pos(name.pos) coconut.ui.tools.ViewCache.mk(
+            $v{Context.getType(name.value).getID()},
+            ${key.or(macro null)},
+            ${name.value.resolve()}.__init,
+            $attr
+          );        
+    }
+    return super.instantiate(name, isClass, key, attr, children);
+  }  
 }
 #end
