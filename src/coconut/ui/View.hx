@@ -12,7 +12,7 @@ class View extends Renderer implements Renderable {
   
   @:keep public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
 
-  public function new(render:Void->coconut.ui.RenderResult, ?pos:haxe.PosInfos) {
+  public function new(render:Void->coconut.ui.RenderResult) {
     var last:Option<RenderResult> = None;
     super(Observable.auto(function () return { 
       if (!shouldViewUpdate() && last != None) {
