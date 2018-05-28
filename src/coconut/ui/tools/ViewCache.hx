@@ -82,7 +82,7 @@ class ViewCache {
           v[v.length - 1].value;
       }
 
-  var __cache = new Map<String, Registry<Dynamic, Dynamic>>();
+  var __cache = new Map<String, Registry<Dynamic, Dynamic>>();//TODO: use ES6 Maps + polyfill on JS
   var retainCount = 0;
   public function cached<T>(f:Void->T):T {
     if (stack.length > 0 && stack[stack.length - 1] == this) return f();
