@@ -12,6 +12,7 @@ class Slot<T> implements ObservableObject<T> {
   var link:CallbackLink;
   var owner:{};
   var compare:T->T->Bool;
+  var cache = new ViewCache();//TODO: maybe having every slot cached is a bit overkill
 
   public var value(get, never):T;
     inline function get_value()
@@ -31,7 +32,7 @@ class Slot<T> implements ObservableObject<T> {
         last = new Pair(null, Future.trigger());
       }
       else {
-        var m = data.measure();
+        var m = measure();
         last = new Pair(m.value, Future.trigger());
         link = m.becameInvalid.handle(last.b.trigger);
       }
@@ -39,6 +40,9 @@ class Slot<T> implements ObservableObject<T> {
     }
     return new Measurement(last.a, last.b);
   }
+
+  function measure()
+    return cache.cached(data.measure);
 
   public function observe():Observable<T>
     return this;
@@ -48,7 +52,7 @@ class Slot<T> implements ObservableObject<T> {
     if (last != null) {
       link.dissolve();
       if (data != null) {
-        var m = Observable.untracked(data.measure);
+        var m = Observable.untracked(measure);
         
         if (compare(m.value, last.a))
           link = m.becameInvalid.handle(last.b.trigger);

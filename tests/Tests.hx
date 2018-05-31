@@ -97,6 +97,29 @@ class Tests extends haxe.unit.TestCase {
   //   assertTrue(cache.cached(make) == cache.cached(make));
   // }
 
+  function testSlotCache() {
+    var s = new State(42);
+    mount(hxx('
+      <Example6>
+        <div data-id={s.value}>
+          <Example6>
+            <if {s.value > 12}>
+              <Example4 value={Std.string(s.value)} />
+            </if>
+          </Example6>
+        </div>
+      </Example6>
+    '));     
+    var elt = q('.example4');
+    var id = elt.getAttribute('data-id');
+    assertTrue(id != null);
+    s.set(17);
+    Observable.updateAll();
+    assertEquals(elt, q('.example4'));
+    assertEquals(id, elt.getAttribute('data-id'));
+    assertEquals('17', elt.innerHTML);
+  }
+
   function testCache() {
     
     var s = new State('42');
