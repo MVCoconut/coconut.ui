@@ -37,10 +37,10 @@ class Generator extends tink.hxx.Generator {
       default: None; 
     }
 
-  override function makeChildren(c:Children, ct:ComplexType, root:Bool)
-    return super.makeChildren(c, switch unboxValue(ct.toType().sure()) {
-      case Some(v): v.toComplex();
-      case None: ct;
+  override function makeChildren(c:Children, t:Type, root:Bool)
+    return super.makeChildren(c, switch unboxValue(t) {
+      case Some(v): v;
+      case None: t;
     }, root);
 
   override function makeAttribute(name:StringAt, value:Expr):Part {
