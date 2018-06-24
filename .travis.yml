@@ -8,8 +8,7 @@ os:
   - linux
   
 install:
-  - npm install haxeshim -g
-  - npm install lix.pm -g
+  - npm install lix@15.2.0-alpha.2 -g
   - lix download
   - haxelib install travix
 
