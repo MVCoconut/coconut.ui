@@ -4,14 +4,14 @@ package coconut.ui.macros;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
+import tink.priority.Queue;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
 using tink.CoreApi;
 
 class ViewBuilder {
-  static var _afterBuild = Signal.trigger();
-  static public var afterBuild(default, null):Signal<{ target: ClassBuilder, attributes:Array<Member> }> = _afterBuild;
+  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member> }>> = new Queue();
   static function check(pos:Position, type:Type)
     switch coconut.data.macros.Models.check(type) {
       case []: 
@@ -275,10 +275,11 @@ class ViewBuilder {
       s.kind = FProp('get', 'set', t, null);
     }
 
-    _afterBuild.trigger({
-      target: c,
-      attributes: attributes
-    });
+    for (cb in afterBuild)
+      cb.invoke({
+        target: c,
+        attributes: attributes
+      });
   }
 
   static function build() {
