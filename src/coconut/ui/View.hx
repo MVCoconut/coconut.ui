@@ -6,7 +6,7 @@ using tink.CoreApi;
 
 @:autoBuild(coconut.ui.macros.ViewBuilder.build())
 @:observable
-class View extends Renderer implements Renderable {
+class View extends Renderer {
     
   @:keep public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
 
@@ -25,7 +25,4 @@ class View extends Renderer implements Renderable {
   }
   
   @:noCompletion function shouldUpdate():Bool return true;
-
-  @:noCompletion inline public function getRenderResult():RenderResult 
-    return this;
 }
