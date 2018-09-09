@@ -12,17 +12,14 @@ class View extends Renderer {
 
   public function new(render:Void->coconut.ui.RenderResult) {
     var last:Option<RenderResult> = None;
-    super(Observable.auto(function () return { 
-      if (!shouldUpdate() && last != None) {
-        last.force();
-      }
-      else {
+    super(Observable.auto(function () return switch last {
+      case Some(r) if (!shouldViewUpdate()): r;
+      default:
         var res = render();
         last = Some(res);
         res;
-      }
     }));
   }
   
-  @:noCompletion function shouldUpdate():Bool return true;
+  @:noCompletion function shouldViewUpdate():Bool return true;
 }
