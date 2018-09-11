@@ -291,6 +291,32 @@ class ViewBuilder {
         s.kind = FProp('get', 'set', t, null);
       }
 
+      for (f in c)
+        switch [f.kind, f.extractMeta(':computed')] {
+          case [FVar(t, e), Success(m)]:
+            
+            if (m.params.length > 0)
+              m.params[0].reject('@:computed does not support parameters');
+            
+            if (e == null)
+              m.pos.error('@:computed field requires expression');
+
+            if (t == null)
+              m.pos.error('@:computed field requires type');
+
+            var internal = '__coco_${f.name}',
+                get = 'get_${f.name}';
+
+            c.addMembers(macro class {
+              @:noCompletion private var $internal:tink.state.Observable<$t> = 
+                @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
+              inline function $get() return $i{internal}.value;
+            });
+
+            f.kind = FProp('get', 'never', t);
+          default:
+        }
+
     }]);
   }
 }
