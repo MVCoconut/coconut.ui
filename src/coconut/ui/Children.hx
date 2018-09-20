@@ -13,5 +13,5 @@ abstract Children(Array<RenderResult>) from Array<RenderResult> {
     return [r];
 
   public function concat(that:Array<RenderResult>):Children
-    return this.concat(that);
+    return if (this == null) that else this.concat(that);
 }
