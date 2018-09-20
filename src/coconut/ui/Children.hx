@@ -11,4 +11,7 @@ abstract Children(Array<RenderResult>) from Array<RenderResult> {
 
   @:from static function ofSingle(r:RenderResult):Children
     return [r];
+
+  public function concat(that:Array<RenderResult>):Children
+    return this.concat(that);
 }
