@@ -4,6 +4,7 @@ import tink.state.Observable;
 
 using tink.CoreApi;
 
+#if !macro
 @:autoBuild(coconut.ui.macros.ViewBuilder.build())
 @:observable
 class View extends Renderer {
@@ -20,6 +21,12 @@ class View extends Renderer {
         res;
     }));
   }
-  
+  macro function hxx(e);
   @:noCompletion function shouldViewUpdate():Bool return true;
 }
+#else
+class View {
+  static function hxx(_, e)
+    return coconut.ui.macros.HXX.parse(e);
+}
+#end
