@@ -11,7 +11,7 @@ using tink.MacroApi;
 using tink.CoreApi;
 
 class ViewBuilder {
-  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member> }>> = new Queue();
+  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<String> }>> = new Queue();
   static function check(pos:Position, type:Type)
     switch coconut.data.macros.Models.check(type) {
       case []: 
@@ -33,7 +33,7 @@ class ViewBuilder {
       case { pack: ['coconut', 'ui'], name: 'View' }:
       default: c.target.pos.error('Subclassing views is currently not supported');
     }
-    function scrape(name:String, ?aliases:Array<String>) {
+    function scrape(name:String, ?aliases:Array<String>, ?skipCheck:Bool) {
       switch c.memberByName('${name}s') {
         case Success(group):
           var m = group.getVar(true).sure();
@@ -90,7 +90,7 @@ class ViewBuilder {
               if (m.kind.match(FProp(_, _, _, _)))
                 m.pos.error('$name cannot be property');
 
-              if (!m.extractMeta(':skipCheck').isSuccess())
+              if (!skipCheck && !m.extractMeta(':skipCheck').isSuccess())
                 switch m.kind {
                   case FVar(t, _): check(m.pos, t.toType().sure());
                   default:
@@ -254,11 +254,23 @@ class ViewBuilder {
       default:
     }
 
+    for (ref in scrape('ref', true)) {
+      var f = ref.member;
+      var v = f.getVar(true).sure();
+      var type = v.type;
+      f.kind = FProp('default', 'never', macro : coconut.ui.tools.Ref<$type>, macro new coconut.ui.tools.Ref());
+    }
+
+    var states = [];
+
     for (state in scrape('state')) {
       var s = state.member;
+      states.push(s.name);
       var v = s.getVar(true).sure();
+
       if (v.expr == null)
         s.pos.error('@:state requires initial value');
+      
       var t = v.type;
       var internal = '__coco_${s.name}',
           get = 'get_${s.name}',
@@ -272,13 +284,15 @@ class ViewBuilder {
           return param;
         }
       });
+      
       s.kind = FProp('get', 'set', t, null);
     }
 
     for (cb in afterBuild)
       cb.invoke({
         target: c,
-        attributes: attributes
+        attributes: attributes,
+        states: states,
       });
   }
 

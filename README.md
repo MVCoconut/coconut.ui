@@ -97,3 +97,123 @@ States are internal to your view. They allow you to hold data that is only relev
 Down the line you will almost always want to move state out of views - except when it's clearly transitory. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
 
 The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested in isolation from the views too.
+
+## Refs
+
+Just like React, coconut supports refs to get access to the views you're creating.
+
+```haxe
+'
+  <div ref=${div -> console.log(div.innerHTML)}>
+    <Counter ref=${counter -> counter.increment()} />
+  </div>
+'
+```
+
+### `@:ref` syntax
+
+You may also define refs like so:
+
+```haxe
+class Counter extends View {
+  @:ref var button:ButtonElement;
+  @:state var counter:Int = 0;
+  function render() '
+    <button ref=${button} onclick=${counter++}>${counter}</button>
+  ';
+
+  function viewDidUpdate() {
+    trace(button.current);//Will log <button>1</button> the first time you click.
+  }
+}
+```
+
+## Life cycle callbacks
+
+Coconut views may declare life cycle callbacks, which are modelled after those in React, adjusted for the naming differences: 
+
+What React calls component and props, Coconut calls views and attributes respectively, as those are more specific terms: the term component can mean anything and in ECMAScript terminology, the `state` of a React component is a *property*.
+
+- `function viewDidMount():Void`: Is called after the component is mounted into the DOM (or whatever the native view hierarchy might be). Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount)
+
+- `function getSnapshotBeforeUpdate():Snapshot`: Is called after `render`, before the resulting changes take effect. Note that `Snapshot` is not a particular data type. You may either be explicit about it, or let the compiler be inferred. Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#getsnapshotbeforeupdate), but note that `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+
+- `function viewDidUpdate(snapshot:Snapshot):Void`: Is called after the changes resulting from `render` take effect. The function has 0 parameters if you don't declare `getSnapshotBeforeUpdate` and 1 if you do. If you don't declare the parameter, a parameter called `snapshot` is created implicitly. If you don't explictly define the type of the one parameter, it will implicitly be inferred to the return type of `getSnapshotBeforeUpdate`. Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount), but note that `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+
+- `function viewWillUnmount():Void`: Is called before the component is unmounted. Consider using `untilUnmounted`/`beforeUnmounting` instead.
+
+- `getDerivedStateFromAttributes`: Is called right before rendering and is expected to return an object
+
+Additional life cycle related utilities:
+
+- `untilUnmounted`/`beforeUnmounting`: One possibility for cleaning up a component is to store any allocated resources in instance fields and then access them in `viewWillUnmount`, e.g.:
+
+  ```haxe
+  var observer:MutationObserver;
+  function viewDidMount() {
+    observer = new MutationObserver(...);
+    observer.connect(...);
+  }
+  function viewWillUnmount() {
+    observer.disconnect();
+    observer = null;
+  }
+  ```
+
+  An alternative us to use `untilUnmounted`/`beforeUnmounting` (which are fully equivalent and should be picked depending on what reads more naturally) which take a callback of `Void->Void` that is executed before unmounting. So for example the code above would be written like so:
+
+   ```haxe
+  function viewDidMount() {
+    var observer = new MutationObserver(...);
+    observer.connect(...);
+    beforeUnmounting(observer.disconnect);
+  }
+  ``` 
+
+  That's shorter and avoids having instance fields that clutter completion. Another way two write the same is:
+
+  ```haxe
+  function viewDidMount() 
+    untilUnmounted(() -> {
+      var observer = new MutationObserver(...);
+      observer.connect(...);
+      observer.disconnect;
+    });
+  ```   
+
+  This is absolutely equivalent with the above. The latter name makes most sense when used a call that returns a `CallbackLink` from `tink_core`. Let's assume we define something like this:
+
+  ```haxe
+  class Observe {
+    static function mutations(target:Element, cb:Callback<Element>):CallbackLink {
+      //... set up mutation observer here
+    }
+  }
+  ```
+
+  The we can use it like so:
+
+  ```haxe
+  @:ref var root:Element;//Need to populate this in `render` of course
+  function viewDidMount() 
+    untilUnmounted(Observe.mutations(root, () -> {
+      //do something
+    }));
+  ```
+
+- `untilNextChange`/`beforeNextChange`: These two are anologous to `untilUnmounted`/`beforeUnmounting`, except that they fire before unmounting and before rerendering. Use these if you need to setup behavior that is cleaned up any time the component changes. Let's consider this rather silly view, that may change it's underlying DOM every time it rerenders:
+
+  ```haxe
+  @:ref var root:Element;
+  function render() '
+    <if ${Math.random() > .5}>
+      <button ref=${root} />
+    <else>
+      <textarea ref=${root} />
+    </if>
+  ';
+  function viewDidMount() 
+    untilChanged(Observe.mutations(root, () -> {
+      //do something
+    }));
+  ```
