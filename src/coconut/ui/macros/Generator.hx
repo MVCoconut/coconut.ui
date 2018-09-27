@@ -7,7 +7,7 @@ import haxe.macro.Context;
 import haxe.macro.Type;
 import tink.hxx.Node;
 import tink.anon.Macro.Part;
-
+import tink.hxx.Generator.TagCreate;
 
 using tink.MacroApi;
 using tink.CoreApi;
@@ -60,8 +60,8 @@ class Generator extends tink.hxx.Generator {
     return ret;
   } 
 
-  override function instantiate(name:StringAt, isClass:Bool, key:Option<Expr>, attr:Expr, children:Option<Expr>) {
-    if (isClass) {
+  override function instantiate(name:StringAt, create:TagCreate, key:Option<Expr>, attr:Expr, children:Option<Expr>) {
+    if (create == New) {
       var t = Context.getType(name.value);
       if (Context.unify(t, Context.getType('coconut.ui.View'))) 
         return 
@@ -72,7 +72,7 @@ class Generator extends tink.hxx.Generator {
             $attr
           );        
     }
-    return super.instantiate(name, isClass, key, attr, children);
+    return super.instantiate(name, create, key, attr, children);
   }  
 }
 #end
