@@ -7,12 +7,14 @@ This library provides the means to create views for [your data](https://github.c
 - [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom)
 - [`coconut.react`](https://github.com/MVCoconut/coconut.react)
 
+Note: coconut is built of top of the tinkerbell libraries.
+
 Coconut views use [HXX](https://github.com/haxetink/tink_hxx#readme) to describe their internal structure, which is primarily driven from their `render` method. This is what a view basically looks like:
 
 ```haxe
 class Stepper extends coconut.ui.View {
   @:attribute var step:Int = 1;
-  @:attribute var onconfirm:Callback<Int>;
+  @:attribute function onconfirm(value:Int);
   @:state var value:Int = 0;
   function render() '
     <div class="counter">
@@ -31,7 +33,7 @@ A function with just a string body is merely a syntactic shortcut for a function
 class Stepper extends coconut.ui.View {
   
   @:attribute var step:Int = 1;
-  @:attribute var onconfirm:Callback<Int>;
+  @:attribute function onconfirm(value:Int);
   @:state var value:Int = 0;
 
   function render() {
@@ -65,17 +67,19 @@ You define attributes in one of the two following ways:
   - if the type is an anonymous object defined inline, "initialize" the fields
   - otherwise "initialize" the pseudo-field with an object literal.
 
+It should also be noted that writing `@:attribute function name(param:Type):Void` is equivalent to `@:attribute var name:tink.core.Callback<Type>`.
+
 The above is equivalent to:
 
 ```haxe
   @:attribute var step:Int = 1;
-  @:attribute var onconfirm:Callback<Int>;
+  @:attribute function onconfirm(value:Int):Void;
 
   //is equivalent to
   
   var attributes:{
     var step:Int = 1;
-    var onconfirm:Callback<Int>;
+    var onconfirm:tink.core.Callback<Int>;
   };
   
   //is equivalent to
@@ -84,19 +88,99 @@ The above is equivalent to:
   //where 
   typedef StepperAttributes = {
     var step:Int;
-    var onconfirm:Callback<Int>;
+    var onconfirm:tink.core.Callback<Int>;
   }
 ```
 
 ## States
 
-States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will cause a rerender that will update the content of the `span` that shows the current value to the user. You views may also hold plain fields for whatever purpose. Note though that updates to those are not tracked.
+States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will cause a rerender that will update the content of the `span` that shows the current value to the user. 
+
+Your views may also hold plain fields for whatever purpose. Note though that updates to those will generally not cause rerendering.
 
 ### When to go Stateful?
 
 Down the line you will almost always want to move state out of views - except when it's clearly transitory. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
 
 The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested in isolation from the views too.
+
+## Laziness, granular invalidation and batched rerendering
+
+Unless the particular renderer diverges from the norm, the following can be said about how views update:
+
+- attributes passed to views are not evaluated unless the view consuming them evaluates them (be it by passing them to a child that evaluates them). Example:
+
+  ```haxe
+  class Foo extends View {
+    @:attribute var foo:Int;
+    function render() '<div/>'
+  }
+
+  hxx('<Foo foo=${throw "you will never see this"}/>');
+  ```
+
+  Because `foo` is never used, it's not evaluated and the exception is never raised.
+- Changes to any state or attribute accessed directly or indirectly in a view's render function will invalidate the view. Any other changes have no effect on the view itself.
+- Passing states/attributes to child views does not count as access. Consider the following contrived example:
+
+  ```haxe
+  class Button extends View {
+    @:attribute var children:Children;
+    @:attribute function onclick():Void;
+    function render() '
+      <button onclick=${onclick}>${...children}</button>
+    ';
+  }
+
+  class Container extends View {
+    @:state var a:Int;
+    @:state var b:Int;
+    var renderCounter = 0;
+    function render() '
+      <div>
+        Rendered ${renderCounter++} times
+        <Button onclick=${a++}>${a}</Button>
+        <button onclick=${b++}>${b}</button>
+      </div>
+    ';
+  }
+  ```
+
+  Note: having side effects such as `renderCounter++` in your render function is bad practice, but here it's meant to illustrate whether or not the component rerenders. 
+  
+  What's important to note about this example is that clicking on the `Button` will not rerender `Container` (but only the `Button`), while clicking on the plain `button` will. You can use this behavior to contain the effect of state updates. In fact you can boil it down to this simple pattern:
+
+  ```haxe
+  class Isolated extends View {
+    @:attribute var children:RenderResult;
+    function render() return child;
+  }
+  ```
+
+  ```haxe
+  class Container extends View {
+    @:state var a:Int;
+    @:state var b:Int;
+    var renderCounter = 0;
+    function render() '
+      <div>
+        Rendered ${renderCounter++} times
+        <Isolated><button onclick=${a++}>${a}</button></Isolated>
+        <button onclick=${b++}>${b}</button>
+      </div>
+    ';
+  }
+  ```  
+
+  Clicking the button wrapped in `Isolated` will not rerender `Container`. 
+  
+- Changes do not instantly rerender views, but invalidate them, which schedules a batched update with the browser's next animation frame (or frame on NME/OpenFl or short timeout on other platforms). This bares some similarity with React's async rendering. 
+  
+  It's important to understand though that on one hand invalidation is an event that eagerly cascades through your dependencies, but all computation is batched, *including attributes*. If your view invokes a callback that is likely to change the value of an attribute, the attribute is recomputed only when accessed, either in rendering or other code you write to access it.
+
+### `@:tracked` states and attributes
+
+On occasion, you may wish for a certain state or attribute to cause a rerender, regardless of whether or not it was accessed in the `render` function. The most common case is a revision counter that is bumped when some value that is not (directly) observable has changed (e.g. your view's size on screen). Regardless of the use case, if you mark a state/attribute as `@:tracked` then changes to it will cause invalidation.
 
 ## Refs
 
@@ -105,7 +189,7 @@ Just like React, coconut supports refs to get access to the views you're creatin
 ```haxe
 '
   <div ref=${div -> console.log(div.innerHTML)}>
-    <Counter ref=${counter -> counter.increment()} />
+    <Stepper ref=${stepper -> trace(stepper.step)} />
   </div>
 '
 ```
@@ -116,8 +200,10 @@ You may also define refs like so:
 
 ```haxe
 class Counter extends View {
+  
   @:ref var button:ButtonElement;
   @:state var counter:Int = 0;
+
   function render() '
     <button ref=${button} onclick=${counter++}>${counter}</button>
   ';
@@ -128,92 +214,166 @@ class Counter extends View {
 }
 ```
 
+Under the hood `button` will be promoted to `Ref<ButtonElement>`:
+
+```haxe
+abstract Ref<T> {
+  var current(get, never):T;
+}
+```
+
+These refs are reset before rendering.
+
 ## Life cycle callbacks
 
 Coconut views may declare life cycle callbacks, which are modelled after those in React, adjusted for the naming differences: 
 
 What React calls component and props, Coconut calls views and attributes respectively, as those are more specific terms: the term component can mean anything and in ECMAScript terminology, the `state` of a React component is a *property*.
 
-- `function viewDidMount():Void`: Is called after the component is mounted into the DOM (or whatever the native view hierarchy might be). Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount)
+### viewDidMount
 
-- `function getSnapshotBeforeUpdate():Snapshot`: Is called after `render`, before the resulting changes take effect. Note that `Snapshot` is not a particular data type. You may either be explicit about it, or let the compiler be inferred. Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#getsnapshotbeforeupdate), but note that `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+```haxe
+function viewDidMount():Void;
+```
 
-- `function viewDidUpdate(snapshot:Snapshot):Void`: Is called after the changes resulting from `render` take effect. The function has 0 parameters if you don't declare `getSnapshotBeforeUpdate` and 1 if you do. If you don't declare the parameter, a parameter called `snapshot` is created implicitly. If you don't explictly define the type of the one parameter, it will implicitly be inferred to the return type of `getSnapshotBeforeUpdate`. Corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount), but note that `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+This callback is invoked after the component is mounted into the DOM (or whatever the native view hierarchy might be). It corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount)
 
-- `function viewWillUnmount():Void`: Is called before the component is unmounted. Consider using `untilUnmounted`/`beforeUnmounting` instead.
+### shouldViewUpdate
 
-- `getDerivedStateFromAttributes`: Is called right before rendering and is expected to return an object
+```haxe
+function shouldViewUpdate():Bool;
+``` 
 
-Additional life cycle related utilities:
+This function is invoked to determine if a component should rerender. While it mostly corresponds to [React's `shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate), in contrast to React, it not pass `nextState` and `nextProps`. Instead, state and attributes changes are always applied *before* this function is invoked. 
 
-- `untilUnmounted`/`beforeUnmounting`: One possibility for cleaning up a component is to store any allocated resources in instance fields and then access them in `viewWillUnmount`, e.g.:
+Caveat: if this function returns `false`, the view will only invalidate if any of the states or attributes that this function depends on changes (or any `@:tracked` attributes or states change).
 
-  ```haxe
-  var observer:MutationObserver;
-  function viewDidMount() {
-    observer = new MutationObserver(...);
-    observer.connect(...);
-  }
-  function viewWillUnmount() {
-    observer.disconnect();
-    observer = null;
-  }
-  ```
+This function exists only for optimization purposes.
 
-  An alternative us to use `untilUnmounted`/`beforeUnmounting` (which are fully equivalent and should be picked depending on what reads more naturally) which take a callback of `Void->Void` that is executed before unmounting. So for example the code above would be written like so:
+### getDerivedStateFromAttributes
 
-   ```haxe
-  function viewDidMount() {
+```haxe
+static function getDerivedStateFromAttributes(states:States, attributes:Attributes):Partial<States>;
+```
+
+This function is called right before rendering and is expected to return an object, that may define a new value for each state. It corresponds to [React's `getDerivedStateFromProps`](https://reactjs.org/docs/react-component.html#static-getderivedstatefromprops).
+
+### getSnapshotBeforeUpdate
+
+```haxe
+function getSnapshotBeforeUpdate():Snapshot;
+```
+
+This function is called after `render`, before the resulting changes take effect. Note that `Snapshot` is not a particular data type. You may either be explicit about it, otherwise it will be inferred by the compiler. Corresponds to [React's `getSnapshotBeforeUpdate`](https://reactjs.org/docs/react-component.html#getsnapshotbeforeupdate), but note that `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+
+### viewDidUpdate
+
+```haxe
+function viewDidUpdate(snapshot:Snapshot):Void;
+```
+
+This callback is invoked after the changes resulting from `render` take effect. 
+
+The function has 0 parameters if you don't declare `getSnapshotBeforeUpdate` and 1 if you do. If you don't declare the parameter, a parameter called `snapshot` is created implicitly. If you don't explictly define the type of the one parameter, it will implicitly be inferred to the return type of `getSnapshotBeforeUpdate`. 
+
+While `viewDidupdate` mostly corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount), `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+
+### viewWillUnmount
+
+```haxe
+function viewWillUnmount():Void;
+```
+
+This callback is invoked before the view is unmounted and corresponds to 
+While `viewDidupdate` mostly corresponds to [React's `componentWillUnmount`](https://reactjs.org/docs/react-component.html#componentwillunmount). 
+
+Consider using `untilUnmounted`/`beforeUnmounting` instead.
+
+### untilUnmounted or beforeUnmounting 
+
+```haxe
+function untilUnmounted(cb:Callback<Noise>):Void;
+function beforeUnmounting(cb:Callback<Noise>):Void;
+```
+
+One possibility (idiomatic in React) for cleaning up a view is to store any allocated resources in instance fields and then access them in `viewWillUnmount`, e.g.:
+
+```haxe
+var map:MutationObserver;
+function viewDidMount() {
+  observer = new MutationObserver(...);
+  observer.connect(...);
+}
+function viewWillUnmount() {
+  observer.disconnect();
+  observer = null;
+}
+```
+
+An alternative us to use `untilUnmounted`/`beforeUnmounting` (which are fully equivalent and should be picked depending on what reads more naturally) which take a `Callback<Noise>` that is executed before unmounting. So for example the code above would be written like so:
+
+```haxe
+function viewDidMount() {
+  var observer = new MutationObserver(...);
+  observer.connect(...);
+  beforeUnmounting(observer.disconnect);
+}
+``` 
+
+That's shorter and avoids having instance fields that clutter completion. Another way to write the same is:
+
+```haxe
+function viewDidMount() 
+  untilUnmounted(() -> {
     var observer = new MutationObserver(...);
     observer.connect(...);
-    beforeUnmounting(observer.disconnect);
+    observer.disconnect;
+  });
+```   
+
+This is absolutely equivalent with the previous version. The latter name makes most sense when used a call that returns a `CallbackLink` from `tink_core`. Let's assume we define something like this:
+
+```haxe
+class Observe {
+  static function mutations(target:Element, cb:Callback<Element>):CallbackLink {
+    //... set up mutation observer here
   }
-  ``` 
+}
+```
 
-  That's shorter and avoids having instance fields that clutter completion. Another way two write the same is:
+The we can use it like so:
 
-  ```haxe
-  function viewDidMount() 
-    untilUnmounted(() -> {
-      var observer = new MutationObserver(...);
-      observer.connect(...);
-      observer.disconnect;
-    });
-  ```   
+```haxe
+@:ref var root:Element;//Need to populate this in `render` of course
+function viewDidMount() 
+  untilUnmounted(Observe.mutations(root, () -> {
+    //do something
+  }));
+```
 
-  This is absolutely equivalent with the above. The latter name makes most sense when used a call that returns a `CallbackLink` from `tink_core`. Let's assume we define something like this:
+### untilNextChange or beforeNextChange
 
-  ```haxe
-  class Observe {
-    static function mutations(target:Element, cb:Callback<Element>):CallbackLink {
-      //... set up mutation observer here
-    }
-  }
-  ```
+These two are anologous to `untilUnmounted`/`beforeUnmounting`, except that they fire before unmounting and before rerendering. Use these if you need to setup behavior that is cleaned up any time the component changes. Let's consider this rather silly view, that may change it's underlying root element every time it rerenders:
 
-  The we can use it like so:
+```haxe
+@:ref var root:Element;
 
-  ```haxe
-  @:ref var root:Element;//Need to populate this in `render` of course
-  function viewDidMount() 
-    untilUnmounted(Observe.mutations(root, () -> {
-      //do something
-    }));
-  ```
+function render() '
+  <if ${Math.random() > .5}>
+    <button ref=${root} />
+  <else>
+    <textarea ref=${root} />
+  </if>
+';
 
-- `untilNextChange`/`beforeNextChange`: These two are anologous to `untilUnmounted`/`beforeUnmounting`, except that they fire before unmounting and before rerendering. Use these if you need to setup behavior that is cleaned up any time the component changes. Let's consider this rather silly view, that may change it's underlying DOM every time it rerenders:
+function viewDidMount() 
+  untilNextChange(Observe.mutations(root, () -> {
+    //do something
+  }));
+```
 
-  ```haxe
-  @:ref var root:Element;
-  function render() '
-    <if ${Math.random() > .5}>
-      <button ref=${root} />
-    <else>
-      <textarea ref=${root} />
-    </if>
-  ';
-  function viewDidMount() 
-    untilChanged(Observe.mutations(root, () -> {
-      //do something
-    }));
-  ```
+### afterUpdating
+
+```haxe
+function afterUpdating():Void;
+```

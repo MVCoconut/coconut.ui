@@ -11,7 +11,7 @@ using tink.MacroApi;
 using tink.CoreApi;
 
 class ViewBuilder {
-  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<String> }>> = new Queue();
+  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>> = new Queue();
   static function check(pos:Position, type:Type)
     switch coconut.data.macros.Models.check(type) {
       case []: 
@@ -33,6 +33,10 @@ class ViewBuilder {
       case { pack: ['coconut', 'ui'], name: 'View' }:
       default: c.target.pos.error('Subclassing views is currently not supported');
     }
+
+    var beforeRender = [],
+        tracked = [];
+
     function scrape(name:String, ?aliases:Array<String>, ?skipCheck:Bool) {
       switch c.memberByName('${name}s') {
         case Success(group):
@@ -102,6 +106,13 @@ class ViewBuilder {
             default:
           }
 
+      if (!skipCheck)
+        for (f in ret)
+          if (f.member.extractMeta(':tracked').isSuccess()) {
+            var name = f.member.name;
+            tracked.push(macro this.$name);
+          }
+
       return ret;
     }
 
@@ -111,7 +122,7 @@ class ViewBuilder {
 
     c.addMember({
       name: defaults,
-      meta: [{ name: ':nocompletion', params: [], pos: c.target.pos }],
+      meta: [{ name: ':noCompletion', params: [], pos: c.target.pos }],
       kind: {
         var ct = TAnonymous(defaultFields);
         FProp('default', 'never', ct, macro {(${EObjectDecl(defaultValues).at(c.target.pos)}:$ct);});
@@ -125,40 +136,13 @@ class ViewBuilder {
 
     c.addMember({
       name: '__slots',
-      meta: [{ name: ':nocompletion', params: [], pos: c.target.pos }],
+      meta: [{ name: ':noCompletion', params: [], pos: c.target.pos }],
       kind: FProp('default', 'never', TAnonymous(slotFields), EObjectDecl(slots).at(c.target.pos)),
       access: [],
       pos: c.target.pos,
     });
 
-    var attributes = [];
-
-    {
-      var attributes = TAnonymous(attributes),
-          init = '__initAttributes';
-      if (c.hasConstructor())
-        c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
-      c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) {
-        this.$init(data);
-        super(render);
-      }).getFunction().sure()).isPublic = true;
-
-      var self = Context.getLocalType().toComplexType();
-      var params = switch self {
-        case TPath(t): t.params;
-        default: throw 'assert';
-      }
-      c.addMembers(macro class {
-
-        @:keep function toString() {
-          return $v{c.target.name}+'#'+this.viewId;
-        }
-        
-        @:noCompletion function $init(attributes:$attributes)
-          $b{initSlots};
-        
-      });
-    }
+    var attributes:Array<Member> = [];
 
     for (attr in scrape('attribute', ['attr'])) {
       var a = attr.member,
@@ -169,6 +153,7 @@ class ViewBuilder {
 
         if (optional && expr == null)
           expr = macro @:pos(a.pos) null;
+
         var data = macro @:pos(a.pos) attributes.$name;
 
         if (optional) {
@@ -237,35 +222,31 @@ class ViewBuilder {
         c.target.pos.error('missing field render');
     }
 
-    switch renderer.args {
-      case []:
-      case [{ type: null, name: name}]:
-        renderer.args = [];
-        
-        if (renderer.expr.getString().isSuccess())
-          renderer.expr = macro return @hxx ${renderer.expr};//it's not particular nice to duplicate this logic with tink_lang
+    if (renderer.args.length > 0)
+      c.memberByName('render').sure().pos.error('argument should not be specified');
 
-        renderer.expr = macro @:pos(renderer.expr.pos) {
-          var $name = this;
-          ${renderer.expr};
-        }
-      case [_]:
-        c.memberByName('render').sure().pos.error('argument should not be specified');
-      default:
-    }
 
     for (ref in scrape('ref', true)) {
       var f = ref.member;
       var v = f.getVar(true).sure();
-      var type = v.type;
+      var type = v.type,
+          name = f.name;
+
       f.kind = FProp('default', 'never', macro : coconut.ui.tools.Ref<$type>, macro new coconut.ui.tools.Ref());
+      
+      beforeRender.push(macro @:privateAccess this.$name.reset());
     }
+
+    renderer.expr = beforeRender.concat([switch renderer.expr {
+      case e = { expr: EConst(CString(s)), pos: p }: macro @:pos(p) return hxx($e);
+      case e: e;
+    }]).toBlock(renderer.expr.pos);
 
     var states = [];
 
     for (state in scrape('state')) {
       var s = state.member;
-      states.push(s.name);
+      states.push(s);
       var v = s.getVar(true).sure();
 
       if (v.expr == null)
@@ -287,6 +268,185 @@ class ViewBuilder {
       
       s.kind = FProp('get', 'set', t, null);
     }
+
+    {
+      if (c.hasConstructor())
+        c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
+
+      function processHook(name:String, ?ret:Lazy<ComplexType>, with:Member->Function->Void)
+        return
+          switch c.memberByName(name) {
+            case Success(m): 
+              var f = m.getFunction().sure();
+              if (m.meta.getValues(':noCompletion').length == 0)
+                m.addMeta(':noCompletion');
+              
+              if (ret != null)
+                switch f.ret {
+                  case null: 
+                    f.ret = ret;
+                  case t: 
+                    (macro @:pos(m.pos) ((null:$t):$ret)).typeof().sure();
+                }
+
+              with(m, f);
+
+              f.asExpr(m.name, m.pos);
+            default: macro null;
+          }        
+
+      var shouldUpdate = processHook('shouldViewUpdate', macro : Bool, function (m, f) {
+        if (f.args.length > 0)
+          m.pos.error('${m.name} cannot take arguments');
+      });
+
+      var beforeRender = [];
+      
+      var snapshot = null;
+
+      var getSnapshotBeforeUpdate = processHook('getSnapshotBeforeUpdate', null, function (m, f) {
+        if (f.args.length > 0)
+          m.pos.error('${m.name} cannot take arguments');
+        
+        snapshot = switch f.ret {
+          case null: m.pos.makeBlankType();
+          case v: v;
+        }
+
+        beforeRender.push(macro @:pos(m.pos) snapshot = getSnapshotBeforeUpdate());
+      });
+
+      var viewDidUpdate = processHook('viewDidUpdate', macro : Void, function (m, f) {
+        if (snapshot != null) 
+          switch f.args {
+            case []: f.args.push({ name: 'snapshot', type: snapshot });
+            case [arg]: if (arg.type == null) arg.type = snapshot;
+            default: m.pos.error('${m.name} should have one argument');
+          }
+        else if (f.args.length > 0)
+          m.pos.error('${m.name} cannot take arguments');
+      });
+
+      if (snapshot != null && !viewDidUpdate.expr.match(EConst(CIdent('null'))))
+        viewDidUpdate = macro @:pos(viewDidUpdate.pos) {
+          if (false)
+            (viewDidUpdate:$snapshot->Void);
+          function () viewDidUpdate(snapshot);
+        }
+
+      var viewDidMount = processHook('viewDidMount', macro : Void, function (m, f) {
+        if (f.args.length > 0)
+          m.pos.error('${m.name} cannot take arguments');
+      });
+
+      var viewWillUmount = processHook('viewWillUmount', macro : Void, function (m, f) {
+        if (f.args.length > 0)
+          m.pos.error('${m.name} cannot take arguments');
+      });
+
+      var getDerivedStateFromAttributes = 
+        processHook(
+          'getDerivedStateFromAttributes', 
+          function () return TAnonymous([
+            for (s in states) {
+              
+              var t = s.getVar().sure().type;
+
+              {
+                name: s.name,
+                pos: s.pos,
+                kind: FProp('default', 'never', macro : $t),
+                meta: [{ name: ':optional', params: [], pos: s.pos}],
+              }
+
+            }
+          ]), 
+          function (m, f) {
+
+            if (!m.isStatic)
+              m.pos.error('${m.name} should be static');
+
+            var argType = TAnonymous([
+              for (m in attributes.concat(states)) {
+                name: m.name,
+                pos: m.pos,
+                kind: FProp('get', 'never', m.getVar().sure().type)
+              }
+            ]);
+
+            switch f.args {
+              case []: f.args.push({ name: 'previous', type: argType });
+              case [arg]: 
+                if (arg.type != null) 
+                  m.pos.error('Argument ${arg.name} should not have its type specified');
+                else 
+                  arg.type = argType;
+              default: m.pos.error('${m.name} must have one argument');
+            }
+
+            var applyChanges = [for (s in states) {
+              var name = s.name;
+              macro @:pos(s.pos) if (changed.$name) this.$name = nu.$name;
+            }];
+
+            tracked.unshift(
+              macro @:pos(m.pos) tink.state.Observable.untracked(function () {
+                var nu = getDerivedStateFromAttributes(cast this),
+                    changed = tink.Anon.existentFields(nu);
+
+                $b{applyChanges}
+              })
+            );
+
+          });
+
+      var attributes = TAnonymous(attributes),
+          init = '__initAttributes',
+          track = 
+            if (tracked.length > 0) 
+              macro function track() $b{tracked};
+            else macro null;
+
+      c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) {
+        this.$init(data);
+        
+        var snapshot:$snapshot = null;
+
+        switch ($viewWillUmount) {
+          case null:
+          case v: beforeUnmounting(v);
+        }
+
+        super(
+          render, 
+          $shouldUpdate, 
+          $track,
+          ${
+            if (snapshot == null) macro null
+            else macro function () snapshot = getSnapshotBeforeUpdate()
+          },
+          $viewDidMount,
+          $viewDidUpdate
+        );
+      }).getFunction().sure()).isPublic = true;
+
+      var self = Context.getLocalType().toComplexType();
+      var params = switch self {
+        case TPath(t): t.params;
+        default: throw 'assert';
+      }
+      c.addMembers(macro class {
+        #if debug
+        @:keep function toString() {
+          return $v{c.target.name}+'#'+this.viewId;
+        }
+        #end
+        
+        @:noCompletion function $init(attributes:$attributes)
+          $b{initSlots};
+        
+      });
+    }    
 
     for (cb in afterBuild)
       cb.invoke({

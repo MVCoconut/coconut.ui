@@ -6,16 +6,16 @@ abstract Ref<T>({ current:T }) {
     this = { current: null };
 
   public var current(get, never):T;
-    inline function get_current():T
+    @:to inline function get_current():T
       return this.current;
 
   inline function reset()
     this.current = null;
 
-  // @:to function toCallback():tink.core.Callback<T>
-  //   return toFunction();
+  @:to function toCallback():tink.core.Callback<T>
+    return toFunction();
 
-  @:to function toFunction():T->Dynamic
+  @:to function toFunction():T->Void
     return function (value) return this.current = value;
 
 }
