@@ -78,11 +78,11 @@ class View extends Renderer {
   
   @:noCompletion var __au:Array<Callback<Noise>> = [];
 
-  function afterUpdating(callback:Void->Void) __au.push(callback);
+  @:extern inline function afterUpdating(callback:Void->Void) __au.push(callback);
 
   override function forceUpdate(?callback) {
     __revisionCounter.set(__revisionCounter.value + 1);
-    afterUpdating(callback);
+    if (callback != null) afterUpdating(callback);
   }
 
   macro function hxx(e);

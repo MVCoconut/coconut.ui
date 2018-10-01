@@ -2,12 +2,10 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MVCoconut/Lobby)
 
-This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It cannot do that on its own though, but requires a rendering backend, of which there are currently two: 
+This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is that like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend, of which there are currently two: 
 
-- [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom)
-- [`coconut.react`](https://github.com/MVCoconut/coconut.react)
-
-Note: coconut is built of top of the tinkerbell libraries.
+- [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom): a handcrafted virtual dom renderer that trumps React in speed and size.
+- [`coconut.react`](https://github.com/MVCoconut/coconut.react): an adapter to render coconut views through React allowing you to leverage React's vast ecosystem.
 
 Coconut views use [HXX](https://github.com/haxetink/tink_hxx#readme) to describe their internal structure, which is primarily driven from their `render` method. This is what a view basically looks like:
 
@@ -67,7 +65,7 @@ You define attributes in one of the two following ways:
   - if the type is an anonymous object defined inline, "initialize" the fields
   - otherwise "initialize" the pseudo-field with an object literal.
 
-It should also be noted that writing `@:attribute function name(param:Type):Void` is equivalent to `@:attribute var name:tink.core.Callback<Type>`.
+It should also be noted that writing `@:attribute function name(param:Type):Void` is equivalent to `@:attribute var name:tink.core.Callback<Type>` (see [tink_core]()).
 
 The above is equivalent to:
 
@@ -108,7 +106,7 @@ The main advantage of stateless views is that they are far easier to test. The s
 
 Unless the particular renderer diverges from the norm, the following can be said about how views update:
 
-- attributes passed to views are not evaluated unless the view consuming them evaluates them (be it by passing them to a child that evaluates them). Example:
+- attributes passed to views are not evaluated unless the view consuming them evaluates them (or passes them to a child that evaluates them). Example:
 
   ```haxe
   class Foo extends View {
@@ -219,10 +217,11 @@ Under the hood `button` will be promoted to `Ref<ButtonElement>`:
 ```haxe
 abstract Ref<T> {
   var current(get, never):T;
+  @:to function toFunction():T->Void;
 }
 ```
 
-These refs are reset before rendering.
+These refs are reset just before `render` executes.
 
 ## Life cycle callbacks
 
@@ -375,5 +374,11 @@ function viewDidMount()
 ### afterUpdating
 
 ```haxe
-function afterUpdating():Void;
+function afterUpdating(cb:Void->Void):Void;
 ```
+
+If you wish to run a function after the next update, you can schedule it per `afterUpdating`.
+
+### Avoiding typos in callbacks
+
+To avoid typos when declaring life cycle callbacks, coconut warns if it sees functions that have names similar to the supported callbacks. To make absolutely sure your callback is correctly named, you may add `override` which is de-facto certain to cause an error if you mistype the name.

@@ -273,11 +273,14 @@ class ViewBuilder {
       if (c.hasConstructor())
         c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
 
+      var notFound:Array<Member> = [];
+
       function processHook(name:String, ?ret:Lazy<ComplexType>, with:Member->Function->Void)
         return
           switch c.memberByName(name) {
             case Success(m): 
               var f = m.getFunction().sure();
+              m.overrides = false;
               if (m.meta.getValues(':noCompletion').length == 0)
                 m.addMeta(':noCompletion');
               
@@ -292,7 +295,14 @@ class ViewBuilder {
               with(m, f);
 
               f.asExpr(m.name, m.pos);
-            default: macro null;
+            default: 
+              notFound.push({
+                name: name,
+                pos: c.target.pos,
+                kind: FProp('default', 'never', macro : Dynamic),
+                meta: [{ name: ':optional', params: [], pos: c.target.pos }]
+              });
+              macro null;
           }        
 
       var shouldUpdate = processHook('shouldViewUpdate', macro : Bool, function (m, f) {
@@ -399,6 +409,15 @@ class ViewBuilder {
             );
 
           });
+
+      var notFound = TAnonymous(notFound);
+
+      for (m in c)
+        if (m.name.charAt(3) != '_' && m.kind.match(FFun(_)) && m.metaNamed(':noCompletion').length == 0)
+          switch notFound.getFieldSuggestions(m.name) {
+            case '':
+            case v: m.pos.warning('Potential typo$v');
+          }
 
       var attributes = TAnonymous(attributes),
           init = '__initAttributes',
