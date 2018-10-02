@@ -25,6 +25,9 @@ class Slot<T> implements ObservableObject<T> {
       case v: v;
     }
   }
+
+  public function isValid()
+    return data != null && (data:ObservableObject<T>).isValid();
   
   public function poll() {
     if (last == null) {
@@ -42,7 +45,9 @@ class Slot<T> implements ObservableObject<T> {
   }
 
   function measure()
-    return cache.cached(data.measure);
+    return 
+      if (isValid()) data.measure();
+      else cache.cached(data.measure);
 
   public function observe():Observable<T>
     return this;
