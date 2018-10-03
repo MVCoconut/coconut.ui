@@ -41,7 +41,7 @@ class Slot<T> implements ObservableObject<T> {
   }
 
   public function isValid()
-	return data == null || (data:ObservableObject<T>).isValid();
+    return data == null || (data:ObservableObject<T>).isValid();
 
   public function observe():Observable<T>
     return this;
@@ -51,7 +51,7 @@ class Slot<T> implements ObservableObject<T> {
     if (last != null) {
       link.dissolve();
       if (data != null) {
-        var m = Observable.untracked(measure);
+        var m = Observable.untracked(data.measure);
         
         if (compare(m.value, last.a))
           link = m.becameInvalid.handle(last.b.trigger);
