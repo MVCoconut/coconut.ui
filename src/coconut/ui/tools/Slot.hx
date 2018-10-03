@@ -31,7 +31,7 @@ class Slot<T> implements ObservableObject<T> {
         last = new Pair(null, Future.trigger());
       }
       else {
-        var m = measure();
+        var m = data.measure();
         last = new Pair(m.value, Future.trigger());
         link = m.becameInvalid.handle(last.b.trigger);
       }
@@ -40,8 +40,8 @@ class Slot<T> implements ObservableObject<T> {
     return new Measurement(last.a, last.b);
   }
 
-  function measure()
-    return data.measure();
+  public function isValid()
+	return data == null || data.isValid();
 
   public function observe():Observable<T>
     return this;
