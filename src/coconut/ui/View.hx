@@ -80,7 +80,7 @@ class View extends Renderer {
 
   @:extern inline function afterUpdating(callback:Void->Void) __au.push(callback);
 
-  override function forceUpdate(?callback) {
+  function forceUpdate(?callback) {
     __revisionCounter.set(__revisionCounter.value + 1);
     if (callback != null) afterUpdating(callback);
   }
