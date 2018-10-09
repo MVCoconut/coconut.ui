@@ -25,7 +25,7 @@ class Tests extends haxe.unit.TestCase {
   function testNested() {
     var s = new State('foo');
     var foobar = new FooBar();
-    mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
+    mount(hxx('<Nestor plain="yohoho" inner={Observable.const(s.observe())} {...foobar} />'));
     
     Observable.updateAll();
     

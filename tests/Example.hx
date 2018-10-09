@@ -2,9 +2,7 @@ package ;
 
 class Example extends coconut.ui.View {
 
-  @:attribute(
-    comparator = function (a, b) return a.value == b.value
-  ) var foo:tink.state.Observable<Int>;
+  @:attribute var foo:Int;
   @:attribute var bar:Int;
   @:attribute var opt:Float = .5;
   @:attribute @:skipCheck var arr:Array<Int> = [];
@@ -19,7 +17,7 @@ class Example extends coconut.ui.View {
     return @hxx '
       <div>
         {redraws++}
-        <span class="foo">{foo.value}</span>
+        <span class="foo">{foo}</span>
         <span class="bar">{bar}</span>
         <span class="baz">{baz}</span>
       </div>

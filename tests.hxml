@@ -2,6 +2,7 @@
 -cp tests
 -lib coconut.vdom
 -main Tests
+# Example3
 #ExampleListView
 -lib hx3compat
 #--times
