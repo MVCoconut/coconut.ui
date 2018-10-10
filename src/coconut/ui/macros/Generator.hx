@@ -43,9 +43,9 @@ class Generator extends tink.hxx.Generator {
       case None: t;
     }, root);
 
-  override function makeAttribute(name:StringAt, value:Expr):Part {
+  override function makeAttribute(name:StringAt, value:Expr, ?quotes):Part {
     
-    var ret = super.makeAttribute(name, value);
+    var ret = super.makeAttribute(name, value, quotes);
     var f = unboxValues(ret.getValue);
     
     if (Context.defined('display') && value.has(function (e) return e.expr.match(EDisplay(_, _)))) {
