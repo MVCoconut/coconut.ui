@@ -234,7 +234,9 @@ class ViewBuilder {
 
       f.kind = FProp('default', 'never', macro : coconut.ui.tools.Ref<$type>, macro new coconut.ui.tools.Ref());
       
+      #if coconut_ui_reset_refs
       beforeRender.push(macro @:privateAccess this.$name.reset());
+      #end
     }
 
     renderer.expr = beforeRender.concat([switch renderer.expr {
