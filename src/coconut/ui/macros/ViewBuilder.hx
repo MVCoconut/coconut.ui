@@ -351,7 +351,7 @@ class ViewBuilder {
           m.pos.error('${m.name} cannot take arguments');
       });
 
-      var viewWillUmount = processHook('viewWillUmount', macro : Void, function (m, f) {
+      var viewWillUnmount = processHook('viewWillUnmount', macro : Void, function (m, f) {
         if (f.args.length > 0)
           m.pos.error('${m.name} cannot take arguments');
       });
@@ -433,11 +433,6 @@ class ViewBuilder {
         
         var snapshot:$snapshot = null;
 
-        switch ($viewWillUmount) {
-          case null:
-          case v: beforeUnmounting(v);
-        }
-
         super(
           render, 
           $shouldUpdate, 
@@ -449,6 +444,12 @@ class ViewBuilder {
           $viewDidMount,
           $viewDidUpdate
         );
+        
+        switch ($viewWillUnmount) {
+          case null:
+          case v: beforeUnmounting(v);
+        }
+
       }).getFunction().sure()).isPublic = true;
 
       var self = Context.getLocalType().toComplexType();
