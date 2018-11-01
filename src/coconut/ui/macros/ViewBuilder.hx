@@ -428,8 +428,8 @@ class ViewBuilder {
               macro function track() $b{tracked};
             else macro null;
 
-      c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) {
-        this.$init(data);
+      c.getConstructor((macro @:pos(c.target.pos) function (__coco_data:$attributes) {
+        this.$init(__coco_data);
         
         var snapshot:$snapshot = null;
 
