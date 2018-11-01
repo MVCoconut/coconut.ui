@@ -43,7 +43,7 @@ class Slot<T> implements ObservableObject<T> {
   public function isValid()
     return data == null || (data:ObservableObject<T>).isValid();
 
-  public function observe():Observable<T>
+  public inline function observe():Observable<T>
     return this;
 
   public function setData(data:Observable<T>) {
