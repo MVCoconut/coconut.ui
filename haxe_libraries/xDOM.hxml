@@ -1,0 +1,6 @@
+-D xDOM=0.1.0
+# @install: lix --silent download "gh://github.com/back2dos/xDOM#a3e3f092cd62db94a06edf40f1c819cf38fe27c1" into xDOM/0.1.0/github/a3e3f092cd62db94a06edf40f1c819cf38fe27c1
+-lib tink_macro
+-lib tink_domspec
+-lib pick.first
+-cp ${HAXE_LIBCACHE}/xDOM/0.1.0/github/a3e3f092cd62db94a06edf40f1c819cf38fe27c1/src
