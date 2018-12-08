@@ -108,9 +108,18 @@ class ViewBuilder {
 
       if (!skipCheck)
         for (f in ret)
-          if (f.member.extractMeta(':tracked').isSuccess()) {
-            var name = f.member.name;
-            tracked.push(macro this.$name);
+          switch f.member.extractMeta(':tracked') {
+            case Success({ params: params }):
+
+              var name = f.member.name;
+              
+              if (params.length == 0)
+                tracked.push(macro this.$name);
+              else
+                for (p in params)
+                  tracked.push(p.substitute({ _ : macro @:pos(p.pos) this.$name }));
+
+            default:
           }
 
       return ret;
@@ -428,8 +437,8 @@ class ViewBuilder {
               macro function track() $b{tracked};
             else macro null;
 
-      c.getConstructor((macro @:pos(c.target.pos) function (__coco_data:$attributes) {
-        this.$init(__coco_data);
+      c.getConstructor((macro @:pos(c.target.pos) function (data:$attributes) {
+        this.$init(data);
         
         var snapshot:$snapshot = null;
 
