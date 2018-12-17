@@ -180,6 +180,15 @@ Unless the particular renderer diverges from the norm, the following can be said
 
 On occasion, you may wish for a certain state or attribute to cause a rerender, regardless of whether or not it was accessed in the `render` function. The most common case is a revision counter that is bumped when some value that is not (directly) observable has changed (e.g. your view's size on screen). Regardless of the use case, if you mark a state/attribute as `@:tracked` then changes to it will cause invalidation.
 
+You may also specify expressions as parameters, with `_` taking the place of the attribute to track sub-expressions.
+
+Example:
+
+```haxe
+@:tracked(_.get('Paris').population)
+@:attribute var cities:ObservableMap<String, City>;
+```
+
 ## Refs
 
 Just like React, coconut supports refs to get access to the views you're creating.
