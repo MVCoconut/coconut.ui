@@ -1,3 +1,4 @@
 class Example3 extends coconut.ui.View {
-  function render(_) '<div></div>'; 
+  @:attribute var blargh:Int = 42;
+  function render() '<div></div>'; 
 }

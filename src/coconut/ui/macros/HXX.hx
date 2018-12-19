@@ -4,6 +4,7 @@ package coconut.ui.macros;
   #error
 #end
 import haxe.macro.Expr;
+import tink.hxx.*;
 using tink.MacroApi;
 
 class HXX {
@@ -11,7 +12,7 @@ class HXX {
   static public function parse(e:Expr) {
     var ctx = generator.createContext();
     return ctx.generateRoot(
-      tink.hxx.Parser.parseRoot(e, { 
+      Parser.parseRoot(e, { 
         defaultExtension: 'hxx', 
         noControlStructures: false, 
         defaultSwitchTarget: macro __data__,

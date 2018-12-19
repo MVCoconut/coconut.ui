@@ -8,8 +8,8 @@ class TodoItemView extends coconut.ui.View {
   var attributes:TodoItemData;
   function render() '
     <div class="todo-item">
-      <input type="checkbox" checked={completed} onchange={ontoggle(event.target.checked)} />
-      <input type="text" value={description} onchange={onedit(event.target.value)} />
+      <input type="checkbox" checked={completed} onchange={ontoggle(event.src.checked)} />
+      <input type="text" value={description} onchange={onedit(event.src.value)} />
     </div>
   ';
 }
