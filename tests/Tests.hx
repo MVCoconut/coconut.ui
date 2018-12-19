@@ -18,9 +18,8 @@ class Tests extends haxe.unit.TestCase {
   static inline function q(s:String)
     return document.querySelector(s);
 
-  static inline function mount(o) {
-    document.body.appendChild(o.toElement());
-  }
+  static inline function mount(o) 
+    coconut.ui.Renderer.mount(document.body.appendChild(document.createDivElement()), o);
 
   // function testNested() {
   //   var s = new State('foo');
@@ -73,7 +72,7 @@ class Tests extends haxe.unit.TestCase {
     var s = new State(4);
 
     mount(hxx('<Example key={s} foo={Observable.const(s.observe())} bar={s} />'));
-    mount(hxx('<Example foo={s.observe()} bar={s} />'));
+    mount(hxx('<Example foo={Observable.const(s.observe())} bar={s} />'));
     
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
@@ -147,8 +146,8 @@ class Tests extends haxe.unit.TestCase {
   function testModel() {
     var model = new Foo({ foo: 4 });
 
-    var e = new Example2({ model: model });
-    mount(e);
+    var e = null;//new Example2({ model: model });
+    mount(hxx('<Example2 ref={function (inst) e = inst} model={model} />'));
     
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
@@ -167,8 +166,8 @@ class Tests extends haxe.unit.TestCase {
   function testModelInCustom() {
     
     var variants = [
-      function (model:Foo) return hxx('<Example {...model} />'), 
-      function (model:Foo) return hxx('<Example {...model} bar={model.bar} />')
+      function (model:Foo) return hxx('<Example foo={Observable.const(Observable.auto(function () return model.foo))} {...model} />'), 
+      function (model:Foo) return hxx('<Example foo={Observable.const(Observable.auto(function () return model.foo))} {...model} bar={model.bar} />')
     ];
     for (render in variants) {
       var model = new Foo({ foo: 4 });

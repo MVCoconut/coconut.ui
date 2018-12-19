@@ -1,7 +1,6 @@
--D coconut.ui=0.6.1
--cp src
-extraParams.hxml
 -lib tink_hxx
 -lib coconut.data
--lib tink_lang
 -lib tink_anon
+-lib tink_lang
+-cp src
+-D coconut_ui
