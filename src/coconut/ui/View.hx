@@ -11,7 +11,7 @@ class View extends Renderer {
     
   @:keep public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
   
-  var __revisionCounter = new State(0);
+  var _coco_revision = new State(0);
 
   public function new(
       render:Void->RenderResult, 
@@ -26,12 +26,12 @@ class View extends Renderer {
         last = null,
         hasBeforeRerender = beforeRerender != null,
         hasUpdated = updated != null,
-        lastRev = __revisionCounter.value; 
+        lastRev = _coco_revision.value; 
 
     super(
       Observable.auto(
         function renderView() {
-          var curRev = __revisionCounter.value;
+          var curRev = _coco_revision.value;
           if (track != null) track();
 
           if (firstTime) firstTime = false;
@@ -81,7 +81,7 @@ class View extends Renderer {
   @:extern inline function afterUpdating(callback:Void->Void) __au.push(callback);
 
   function forceUpdate(?callback) {
-    __revisionCounter.set(__revisionCounter.value + 1);
+    _coco_revision.set(_coco_revision.value + 1);
     if (callback != null) afterUpdating(callback);
   }
 
