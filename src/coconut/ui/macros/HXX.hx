@@ -3,7 +3,7 @@ package coconut.ui.macros;
 #if !macro
   #error
 #end
-import haxe.macro.Expr;
+import haxe.macro.*;
 import tink.hxx.*;
 using tink.MacroApi;
 
@@ -16,7 +16,8 @@ class HXX {
         defaultExtension: 'hxx', 
         noControlStructures: false, 
         defaultSwitchTarget: macro __data__,
-        isVoid: ctx.isVoid
+        isVoid: ctx.isVoid,
+        fragment: Context.definedValue('hxx_fragment')
       })
     );
   }
