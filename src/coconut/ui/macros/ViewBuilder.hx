@@ -184,6 +184,14 @@ class ViewBuilder {
           kind: FVar(macro : coconut.ui.tools.Slot<$type>)
         });
 
+        switch attr.member.pos.getOutcome(type.toType()).reduce() {
+          case TDynamic(null):
+            attr.member.pos.error('Attribute `${attr.member.name}` must not be Dynamic');
+          case TAbstract(_.get() => { pack: [], name: 'Any' }, _):
+            attr.member.pos.error('Attribute `${attr.member.name}` must not be Any');
+          default:
+        }
+
         a.kind = FProp('get', 'never', type, null);
         a.isPublic = true;
 
