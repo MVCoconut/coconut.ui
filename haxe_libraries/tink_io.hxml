@@ -1,0 +1,5 @@
+-D tink_io=0.6.2
+# @install: lix --silent download "haxelib:/tink_io#0.6.2" into tink_io/0.6.2/haxelib
+-lib tink_chunk
+-lib tink_streams
+-cp ${HAXE_LIBCACHE}/tink_io/0.6.2/haxelib/src
