@@ -9,7 +9,7 @@ using tink.CoreApi;
 @:observable
 class View extends Renderer {
     
-  @:keep public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
+  public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
   
   var _coco_revision = new State(0);
 
