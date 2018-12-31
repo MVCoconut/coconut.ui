@@ -1,6 +1,7 @@
 {
     "version": "0.1.0",
     "command": "haxelib",
+    "isShellCommand": true,
     "args": ["run", "travix", "js"],
     "problemMatcher": "$haxe"
 }
