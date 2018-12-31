@@ -12,6 +12,7 @@ using tink.CoreApi;
 
 class ViewBuilder {
   static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>> = new Queue();
+  
   static function check(pos:Position, type:Type)
     switch coconut.data.macros.Models.check(type) {
       case []: 
@@ -487,33 +488,32 @@ class ViewBuilder {
       });
     }    
 
-      for (f in c)
-        switch [f.kind, f.extractMeta(':computed')] {
-          case [FVar(t, e), Success(m)]:
-            
-            if (m.params.length > 0)
-              m.params[0].reject('@:computed does not support parameters');
-            
-            if (e == null)
-              m.pos.error('@:computed field requires expression');
+    for (f in c)
+      switch [f.kind, f.extractMeta(':computed')] {
+        case [FVar(t, e), Success(m)]:
+          
+          if (m.params.length > 0)
+            m.params[0].reject('@:computed does not support parameters');
+          
+          if (e == null)
+            m.pos.error('@:computed field requires expression');
 
-            if (t == null)
-              m.pos.error('@:computed field requires type');
+          if (t == null)
+            m.pos.error('@:computed field requires type');
 
-            var internal = '__coco_${f.name}',
-                get = 'get_${f.name}';
+          var internal = '__coco_${f.name}',
+              get = 'get_${f.name}';
 
-            c.addMembers(macro class {
-              @:noCompletion private var $internal:tink.state.Observable<$t> = 
-                @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
-              inline function $get() return $i{internal}.value;
-            });
+          c.addMembers(macro class {
+            @:noCompletion private var $internal:tink.state.Observable<$t> = 
+              @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
+            inline function $get() return $i{internal}.value;
+          });
 
-            f.kind = FProp('get', 'never', t);
-          default:
-        }
+          f.kind = FProp('get', 'never', t);
+        default:
+      }
 
-    }]);
     for (cb in afterBuild)
       cb.invoke({
         target: c,

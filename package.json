@@ -1,0 +1,10 @@
+{
+  "name": "@haxe/coconut.ui",
+  "scripts": {
+    "postinstall": "lix download",
+    "test": "lix run travix js"
+  },
+  "dependencies": {
+    "lix": "=15.3.4"
+  }
+}

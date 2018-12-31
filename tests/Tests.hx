@@ -71,8 +71,8 @@ class Tests extends haxe.unit.TestCase {
   function testCustom() {
     var s = new State(4);
 
-    mount(hxx('<Example key={s} foo={Observable.const(s.observe())} bar={s} />'));
-    mount(hxx('<Example foo={Observable.const(s.observe())} bar={s} />'));
+    mount(hxx('<Example key={s} foo={s} bar={s} />'));
+    mount(hxx('<Example foo={s} bar={s} />'));
     
     assertEquals('4', q('.foo').innerHTML);
     assertEquals('4', q('.bar').innerHTML);
@@ -166,8 +166,8 @@ class Tests extends haxe.unit.TestCase {
   function testModelInCustom() {
     
     var variants = [
-      function (model:Foo) return hxx('<Example foo={Observable.const(Observable.auto(function () return model.foo))} {...model} />'), 
-      function (model:Foo) return hxx('<Example foo={Observable.const(Observable.auto(function () return model.foo))} {...model} bar={model.bar} />')
+      function (model:Foo) return hxx('<Example foo={model.foo} {...model} />'), 
+      function (model:Foo) return hxx('<Example foo={model.foo} {...model} bar={model.bar} />')
     ];
     for (render in variants) {
       var model = new Foo({ foo: 4 });

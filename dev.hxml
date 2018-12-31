@@ -1,0 +1,4 @@
+tests.hxml
+-lib coconut.ui
+-lib travix
+-js bin/js/tests.js

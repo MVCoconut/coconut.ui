@@ -3,7 +3,7 @@ class ExampleListView extends coconut.ui.View {
   function render() '
     <div class="foo-list">
       <for {i in list.items}>
-        <Example key={i} foo={Observable.const(i.foo)} {...i} />
+        <Example key={i} foo={i.foo} {...i} />
       </for>
     </div>
   ';
