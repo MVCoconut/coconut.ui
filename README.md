@@ -4,16 +4,18 @@
 
 This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is that like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend, of which there are currently two: 
 
-- [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom): a handcrafted virtual dom renderer that trumps React in speed and size.
+- [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom): a hand crafted virtual dom renderer that trumps React in speed and size.
 - [`coconut.react`](https://github.com/MVCoconut/coconut.react): an adapter to render coconut views through React allowing you to leverage React's vast ecosystem.
 
 Coconut views use [HXX](https://github.com/haxetink/tink_hxx#readme) to describe their internal structure, which is primarily driven from their `render` method. This is what a view basically looks like:
 
 ```haxe
 class Stepper extends coconut.ui.View {
+  
   @:attribute var step:Int = 1;
   @:attribute function onconfirm(value:Int);
   @:state var value:Int = 0;
+
   function render() '
     <div class="counter">
       <button onclick={value -= step}>-</button>
@@ -96,12 +98,6 @@ States are internal to your view. They allow you to hold data that is only relev
 
 Your views may also hold plain fields for whatever purpose. Note though that updates to those will generally not cause rerendering.
 
-### When to go Stateful?
-
-Down the line you will almost always want to move state out of views - except when it's clearly transitory. On the other hand, all software development is a meandering learning process. You may find yourself working on the UI, the application model and the business logic at the same time. It's a system with many moving parts and there's really two important ends to it: how to cleanly model your business logic and how to nicely interface with the user. Any layers inbetween may require *radical* changes as those two ends evolve, which is why coconut gives you the option to put application state directly into the view at first and factor it out as it becomes more obvious along which lines to actually do that. In theory you may even start out with a view that depends solely on its own state.
-
-The main advantage of stateless views is that they are far easier to test. The stateful application logic on the other hand can be tested in isolation from the views too.
-
 ## Laziness, granular invalidation and batched rerendering
 
 Unless the particular renderer diverges from the norm, the following can be said about how views update:
@@ -146,12 +142,14 @@ Unless the particular renderer diverges from the norm, the following can be said
 
   Note: having side effects such as `renderCounter++` in your render function is bad practice, but here it's meant to illustrate whether or not the component rerenders. 
   
-  What's important to note about this example is that clicking on the `Button` will not rerender `Container` (but only the `Button`), while clicking on the plain `button` will. You can use this behavior to contain the effect of state updates. In fact you can boil it down to this simple pattern:
+  What's important to note about this example is that clicking on the `Button` will not rerender `Container` (but only the `Button`), while clicking on the plain `button` will. You can use this behavior to contain the effect of state updates. There is a very simple view included in coconut.ui to leverage just that:
 
   ```haxe
+  package coconut.ui;
+
   class Isolated extends View {
     @:attribute var children:RenderResult;
-    function render() return child;
+    function render() return children;
   }
   ```
 
@@ -229,8 +227,6 @@ abstract Ref<T> {
   @:to function toFunction():T->Void;
 }
 ```
-
-These refs are reset just before `render` executes.
 
 ## Life cycle callbacks
 
