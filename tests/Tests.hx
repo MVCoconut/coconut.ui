@@ -290,7 +290,7 @@ class Tests extends haxe.unit.TestCase {
 class FooListView extends coconut.ui.View {
   @:attr var list:ListModel<Foo>;
   function render() '
-    <div class="foo-list">
+    <div class="foo-list" style="background: blue">
       <for {i in list.items}>
         <Example2 model={i} />
       </for>
