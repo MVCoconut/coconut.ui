@@ -1,0 +1,4 @@
+-D tink_url=0.4.1
+# @install: lix --silent download "haxelib:/tink_url#0.4.1" into tink_url/0.4.1/haxelib
+-lib tink_stringly
+-cp ${HAXE_LIBCACHE}/tink_url/0.4.1/haxelib/src

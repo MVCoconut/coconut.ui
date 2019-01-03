@@ -18,22 +18,25 @@ class Tests extends haxe.unit.TestCase {
   static inline function q(s:String)
     return document.querySelector(s);
 
-  static inline function mount(o) 
-    coconut.ui.Renderer.mount(document.body.appendChild(document.createDivElement()), o);
+  static inline function mount(o) {
+    var wrapper = document.createElement('wrapper-element');
+    document.body.appendChild(wrapper);
+    coconut.ui.Renderer.mount(wrapper, o);
+  }
 
   // function testNested() {
   //   var s = new State('foo');
   //   var foobar = new FooBar();
   //   mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
     
-  //   Observable.updateAll();
+  //   Renderer.updateAll();
     
   //   var beforeOuter = Nestor.redraws,
   //       beforeInner = Example4.redraws;
 
   //   s.set('bar');
     
-  //   Observable.updateAll();
+  //   Renderer.updateAll();
     
   //   assertEquals(beforeOuter, Nestor.redraws);
   //   assertEquals(beforeInner + 1, Example4.redraws);
@@ -47,24 +50,24 @@ class Tests extends haxe.unit.TestCase {
     s.observe().bind(log.push);
     s.setData(Observable.const(42));
     assertEquals('', log.join(','));
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42', log.join(','));
     s.setData(Observable.const(0));
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42,0', log.join(','));
     s.setData(s1);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42,0', log.join(','));
     s1.set(1000);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42,0,1000', log.join(','));
     s.setData(s2);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42,0,1000', log.join(','));    
 
     s1.set(1001);
     s2.set(1002);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42,0,1000,1002', log.join(','));    
   }  
 
@@ -78,7 +81,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('4', q('.bar').innerHTML);
 
     s.set(5);
-    Observable.updateAll();
+    Renderer.updateAll();
 
     assertEquals('5', q('.foo').innerHTML);
     assertEquals('5', q('.bar').innerHTML);
@@ -113,7 +116,7 @@ class Tests extends haxe.unit.TestCase {
     var id = elt.getAttribute('data-id');
     assertTrue(id != null);
     s.set(17);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals(elt, q('.example4'));
     assertEquals(id, elt.getAttribute('data-id'));
     assertEquals('17', elt.innerHTML);
@@ -137,7 +140,7 @@ class Tests extends haxe.unit.TestCase {
     assertTrue(id != null);
     assertEquals('42', q('.example4').innerHTML);
     s.set('321');
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('321', q('.example4').innerHTML);
     assertEquals(id, q('.example4').getAttribute('data-id'));
     
@@ -154,12 +157,12 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('0', q('.baz').innerHTML);
 
     model.foo = 5;
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('5', q('.foo').innerHTML);
     assertEquals('5', q('.bar').innerHTML);
 
     e.baz = 42;
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('42', q('.baz').innerHTML);
   }  
   
@@ -177,7 +180,7 @@ class Tests extends haxe.unit.TestCase {
       assertEquals('4', q('.bar').innerHTML);
 
       model.foo = 5;
-      Observable.updateAll();
+      Renderer.updateAll();
       assertEquals('5', q('.foo').innerHTML);
       assertEquals('5', q('.bar').innerHTML);
       
@@ -200,11 +203,13 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('test', edit.value);
     desc.set('foo');
     assertEquals('test', edit.value);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals('foo', edit.value);
+    #if !react
     edit.value = "bar";
     edit.dispatchEvent(new js.html.Event("change"));//gotta love this
     assertEquals('bar', desc);
+    #end
   }
   
   function testPropViewReuse() {
@@ -220,21 +225,21 @@ class Tests extends haxe.unit.TestCase {
 
     var before = Example.created.length;
     list.items = models;
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals(before, Example.created.length);
 
     list.items = models.concat(models);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals(before + 10, Example.created.length);
     assertEquals(redraws + 20, Example.redraws);    
 
     states[0].set(100);
-    Observable.updateAll();
+    Renderer.updateAll();
     
     assertEquals(redraws + 22, Example.redraws);    
 
     list.items = models;
-    Observable.updateAll();    
+    Renderer.updateAll();    
 
     assertEquals(redraws + 22, Example.redraws);    
   }
@@ -257,17 +262,20 @@ class Tests extends haxe.unit.TestCase {
 
     var before = Example2.created.length;
     list.items = models;
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals(before, Example2.created.length);
 
     list.items = models.concat(models);
-    Observable.updateAll();
+    Renderer.updateAll();
     assertEquals(before + 10, Example2.created.length);
     assertEquals(redraws + 20, Example2.redraws);
     
   }
   
   static function main() {
+    
+    travix.Logger.println('yo');
+
     var runner = new haxe.unit.TestRunner();
     runner.add(new Tests());
     

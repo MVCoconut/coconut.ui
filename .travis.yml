@@ -13,4 +13,5 @@ install:
   - haxelib install travix
 
 script:
-  - haxelib run travix js
+  - haxelib run travix js -lib coconut.vdom
+  - haxelib run travix js with-react.hxml

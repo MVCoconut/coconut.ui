@@ -8,5 +8,4 @@ class Example5<T> extends View {
       {...renderer({ data: data })}
     </div>
   ';
-
 }

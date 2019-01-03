@@ -1,5 +1,6 @@
 -dce full
 -cp tests
--lib coconut.vdom
+with-react.hxml
 -main Tests
+# Example5
 -lib hx3compat
