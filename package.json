@@ -2,7 +2,7 @@
   "name": "@haxe/coconut.ui",
   "scripts": {
     "postinstall": "lix download",
-    "test": "lix run travix js"
+    "test": "lix run travix js -lib coconut.vdom"
   },
   "dependencies": {
     "lix": "=15.3.4"

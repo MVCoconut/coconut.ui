@@ -1,4 +1,4 @@
 tests.hxml
--lib coconut.ui
+-lib coconut.vdom
 -lib travix
 -js bin/js/tests.js

@@ -1,6 +1,4 @@
 -dce full
 -cp tests
-with-react.hxml
 -main Tests
-# Example5
 -lib hx3compat
