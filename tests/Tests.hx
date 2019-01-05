@@ -149,7 +149,7 @@ class Tests extends haxe.unit.TestCase {
   function testModel() {
     var model = new Foo({ foo: 4 });
 
-    var e = null;//new Example2({ model: model });
+    var e = null;
     mount(hxx('<Example2 ref={function (inst) e = inst} model={model} />'));
     
     assertEquals('4', q('.foo').innerHTML);
@@ -297,55 +297,6 @@ class FooListView extends coconut.ui.View {
     </div>
   ';
 }
-
-// typedef WindowConfig = { 
-//   var className(default, never):String;
-//   var title(default, never):RenderResult;
-//   var content(default, never):RenderResult;
-//   var parts(default, never):Iterable<Int>;
-// }
-
-// class Container extends View<{ ?className:String, children: RenderResult }> {
-//   function render() '
-//     <div class={className}>{children}</div>
-//   ';
-// }
-
-// class Window<C:WindowConfig> extends View<C> {
-//   @:signal var closed;
-//   function render() '
-//     <div class={className}>
-//       <for {p in parts}>
-//       </for>
-//     </div>
-//   ';
-// }
-
-class Lift extends View {
-  @:attribute var foo:Iterable<String>;
-  function render() '
-    <div>{[for (v in foo) v].join("-")}</div>
-  ';
-}
-
-// class Sub extends Window<WindowConfig> {
-//   function foo()
-//     _closed.trigger(Noise);
-// }
-
-// class SubSub extends Sub {
-//   override function render() '
-//     <div class={"test"}></div>
-//   ';
-// }
-
-// class CtorSub extends Sub { //TODO: this should be made to compile
-//   public function new() {
-//     @hxx '
-//       <super class="super" title="yo" content="yeah" parts={[0,1,2]} />
-//     ';
-//   }
-// }
 
 class MyView extends View {
   function render() '
