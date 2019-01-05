@@ -220,7 +220,7 @@ class Tests extends haxe.unit.TestCase {
             <video>DIV</video>
           </if>
           <hr/>
-          $inst     
+          ${inst#if react.reactify()#end}
           <Outer>YEAH ${r.bar}</Outer>
           <Inst ref={instRef} />
         </blub>
@@ -236,8 +236,9 @@ class Tests extends haxe.unit.TestCase {
 
     assertFalse(blargh.current.hidden);
     assertFalse(instRef.current == null);
+    #if !react
     assertEquals('I am native!', q('.native-element').innerHTML);
-
+    #end
     assertEquals(0, inst.count);
     assertEquals(0, instRef.current.count);
 
@@ -438,12 +439,16 @@ class Inst extends View {
 
   @:state public var count:Int = 0;
 
-  var elt = {
-    var div = document.createDivElement();
-    div.className = 'native-element';
-    div.innerHTML = 'I am native!';
-    div;
-  }
+  var elt = 
+    #if react
+      null;
+    #else {
+      var div = document.createDivElement();
+      div.className = 'native-element';
+      div.innerHTML = 'I am native!';
+      div;
+    }
+    #end
 
   function render() '
     <div class="inst">
