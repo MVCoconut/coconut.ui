@@ -1,4 +1,5 @@
 tests.hxml
 -lib coconut.vdom
+# with-react.hxml
 -lib travix
 -js bin/js/tests.js

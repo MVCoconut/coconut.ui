@@ -11,12 +11,24 @@ using tink.CoreApi;
 
 class Tests extends haxe.unit.TestCase {
 
+  static var entries = [];
+  static public function log(msg:String, ?pos:haxe.PosInfos)
+    entries.push('${pos.className}:$msg');
+
+  function expectLog(expected:Array<String>, ?pos:haxe.PosInfos) 
+    assertEquals(expected.join('\n'), entries.splice(0, entries.length).join('\n'), pos);
+
   override function setup() {
     document.body.innerHTML = '';
   }
 
   static inline function q(s:String)
     return document.querySelector(s);
+
+  static function qs(s:String) {
+    var ret:Array<js.html.Element> = cast document.querySelectorAll(s);
+    return [for (x in ret) x];
+  }
 
   static inline function mount(o) {
     var wrapper = document.createElement('wrapper-element');
@@ -130,10 +142,10 @@ class Tests extends haxe.unit.TestCase {
       return hxx('<Example4 key={"42"} value={value} />');
 
     mount(hxx('
-      <Example5 data={s.value}>
-        <renderer>
+      <Example5 data={s}>
+        <renderData>
           {render(data)}
-        </renderer>
+        </renderData>
       </Example5>
     '));
     var id = q('.example4').getAttribute('data-id');
@@ -186,8 +198,89 @@ class Tests extends haxe.unit.TestCase {
       
       setup();
     }
+
   }  
-  
+
+  function testMisc() {//horay for naming!
+
+    var r = new Rec({ foo: 42, bar: 0 }),
+        inst = new Inst({}),
+        instRef = new coconut.ui.Ref<Inst>(),
+        blargh = new coconut.ui.Ref();
+    
+    mount(hxx('
+      <Blargh ref={blargh}>
+        <blub>
+          Foo: {foo}
+          <button onclick={r.update({ foo: r.foo + 1})}>{r.foo}</button>
+          <Btn onclick={{ var x = 1 + Std.random(10); function () r.update({ foo: r.foo + x}); }} />
+          <if {r.foo == 42}>
+            <video muted></video>
+          <else>
+            <video>DIV</video>
+          </if>
+          <hr/>
+          $inst     
+          <Outer>YEAH ${r.bar}</Outer>
+          <Inst ref={instRef} />
+        </blub>
+      </Blargh>
+    '));  
+
+    expectLog([
+      'Outer:render',
+      'Inner:render',
+      'Inst:mounted',
+      'Inst:mounted',
+    ]);
+
+    assertFalse(blargh.current.hidden);
+    assertFalse(instRef.current == null);
+    assertEquals('I am native!', q('.native-element').innerHTML);
+
+    assertEquals(0, inst.count);
+    assertEquals(0, instRef.current.count);
+
+    for (btn in qs('.inst>button'))
+      btn.click();
+
+    assertEquals(1, inst.count);
+    assertEquals(1, instRef.current.count);
+
+    q('.hide-blargh').click();
+    Renderer.updateAll();
+
+    expectLog([
+      'Inst:unmounting',
+      'Inst:unmounting',
+    ]);
+
+    assertTrue(instRef.current == null);
+    assertTrue(blargh.current.hidden);
+
+    blargh.current.hidden = false;
+    Renderer.updateAll();
+
+    expectLog([
+      'Outer:render',
+      'Inner:render',
+      'Inst:mounted',
+      'Inst:mounted',
+    ]);    
+
+    assertEquals(1, inst.count);
+    assertEquals(0, instRef.current.count);
+
+    r.update({ bar: r.bar + 1 });
+    Renderer.updateAll();
+    expectLog([
+      'Outer:render',
+      'Inner:render',
+      'Inner:updated',
+      'Outer:updated',
+    ]);     
+
+  }
 
   function testTodo() {
 
@@ -284,7 +377,6 @@ class Tests extends haxe.unit.TestCase {
       else 500
     ); 
   }
-
 }
 
 class FooListView extends coconut.ui.View {
@@ -318,3 +410,91 @@ class Issue19 extends View {
   function render() '<div />';
   static function check() '<Issue19/>';
 }
+
+
+class Wrapper extends View {
+	
+  @:state var key:Int = 0;
+  @:attribute var depth:Int;
+
+	function render() '
+    <if {depth == 0}>
+      <div key=${key} onclick=${key++}>Key: $key</div>
+    <else>
+      <Wrapper depth={depth - 1} />
+    </if>  
+  ';
+}
+
+class Btn extends View {
+  @:attribute function onclick();
+  var count = 0;
+  function render() '
+    <button onclick=${onclick}>Rendered ${count++}</button>
+  ';
+}
+
+class Inst extends View {
+
+  @:state public var count:Int = 0;
+
+  var elt = {
+    var div = document.createDivElement();
+    div.className = 'native-element';
+    div.innerHTML = 'I am native!';
+    div;
+  }
+
+  function render() '
+    <div class="inst">
+      Inst: ${elt}
+      <button onclick=${count++}>$count</button>
+    </div>
+  ';
+
+  override function viewDidMount()
+    Tests.log('mounted');
+
+  override function viewWillUnmount()
+    Tests.log('unmounting');
+
+}
+
+class Outer extends View {
+  @:attribute var children:Children;
+  function render() {
+    Tests.log('render');
+    return @hxx '<div data-id={viewId}>Outer: {...children} <Inner>{...children}</Inner></div>';
+  }
+  override function viewDidUpdate()
+    Tests.log('updated');
+}
+
+
+class Inner extends View {
+  @:attribute var children:Children;
+  function render() {
+    Tests.log('render');
+    return @hxx '<div data-id={viewId}>Inner: {...children}</div>';
+  }
+
+  override function viewDidUpdate()
+    Tests.log('updated');
+}
+
+class Blargh extends View {
+  @:attribute function blub(attr:{ foo:String }):Children;
+  @:state public var hidden:Bool = false;
+  function render() '
+    <if {!hidden}>
+      <>
+        <div>1</div>
+        <div>2</div>
+        {...blub({ foo: "yeah" })}
+        <button class="hide-blargh" onclick={hidden = true}>Hide</button>
+      </>
+    </if>
+  ';
+}
+
+typedef Rec = Record<{ foo: Int, bar:Int }>;

@@ -2,10 +2,10 @@ import coconut.ui.*;
 
 class Example5<T> extends View {
   @:attribute var data:T;
-  @:attribute var renderer:{ data: T }->Children;
+  @:attribute var renderData:{ data: T }->Children;
   @:computed var content:RenderResult = hxx('
     <div class="example5">
-      {...renderer({ data: data })}
+      {...renderData({ data: data })}
     </div>
   ');
   function render() return content;

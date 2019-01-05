@@ -1,0 +1,3 @@
+-D js-object=0.0.5
+# @install: lix --silent download "haxelib:/js-object#0.0.5" into js-object/0.0.5/haxelib
+-cp ${HAXE_LIBCACHE}/js-object/0.0.5/haxelib/src
