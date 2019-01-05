@@ -272,6 +272,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(1, inst.count);
     assertEquals(0, instRef.current.count);
 
+    #if !react
     r.update({ bar: r.bar + 1 });
     Renderer.updateAll();
     expectLog([
@@ -280,7 +281,7 @@ class Tests extends haxe.unit.TestCase {
       'Inner:updated',
       'Outer:updated',
     ]);     
-
+    #end
   }
 
   function testTodo() {
