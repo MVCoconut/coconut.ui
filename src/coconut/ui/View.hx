@@ -58,7 +58,11 @@ class View extends Renderer {
             if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);              
           });
       }, 
-      __beforeUnmount
+      function () {
+        last = null;
+        firstTime = true;
+        __beforeUnmount();
+      }
     );
   }
 
