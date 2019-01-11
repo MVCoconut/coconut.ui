@@ -233,16 +233,22 @@ class ViewBuilder {
       }
     }
 
+    var rendererPos = null;
     var renderer = switch c.memberByName('render') {
       case Success(m): 
+        rendererPos = m.pos;
         m.getFunction().sure();
       default:
         c.target.pos.error('missing field render');
     }
 
     if (renderer.args.length > 0)
-      c.memberByName('render').sure().pos.error('argument should not be specified');
+      rendererPos.error('argument should not be specified');
 
+    switch renderer.ret {
+      case null: renderer.ret = macro : coconut.ui.RenderResult;
+      case ct: (macro @:pos(rendererPos) ((null:$ct):coconut.ui.RenderResult)).typeof().sure();
+    }
 
     for (ref in scrape('ref', true)) {
       var f = ref.member;
