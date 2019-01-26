@@ -155,8 +155,10 @@ class ViewBuilder {
     var attributes:Array<Member> = [];
 
     for (attr in scrape('attribute', ['attr'])) {
+
       var a = attr.member,
           comparator = attr.comparator;
+
       function add(type:ComplexType, expr:Expr) {
         var optional = a.extractMeta(':optional').isSuccess() || expr != null,
             name = a.name;
@@ -193,9 +195,6 @@ class ViewBuilder {
           default:
         }
 
-        a.kind = FProp('get', 'never', type, null);
-        a.isPublic = true;
-
         attributes.push({
           name: a.name,
           pos: a.pos,
@@ -203,12 +202,41 @@ class ViewBuilder {
           meta: if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else [],
         });
         
-        var getter = 'get_$name';
+        a.isPublic = true;
+        a.kind = 
+          switch a.pos.getOutcome(type.toType()).reduce() {
+            case TFun(args, ret):
+              var args =
+                switch a.kind {
+                  case FFun(f):
+                    f.args;
+                  default:
+                    [for (i in 0...args.length) {
+                      name: 'a$i',
+                      type: null,
+                      opt: args[i].opt
+                    }];
+                }
 
-        c.addMembers(macro class {
-          inline function $getter():$type
-            return return this.__slots.$name.value;
-        });
+              FFun({
+                args: args,
+                ret: ret.toComplex(),
+                expr: {
+                  var callArgs = [for (a in args) macro $i{a.name}];
+                  var body = macro return this.__slots.$name.value($a{callArgs});
+                  body;
+                },
+              });
+              
+            default:
+              var getter = 'get_$name';
+
+              c.addMembers(macro class {
+                inline function $getter():$type
+                  return return this.__slots.$name.value;
+              });
+              FProp('get', 'never', type, null);
+          }
         
       }
 

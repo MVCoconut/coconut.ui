@@ -369,8 +369,6 @@ class Tests extends haxe.unit.TestCase {
   
   static function main() {
     
-    travix.Logger.println('yo');
-
     var runner = new haxe.unit.TestRunner();
     runner.add(new Tests());
     
