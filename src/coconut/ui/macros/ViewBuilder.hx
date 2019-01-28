@@ -21,6 +21,8 @@ class ViewBuilder {
 
   static function doBuild(c:ClassBuilder) {
       
+    var defaultPos = (macro null).pos;//perhaps just use currentPos()
+
     function add(t:TypeDefinition) {
       for (f in t.fields)
         c.addMember(f);
@@ -28,7 +30,7 @@ class ViewBuilder {
     }
 
     if (!c.target.meta.has(':tink'))
-      c.target.meta.add(':tink', [], c.target.pos);
+      c.target.meta.add(':tink', [], defaultPos);
 
     switch c.target.superClass.t.get() {
       case { pack: ['coconut', 'ui'], name: 'View' }:
@@ -132,12 +134,12 @@ class ViewBuilder {
 
     c.addMember({
       name: defaults,
-      meta: [{ name: ':noCompletion', params: [], pos: c.target.pos }],
+      meta: [{ name: ':noCompletion', params: [], pos: defaultPos }],
       kind: {
         var ct = TAnonymous(defaultFields);
-        FProp('default', 'never', ct, macro {(${EObjectDecl(defaultValues).at(c.target.pos)}:$ct);});
+        FProp('default', 'never', ct, macro {(${EObjectDecl(defaultValues).at(defaultPos)}:$ct);});
       },
-      pos: c.target.pos,
+      pos: defaultPos,
     });
 
     var slots = [],
@@ -146,10 +148,10 @@ class ViewBuilder {
 
     c.addMember({
       name: '__slots',
-      meta: [{ name: ':noCompletion', params: [], pos: c.target.pos }],
-      kind: FProp('default', 'never', TAnonymous(slotFields), EObjectDecl(slots).at(c.target.pos)),
+      meta: [{ name: ':noCompletion', params: [], pos: defaultPos }],
+      kind: FProp('default', 'never', TAnonymous(slotFields), EObjectDecl(slots).at(defaultPos)),
       access: [],
-      pos: c.target.pos,
+      pos: defaultPos,
     });
 
     var attributes:Array<Member> = [];
@@ -352,9 +354,9 @@ class ViewBuilder {
             default: 
               notFound.push({
                 name: name,
-                pos: c.target.pos,
+                pos: defaultPos,
                 kind: FProp('default', 'never', macro : Dynamic),
-                meta: [{ name: ':optional', params: [], pos: c.target.pos }]
+                meta: [{ name: ':optional', params: [], pos: defaultPos }]
               });
               macro null;
           }        
