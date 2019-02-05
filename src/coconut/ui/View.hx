@@ -7,7 +7,7 @@ using tink.CoreApi;
 #if !macro
 @:autoBuild(coconut.ui.macros.ViewBuilder.build())
 @:observable
-class View extends Renderer {
+class View extends ViewBase {
     
   public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
   
