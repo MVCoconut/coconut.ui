@@ -336,6 +336,7 @@ class ViewBuilder {
           switch c.memberByName(name) {
             case Success(m): 
               var f = m.getFunction().sure();
+              c.removeMember(m);
               m.overrides = false;
               if (m.meta.getValues(':noCompletion').length == 0)
                 m.addMeta(':noCompletion');

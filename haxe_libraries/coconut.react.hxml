@@ -1,8 +1,0 @@
--D coconut.react=0.0.0
-# @install: lix --silent download "gh://github.com/MVCoconut/coconut.react#8120aa8356c88bc441494aab03cae63e8924ec71" into coconut.react/0.0.0/github/8120aa8356c88bc441494aab03cae63e8924ec71
--lib coconut.ui
--lib react-next
--lib xDOM
--cp ${HAXE_LIBCACHE}/coconut.react/0.0.0/github/8120aa8356c88bc441494aab03cae63e8924ec71/src
---macro coconut.react.macros.Setup.all()
--D hxx_fragment=coconut.ui.Renderer.createFragment
