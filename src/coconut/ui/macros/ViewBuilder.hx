@@ -1,6 +1,7 @@
 package coconut.ui.macros;
 
 #if macro
+import coconut.data.macros.*;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
@@ -12,16 +13,11 @@ using tink.CoreApi;
 
 class ViewBuilder {
   static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>> = new Queue();
-  
-  static function check(pos:Position, type:Type)
-    switch coconut.data.macros.Models.check(type) {
-      case []: 
-      case v: pos.error(v.join('\n'));
-    }
 
   static function doBuild(c:ClassBuilder) {
       
-    var defaultPos = (macro null).pos;//perhaps just use currentPos()
+    var defaultPos = (macro null).pos,//perhaps just use currentPos()
+        classId = Models.classId(c.target);
 
     function add(t:TypeDefinition) {
       for (f in t.fields)
@@ -60,15 +56,13 @@ class ViewBuilder {
                   case { expr: EObjectDecl(fields) }: [for (f in fields) f.field => f.expr];
                   case v: v.reject('object literal expected');
                 }
-              for (f in m.type.toType().sure().getFields().sure()) {
-                check(f.pos, f.type);
+              for (f in m.type.toType().sure().getFields().sure()) 
                 c.addMember({
                   pos: f.pos,
                   name: f.name,
                   kind: FVar(f.type.toComplex(), defaults[f.name]),
                   meta: f.meta.get(),
                 }).addMeta(':$name').addMeta(':skipCheck');
-              }
           }
           c.removeMember(group);
         default:
@@ -99,7 +93,8 @@ class ViewBuilder {
 
               if (!skipCheck && !m.extractMeta(':skipCheck').isSuccess())
                 switch m.kind {
-                  case FVar(t, _): check(m.pos, t.toType().sure());
+                  case FVar(t, _): 
+                    Models.checkLater(m.name, classId);
                   default:
                 }
               ret.push({
