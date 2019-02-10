@@ -3,7 +3,7 @@ class ExampleListView extends coconut.ui.View {
   #if haxe4
   function render() 
     <div class="foo-list">
-      {/*for (item in list.items) <Example key={item} foo={item.foo} {...item} />*/}
+      {for (item in list.items) <Example key={item} foo={item.foo} {...item} />}
     </div>
   ;
   #else
