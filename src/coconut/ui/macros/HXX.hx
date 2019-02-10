@@ -23,7 +23,8 @@ class HXX {
         noControlStructures: false, 
         defaultSwitchTarget: macro __data__,
         isVoid: ctx.isVoid,
-        fragment: Context.definedValue('hxx_fragment')
+        fragment: Context.definedValue('hxx_fragment'),
+        treatNested: function (children) return ctx.generateRoot.bind(children).bounce(),
       })
     );
   }

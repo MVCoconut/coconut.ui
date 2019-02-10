@@ -1,5 +1,5 @@
 -D tink_lang=0.6.1
-# @install: lix --silent download "gh://github.com/haxetink/tink_lang#8e5ab1c9727f2e6ab49775ee361124479ccebb6c" into tink_lang/0.6.1/github/8e5ab1c9727f2e6ab49775ee361124479ccebb6c
+# @install: lix --silent download "gh://github.com/haxetink/tink_lang#439706f55e4b00bf4662a9e01f53939cdb00694e" into tink_lang/0.6.1/github/439706f55e4b00bf4662a9e01f53939cdb00694e
 -lib tink_syntaxhub
--cp ${HAXE_LIBCACHE}/tink_lang/0.6.1/github/8e5ab1c9727f2e6ab49775ee361124479ccebb6c/src
+-cp ${HAXE_LIBCACHE}/tink_lang/0.6.1/github/439706f55e4b00bf4662a9e01f53939cdb00694e/src
 --macro tink.lang.Sugar.use()
