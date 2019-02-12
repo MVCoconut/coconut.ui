@@ -500,10 +500,10 @@ class Outer extends View {
 
 
 class Inner extends View {
-  @:attribute var children:Children;
+  @:children var content:Children;
   function render() {
     Tests.log('render');
-    return @hxx '<div data-id={viewId}>Inner: {...children}</div>';
+    return @hxx '<div data-id={viewId}>Inner: {...content}</div>';
   }
 
   override function viewDidUpdate()

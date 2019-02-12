@@ -68,41 +68,37 @@ class ViewBuilder {
         default:
       }
 
-      var tags = [name].concat(switch aliases {
-        case null: [];
-        case v: v;
-      });
-
+      var tags = [for (a in [name].concat(switch aliases { case null: []; case v: v; })) ':$a' => true];
       var ret = [];
 
       for (m in c)
-        for (t in tags)
-          switch m.extractMeta(':$t') {
-            case Success(t):
-
-              var comparator = macro @:pos(t.pos) null;
-              for (p in t.params) {
-                switch p {
-                  case macro comparator = $f: 
-                    comparator = f;
-                  default: p.reject();
-                }
+        switch [for (m in m.meta) if (tags[m.name]) m] {
+          case []:
+          case [t]:
+            var comparator = macro @:pos(t.pos) null;
+            for (p in t.params) {
+              switch p {
+                case macro comparator = $f: 
+                  comparator = f;
+                default: p.reject();
               }
-              if (m.kind.match(FProp(_, _, _, _)))
-                m.pos.error('$name cannot be property');
+            }
+            if (m.kind.match(FProp(_, _, _, _)))
+              m.pos.error('$name cannot be property');
 
-              if (!skipCheck && !m.extractMeta(':skipCheck').isSuccess())
-                switch m.kind {
-                  case FVar(t, _): 
-                    Models.checkLater(m.name, classId);
-                  default:
-                }
-              ret.push({
-                member: m,
-                comparator: comparator,
-              });
-            default:
-          }
+            if (!skipCheck && !m.extractMeta(':skipCheck').isSuccess())
+              switch m.kind {
+                case FVar(t, _): 
+                  Models.checkLater(m.name, classId);
+                default:
+              }
+            ret.push({
+              member: m,
+              comparator: comparator,
+            });
+          case a:
+            a[1].pos.error('cannot have ${a[1].name} and ${a[0].name}');
+        }
 
       if (!skipCheck)
         for (f in ret)
@@ -151,7 +147,7 @@ class ViewBuilder {
 
     var attributes:Array<Member> = [];
 
-    for (attr in scrape('attribute', ['attr'])) {
+    for (attr in scrape('attribute', ['attr', 'children', 'child'])) {
 
       var a = attr.member,
           comparator = attr.comparator;
@@ -184,11 +180,11 @@ class ViewBuilder {
           kind: FVar(macro : coconut.ui.tools.Slot<$type>)
         });
 
-        switch attr.member.pos.getOutcome(type.toType()).reduce() {
+        switch a.pos.getOutcome(type.toType()).reduce() {
           case TDynamic(null):
-            attr.member.pos.error('Attribute `${attr.member.name}` must not be Dynamic');
+            a.pos.error('Attribute `${a.name}` must not be Dynamic');
           case TAbstract(_.get() => { pack: [], name: 'Any' }, _):
-            attr.member.pos.error('Attribute `${attr.member.name}` must not be Any');
+            a.pos.error('Attribute `${a.name}` must not be Any');
           default:
         }
 
@@ -196,7 +192,10 @@ class ViewBuilder {
           name: a.name,
           pos: a.pos,
           kind: FVar(macro : coconut.data.Value<$type>),
-          meta: if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else [],
+          meta: 
+            a.metaNamed(':children')
+              .concat(a.metaNamed(':child'))
+              .concat(if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else []),
         });
         
         a.isPublic = true;

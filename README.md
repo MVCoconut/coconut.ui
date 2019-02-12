@@ -90,6 +90,44 @@ The following things mean the same:
   }
 ```
 
+### Children
+
+Views may also consume children, which are handled very much like attributes in almost every way, except how they're specified in HXX.
+
+The following are all equivalent:
+
+```haxe
+class Button extends View {
+  @:attribute function onclick():Void;
+  @:attribute var children:String;
+  function render() '
+    <button onclick={onclick}>{children}</button>
+  ';
+}
+
+class Button extends View {
+  @:attribute function onclick():Void;
+  @:children var label:String;
+  function render() '
+    <button onclick={onclick}>{label}</button>
+  ';
+}
+
+class Button extends View {
+  @:attribute function onclick():Void;
+  @:child var label:String;
+  function render() '
+    <button onclick={onclick}>{label}</button>
+  ';
+}
+```
+
+And you would use any of them like so:
+
+```haxe
+<Button onclick={trace("World!")}>Hello</Button>
+```
+
 ## States
 
 States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will in turn cause a rerender that is going to update the content of the `span` that shows the current value to the user. 
