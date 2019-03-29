@@ -201,7 +201,7 @@ class ViewBuilder {
         a.isPublic = true;
         a.kind = 
           switch a.pos.getOutcome(type.toType()).reduce() {
-            case TFun(args, ret):
+            case TFun(args, ret) if (false): // disable for now
               var args =
                 switch a.kind {
                   case FFun(f):
