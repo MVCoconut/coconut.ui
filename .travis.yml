@@ -17,8 +17,6 @@ os:
   # - osx
 
 env:
-  - secure: "h0C3WetJEyjxSqT6qU43l06VQC9IrZHH3NV954PfCQsRUj6ARG9gNILR1/0IiDT/eIxQTicoo/humT4cQarxX/jBuxWeKU8uSNlUMLmz+tX8evPYY8xzFkBM+OQLYrhjbg9HKOG5jmySLR7XGDzvhSxpoafhRfeoZ7tne8PpvZ3YFy1nwZIH862rzhjBSLHdfgfO+65RoRKLWNaGfp7yzEZ+oqbnSx4Wztf9M1f5hD77aR5Oky7U6VanP4KmeQRDEWtk1wQY4enXcQDkQzKDo/099l9TutB7ydduSsicZw4mxEFqW2lMLB/PcatRw+dGnBV2pzP8y/Oj6x5fZoYtCOiSxyFgpJW/7qNSk8mbYzN9fR17Mot7+I06FJ5U197MZ4u4cqVAjVap3i8xWhDVUlqqFuKIU/GfcNsfNChbDBbuwfbMAHt85euTGVxswnVTRG70TjljojZBreTyp7xL7Uhth7o09u0TZuPUmRCcTAHyQkVJz8FGGy6TtE9ur8VTUiBGxd1h8J+2QtA5g7Esa34iIreCh36JnT9rVV2dYJjRatUohv+E5/mIrBMTd9bGZwM23DmHa58ZIxqrsx+9sP0FgdBNyofrwVyWHA+s/WNz5lHuICruTGcARnmv3tszngSkcosWhFO3c+UWjSCCDpKrf7E/KciNyXLNwny0lqg="
-
   - HAXE_VERSION=3.4.7
   # - HAXE_VERSION=latest
   - HAXE_VERSION=nightly
@@ -32,17 +30,17 @@ script:
   - lix run travix js -lib coconut.vdom
   - lix run travix js with-react.hxml
 
-# jobs:
-#   include:
-#     # - stage: test # should uncomment this when there is no matrix above (e.g. only one os, one env, etc)
-#     - stage: deploy
-#       os: linux
-#       install:
-#         - npm i -g lix
-#         - lix download
-#       script: skip
-#       env:
-#         secure: xxxx
-#       after_success:
-#         - lix run travix install
-#         - lix run travix release
+jobs:
+  include:
+    # - stage: test # should uncomment this when there is no matrix above (e.g. only one os, one env, etc)
+    - stage: deploy
+      os: linux
+      install:
+        - npm i -g lix
+        - lix download
+      script: skip
+      env:
+        secure: h0C3WetJEyjxSqT6qU43l06VQC9IrZHH3NV954PfCQsRUj6ARG9gNILR1/0IiDT/eIxQTicoo/humT4cQarxX/jBuxWeKU8uSNlUMLmz+tX8evPYY8xzFkBM+OQLYrhjbg9HKOG5jmySLR7XGDzvhSxpoafhRfeoZ7tne8PpvZ3YFy1nwZIH862rzhjBSLHdfgfO+65RoRKLWNaGfp7yzEZ+oqbnSx4Wztf9M1f5hD77aR5Oky7U6VanP4KmeQRDEWtk1wQY4enXcQDkQzKDo/099l9TutB7ydduSsicZw4mxEFqW2lMLB/PcatRw+dGnBV2pzP8y/Oj6x5fZoYtCOiSxyFgpJW/7qNSk8mbYzN9fR17Mot7+I06FJ5U197MZ4u4cqVAjVap3i8xWhDVUlqqFuKIU/GfcNsfNChbDBbuwfbMAHt85euTGVxswnVTRG70TjljojZBreTyp7xL7Uhth7o09u0TZuPUmRCcTAHyQkVJz8FGGy6TtE9ur8VTUiBGxd1h8J+2QtA5g7Esa34iIreCh36JnT9rVV2dYJjRatUohv+E5/mIrBMTd9bGZwM23DmHa58ZIxqrsx+9sP0FgdBNyofrwVyWHA+s/WNz5lHuICruTGcARnmv3tszngSkcosWhFO3c+UWjSCCDpKrf7E/KciNyXLNwny0lqg=
+      after_success:
+        - lix run travix install
+        - lix run travix release
