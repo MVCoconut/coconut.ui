@@ -276,15 +276,22 @@ class ViewBuilder {
 
     for (ref in scrape('ref', true)) {
       var f = ref.member;
-      var v = f.getVar(true).sure();
-      var type = v.type,
-          name = f.name;
+      var type = f.getVar(true).sure().type;
 
-      f.kind = FProp('default', 'never', macro : coconut.ui.Ref<$type>, macro new coconut.ui.Ref());
-      
-      #if coconut_ui_reset_refs
-      beforeRender.push(macro @:privateAccess this.$name.reset());
-      #end
+      f.kind = FProp('default', 'never', type);
+
+      var setter = '_coco_set_${f.name}',
+          refHolder = f.name;
+
+      var set = (function () {
+        var e = Context.storeTypedExpr(Context.typeExpr(macro this.$refHolder));
+        return macro $e = param;
+      }).bounce(f.pos);
+
+      f.addMeta(':refSetter', [macro $i{setter}]);
+      c.addMembers(macro class {
+        @:noCompletion function $setter(param:$type) $set;
+      });
     }
 
     renderer.expr = beforeRender.concat([switch renderer.expr {

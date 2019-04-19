@@ -229,11 +229,11 @@ class Tests extends haxe.unit.TestCase {
 
     var r = new Rec({ foo: 42, bar: 0 }),
         inst = new Inst({}),
-        instRef = new coconut.ui.Ref<Inst>(),
-        blargh = new coconut.ui.Ref();
+        instRef:Inst = null,
+        blargh:Blargh = null;
     
     mount(hxx('
-      <Blargh ref={blargh}>
+      <Blargh ref={function (v) blargh = v}>
         <blub>
           Foo: {foo}
           <button onclick={r.update({ foo: r.foo + 1})}>{r.foo}</button>
@@ -246,7 +246,7 @@ class Tests extends haxe.unit.TestCase {
           <hr/>
           ${inst#if react.reactify()#end}
           <Outer>YEAH ${r.bar}</Outer>
-          <Inst ref={instRef} />
+          <Inst ref={function (v) instRef = v} />
         </blub>
       </Blargh>
     '));  
@@ -258,19 +258,19 @@ class Tests extends haxe.unit.TestCase {
       'Inst:mounted',
     ]);
 
-    assertFalse(blargh.current.hidden);
-    assertFalse(instRef.current == null);
+    assertFalse(blargh.hidden);
+    assertFalse(instRef == null);
     #if !react
     assertEquals('I am native!', q('.native-element').innerHTML);
     #end
     assertEquals(0, inst.count);
-    assertEquals(0, instRef.current.count);
+    assertEquals(0, instRef.count);
 
     for (btn in qs('.inst>button'))
       btn.click();
 
     assertEquals(1, inst.count);
-    assertEquals(1, instRef.current.count);
+    assertEquals(1, instRef.count);
 
     q('.hide-blargh').click();
     Renderer.updateAll();
@@ -280,10 +280,10 @@ class Tests extends haxe.unit.TestCase {
       'Inst:unmounting',
     ]);
 
-    assertTrue(instRef.current == null);
-    assertTrue(blargh.current.hidden);
+    assertTrue(instRef == null);
+    assertTrue(blargh.hidden);
 
-    blargh.current.hidden = false;
+    blargh.hidden = false;
     Renderer.updateAll();
 
     expectLog([
@@ -294,7 +294,7 @@ class Tests extends haxe.unit.TestCase {
     ]);    
 
     assertEquals(1, inst.count);
-    assertEquals(0, instRef.current.count);
+    assertEquals(0, instRef.count);
 
     #if !react
     r.update({ bar: r.bar + 1 });
@@ -452,10 +452,14 @@ class Wrapper extends View {
 
 class Btn extends View {
   @:attribute function onclick();
+  @:ref var dom:js.html.Element;
   var count = 0;
   function render() '
-    <button onclick=${onclick}>Rendered ${count++}</button>
+    <button ref={dom} onclick=${onclick}>Rendered ${count++}</button>
   ';
+
+  function viewDidMount()
+    if (dom.nodeName != 'BUTTON') throw 'assert';
 }
 
 class Inst extends View {
