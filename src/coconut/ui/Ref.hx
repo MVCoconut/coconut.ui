@@ -22,6 +22,7 @@ abstract Ref<T>(T->Void) from T->Void to T->Void {
       case TAbstract(_.get() => { pack: [], name: 'Null'}, [t]): getRef(t);
       case TAbstract(_.get() => { pack: ['coconut', 'ui'], name: 'Ref'}, [t]): t;
       case TLazy(f): getRef(f());
+      case TType(_): follow(t, true);
       default: throw 'assert';
     }
   #end
