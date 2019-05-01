@@ -198,10 +198,19 @@ class ViewBuilder {
               .concat(if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else []),
         });
         
+        var isNullable = 
+          if (optional) switch expr {
+            case macro null: true;
+            default: false;
+          }
+          else switch type {
+            case macro : Null<$_>: true;
+            default: false;
+          }
         a.isPublic = true;
         a.kind = 
           switch a.pos.getOutcome(type.toType()).reduce() {
-            case TFun(args, ret) if (false): // disable for now
+            case TFun(args, ret) if (!isNullable):
               var args =
                 switch a.kind {
                   case FFun(f):
@@ -219,7 +228,14 @@ class ViewBuilder {
                 ret: ret.toComplex(),
                 expr: {
                   var callArgs = [for (a in args) macro $i{a.name}];
-                  var body = macro return this.__slots.$name.value($a{callArgs});
+                  var body = 
+                    if (optional) 
+                      macro @:pos(a.pos) return this.__slots.$name.value($a{callArgs});
+                    else 
+                      macro @:pos(a.pos) return switch this.__slots.$name.value {
+                        case null: throw 'mandatory attribute ' + $v{name} + ' of <' + $v{c.target.name} + '/> was set to null';
+                        case __fn: __fn($a{callArgs});
+                      }
                   body;
                 },
               });

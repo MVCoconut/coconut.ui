@@ -201,29 +201,42 @@ class Tests extends haxe.unit.TestCase {
 
   }  
 
-  // function testIssue31() {
-  //   var counter = new State(0),
-  //       btn1 = null,
-  //       btn2 = null;
+  function testIssue31() {
+    var counter = new State(0),
+        btn1 = null,
+        btn2 = null;
 
-  //   mount(hxx('
-  //     <Isolated>
-  //       <div>
-  //         <span>${counter.value}</span>
-  //         <SimpleButton ref={function (e) btn1 = e} onclick=${counter.set(counter.value + 1)}>Yay</SimpleButton>
-  //         <SimpleButton ref={function (e) btn2 = e} onclick=${counter.set(counter.value + 1)}>${Std.string(counter.value)}</SimpleButton>
-  //       </div>
-  //     </Isolated>
-  //   '));
+    mount(hxx('
+      <Isolated>
+        <div>
+          <span>${counter.value}</span>
+          <SimpleButton ref={function (e) btn1 = e} onclick=${counter.set(counter.value + 1)}>Yay</SimpleButton>
+          <SimpleButton ref={function (e) btn2 = e} onclick=${counter.set(counter.value + 1)}>${Std.string(counter.value)}</SimpleButton>
+        </div>
+      </Isolated>
+    '));
 
 
-  //   assertEquals(1, btn1.renderCount);
-  //   assertEquals(1, btn2.renderCount);
-  //   q('button').click();
-  //   Observable.updateAll();
-  //   assertEquals(1, btn1.renderCount);
-  //   assertEquals(2, btn2.renderCount);
-  // }  
+    assertEquals(1, btn1.renderCount);
+    assertEquals(1, btn2.renderCount);
+    q('button').click();
+    Observable.updateAll();
+    assertEquals(1, btn1.renderCount);
+    assertEquals(2, btn2.renderCount);
+
+    setup();
+    var fn:Void->Void = null;
+
+    var button:SimpleButton = null;
+    var ref = function (v) button = v;
+    mount(hxx('<SimpleButton ref={ref} onclick=${fn}>Exploded</SimpleButton>'));
+    try {
+      button.onclick();
+      assertTrue(false);
+    }
+    catch (e:String)
+      assertEquals('mandatory attribute onclick of <SimpleButton/> was set to null', e);
+  }  
 
   function testMisc() {//horay for naming!
 
