@@ -231,11 +231,13 @@ Just like React, coconut supports refs to get access to the elements/views you'r
 
 ```haxe
 '
-  <div ref=${div -> console.log(div.innerHTML)}>
+  <div ref=${div -> if (div != null) console.log(div.innerHTML)}>
     <Stepper ref=${stepper -> trace(stepper.step)} />
   </div>
 '
 ```
+
+It is advised to use methods rather than anonymous functions for performance reasons.
 
 ### `@:ref` syntax
 
@@ -252,19 +254,12 @@ class Counter extends View {
   ';
 
   function viewDidUpdate() {
-    trace(button.current);//Will log <button>1</button> the first time you click.
+    trace(button);//Will log <button>1</button> the first time you click.
   }
 }
 ```
 
-Under the hood `button` will be promoted to `Ref<ButtonElement>`:
-
-```haxe
-abstract Ref<T> {
-  var current(get, never):T;
-  @:to function toFunction():T->Void;
-}
-```
+It is in fact possible to pass in any valid left hand value for an assignment, although that will also cause the creation of an anonymous function, which you want to avoid. Using `@:ref` avoids this and also makes the reference read only and thus safer to rely on.
 
 ## Life cycle callbacks
 
