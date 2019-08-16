@@ -24,6 +24,9 @@ class Slot<T> implements ObservableObject<T> {
       case v: v;
     }
   }
+
+  public function getComparator():Null<T->T->Bool>
+    return compare;
   
   public function poll() {
     if (last == null) {
