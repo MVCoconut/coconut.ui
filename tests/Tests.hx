@@ -257,7 +257,7 @@ class Tests extends haxe.unit.TestCase {
             <video>DIV</video>
           </if>
           <hr/>
-          ${inst#if react.reactify()#end}
+          ${inst#if react .reactify()#end}
           <Outer>YEAH ${r.bar}</Outer>
           <Inst ref={function (v) instRef = v} />
         </blub>
