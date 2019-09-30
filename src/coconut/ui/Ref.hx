@@ -4,11 +4,13 @@ package coconut.ui;
 import haxe.macro.Context.*;
 import haxe.macro.Type;
 using haxe.macro.Tools;
+using tink.MacroApi;
 #end
 
 @:callable
 abstract Ref<T>(T->Void) from T->Void to T->Void {
-  
+  public function new(f)
+    this = f;
   #if macro
   static function unwrap(t:TypedExpr)
     return switch t.expr {
@@ -50,7 +52,7 @@ abstract Ref<T>(T->Void) from T->Void to T->Void {
         default: null;
       }
     
-    return
+    var ret = 
       switch follow(te.t) {
         case TFun([{ t: t }], r):
           if (unify(expected, t))
@@ -67,5 +69,7 @@ abstract Ref<T>(T->Void) from T->Void to T->Void {
           else
             fatalError('${te.t.toString()} should be Ref<${expected.toString()}>', e.pos);
       }
+
+    return macro @:pos(e.pos) new coconut.ui.Ref<$ct>($ret);
   }
 }
