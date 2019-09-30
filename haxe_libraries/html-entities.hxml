@@ -1,0 +1,3 @@
+-D html-entities=1.0.0
+# @install: lix --silent download "haxelib:/html-entities#1.0.0" into html-entities/1.0.0/haxelib
+-cp ${HAXE_LIBCACHE}/html-entities/1.0.0/haxelib/src
