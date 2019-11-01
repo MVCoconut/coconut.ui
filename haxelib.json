@@ -11,8 +11,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"releasenote": "Make computed fields work like in models, adjust for latest tink_hxx, fix caching bug.",
-	"version": "0.9.0",
+	"releasenote": "API Overhual",
+	"version": "0.10.0",
 	"url": "https://github.com/MVCoconut/coconut.ui/",
 	"dependencies": {
 		"tink_hxx": "",
