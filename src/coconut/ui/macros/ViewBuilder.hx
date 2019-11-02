@@ -385,7 +385,8 @@ class ViewBuilder {
           m.pos.error('${m.name} cannot take arguments');
       });
 
-      var beforeRender = [];
+      var beforeRender = [],
+          afterRender = [];
 
       var snapshot = null;
 
@@ -401,7 +402,19 @@ class ViewBuilder {
         beforeRender.push(macro @:pos(m.pos) snapshot = getSnapshotBeforeUpdate());
       });
 
-      var viewDidUpdate = processHook('viewDidUpdate', macro : Void, function (m, f) {
+      processHook('viewDidRender', macro : Void, function (m, f) {
+
+        switch f.args {
+          case []: f.args.push({ name: 'firstTime', type: macro : Bool });
+          case [arg]: if (arg.type == null) arg.type = macro : Bool;
+          default: m.pos.error('${m.name} should have one argument');
+        }
+
+        afterRender.push(macro @:pos(m.pos) viewDidRender(firstTime));
+      });
+
+      processHook('viewDidUpdate', macro : Void, function (m, f) {
+
         if (snapshot != null)
           switch f.args {
             case []: f.args.push({ name: 'snapshot', type: snapshot });
@@ -410,15 +423,17 @@ class ViewBuilder {
           }
         else if (f.args.length > 0)
           m.pos.error('${m.name} cannot take arguments');
+
+        var args = [for (a in f.args) macro @:pos(m.pos) $i{a.name}];
+
+        afterRender.push(macro @:pos(m.pos) if (!firstTime) viewDidUpdate($a{args}));
       });
 
-      if (snapshot != null && !viewDidUpdate.expr.match(EConst(CIdent('null'))))
-        viewDidUpdate = macro @:pos(viewDidUpdate.pos)
-          function () viewDidUpdate(snapshot);
-
-      var viewDidMount = processHook('viewDidMount', macro : Void, function (m, f) {
+      processHook('viewDidMount', macro : Void, function (m, f) {
         if (f.args.length > 0)
           m.pos.error('${m.name} cannot take arguments');
+
+        afterRender.push(macro @:pos(m.pos) if (firstTime) viewDidMount());
       });
 
       var viewWillUnmount = processHook('viewWillUnmount', macro : Void, function (m, f) {
@@ -511,8 +526,10 @@ class ViewBuilder {
             if (snapshot == null) macro null
             else macro function () snapshot = getSnapshotBeforeUpdate()
           },
-          $viewDidMount,
-          $viewDidUpdate
+          ${switch afterRender {
+            case []: macro null;
+            default: macro function (firstTime:Bool) $b{afterRender};
+          }}
         );
 
         switch ($viewWillUnmount) {

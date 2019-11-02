@@ -243,7 +243,15 @@ class Tests extends haxe.unit.TestCase {
     mount(hxx('<Snapshotter value=${state.value} />'));
     state.set(321);
     Observable.updateAll();
-    expectLog(['123']);
+    expectLog(['Snapshotter:123']);
+  }
+
+  function testViewDidRender() {
+    var state = new State(123);
+    mount(hxx('<DidRender counter=${state.value} />'));
+    state.set(321);
+    Observable.updateAll();
+    expectLog(['DidRender:true', 'DidRender:false']);
   }
 
   function testMisc() {//horay for naming!
@@ -533,6 +541,18 @@ class Inner extends View {
 
   override function viewDidUpdate()
     Tests.log('updated');
+}
+
+class DidRender extends View {
+  @:attribute var counter:Int;
+  function render() '
+    <div>${counter}</div>
+  ';
+
+  override function viewDidRender(firstTime:Bool) {
+    Tests.log('$firstTime');
+  }
+
 }
 
 class Blargh extends View {

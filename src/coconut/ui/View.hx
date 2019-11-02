@@ -18,9 +18,11 @@ class View extends ViewBase {
       shouldUpdate:Void->Bool,
       track:Void->Void,
       beforeRerender:Void->Void,
-      mounted:Void->Void,
-      updated:Void->Void
+      rendered:Bool->Void
     ) {
+
+    var mounted = if (rendered != null) rendered.bind(true) else null,
+        updated = if (rendered != null) rendered.bind(false) else null;
 
     var firstTime = true,
         last = null,

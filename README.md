@@ -2,7 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MVCoconut/Lobby)
 
-This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is its API, which has increasingly converged with React's for higher familiarity, easier porting and better interoperability with react. Furthermore, just like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend, of which there are currently two: 
+This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is its API, which has increasingly converged with React's for higher familiarity, easier porting and better interoperability with react. Furthermore, just like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend, of which there are currently two:
 
 - [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom): a hand crafted virtual dom renderer that trumps React in speed and size.
 - [`coconut.react`](https://github.com/MVCoconut/coconut.react): an adapter to render coconut views through React allowing you to leverage React's vast ecosystem.
@@ -11,7 +11,7 @@ Coconut views use [HXX](https://github.com/haxetink/tink_hxx#readme) to describe
 
 ```haxe
 class Stepper extends coconut.ui.View {
-  
+
   @:attribute var step:Int = 1;
   @:attribute function onconfirm(value:Int);
   @:state var value:Int = 0;
@@ -31,7 +31,7 @@ A function with just a string body is merely a syntactic shortcut for a function
 
 ```haxe
 class Stepper extends coconut.ui.View {
-  
+
   @:attribute var step:Int = 1;
   @:attribute function onconfirm(value:Int);
   @:state var value:Int = 0;
@@ -74,16 +74,16 @@ The following things mean the same:
   @:attribute function onconfirm(value:Int):Void;
 
   //is equivalent to:
-  
+
   var attributes:{
     var step:Int = 1;
     var onconfirm:tink.core.Callback<Int>;
   };
-  
+
   //is equivalent to:
 
   var attributes:StepperAttributes = { step: 1 };
-  //where 
+  //where
   typedef StepperAttributes = {
     var step:Int;
     var onconfirm:tink.core.Callback<Int>;
@@ -130,7 +130,7 @@ And you would use any of them like so:
 
 ## States
 
-States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will in turn cause a rerender that is going to update the content of the `span` that shows the current value to the user. 
+States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will in turn cause a rerender that is going to update the content of the `span` that shows the current value to the user.
 
 Your views may also hold plain fields for whatever purpose. Note though that updates to those will generally not cause rerendering.
 
@@ -176,8 +176,8 @@ Unless the particular renderer diverges from the norm, the following can be said
   }
   ```
 
-  Note: having side effects such as `renderCounter++` in your render function is bad practice, but here it's meant to illustrate whether or not the component rerenders. 
-  
+  Note: having side effects such as `renderCounter++` in your render function is bad practice, but here it's meant to illustrate whether or not the component rerenders.
+
   What's important to note about this example is that clicking on the `Button` will not rerender `Container` (but only the `Button`), while clicking on the plain `button` will. You can use this behavior to contain the effect of state updates. There is a very simple view included in coconut.ui to leverage just that:
 
   ```haxe
@@ -204,12 +204,12 @@ Unless the particular renderer diverges from the norm, the following can be said
       </div>
     ';
   }
-  ```  
+  ```
 
-  Clicking the button wrapped in `Isolated` will not rerender `Container`. 
-  
-- Changes do not instantly rerender views, but invalidate them, which schedules a batched update with the browser's next animation frame (or frame on NME/OpenFl or short timeout on other platforms). This bares some similarity with React's async rendering. 
-  
+  Clicking the button wrapped in `Isolated` will not rerender `Container`.
+
+- Changes do not instantly rerender views, but invalidate them, which schedules a batched update with the browser's next animation frame (or frame on NME/OpenFl or short timeout on other platforms). This bares some similarity with React's async rendering.
+
   It's important to understand though that on one hand invalidation is an event that eagerly cascades through your dependencies, but all computation is batched, *including attributes*. If your view invokes a callback that is likely to change the value of an attribute, the attribute is recomputed only when accessed, either in rendering or other code you write to access it.
 
 ### `@:tracked` states and attributes
@@ -245,7 +245,7 @@ You may also define refs like so:
 
 ```haxe
 class Counter extends View {
-  
+
   @:ref var button:ButtonElement;
   @:state var counter:Int = 0;
 
@@ -263,7 +263,7 @@ It is in fact possible to pass in any valid left hand value for an assignment, a
 
 ## Life cycle callbacks
 
-Coconut views may declare life cycle callbacks, which are modelled after those in React, adjusted for the naming differences: 
+Coconut views may declare life cycle callbacks, which are modelled after those in React, adjusted for the naming differences:
 
 What React calls component and props, Coconut calls views and attributes respectively, as those are more specific terms: the term component can mean anything and in ECMAScript terminology, the `state` of a React component is a *property*.
 
@@ -279,9 +279,9 @@ This callback is invoked after the component is mounted into the DOM (or whateve
 
 ```haxe
 function shouldViewUpdate():Bool;
-``` 
+```
 
-This function is invoked to determine if a component should rerender. While it mostly corresponds to [React's `shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate), in contrast to React, it not pass `nextState` and `nextProps`. Instead, state and attributes changes are always applied *before* this function is invoked. 
+This function is invoked to determine if a component should rerender. While it mostly corresponds to [React's `shouldComponentUpdate`](https://reactjs.org/docs/react-component.html#shouldcomponentupdate), in contrast to React, it not pass `nextState` and `nextProps`. Instead, state and attributes changes are always applied *before* this function is invoked.
 
 Caveat: if this function returns `false`, the view will only invalidate if any of the states or attributes that this function depends on changes (or any `@:tracked` attributes or states change).
 
@@ -309,11 +309,19 @@ This function is called after `render`, before the resulting changes take effect
 function viewDidUpdate(snapshot:Snapshot):Void;
 ```
 
-This callback is invoked after the changes resulting from `render` take effect. 
+This callback is invoked after the updates resulting from `render` take effect.
 
-The function has 0 parameters if you don't declare `getSnapshotBeforeUpdate` and 1 if you do. If you don't declare the parameter, a parameter called `snapshot` is created implicitly. If you don't explictly define the type of the one parameter, it will implicitly be inferred to the return type of `getSnapshotBeforeUpdate`. 
+The function has 0 parameters if you don't declare `getSnapshotBeforeUpdate` and 1 if you do. If you don't declare the parameter, a parameter called `snapshot` is created implicitly. If you don't explictly define the type of the one parameter, it will implicitly be inferred to the return type of `getSnapshotBeforeUpdate`.
 
 While `viewDidupdate` mostly corresponds to [React's `componentDidMount`](https://reactjs.org/docs/react-component.html#componentdidmount), `prevState` and `prevProps` are not passed. If you need these, you will have to track them yourself.
+
+### viewDidRender
+
+```haxe
+function viewDidRender(firstTime:Bool):Void;
+```
+
+This callback is invoked every time after the results of `render` are applied to the physical UI (e.g. DOM), with the passed boolean being `true` for the first call and `false` for all subsequent calls. You can use this as a combination of `viewDidMount` and `viewDidUpdate`.
 
 ### viewWillUnmount
 
@@ -321,12 +329,12 @@ While `viewDidupdate` mostly corresponds to [React's `componentDidMount`](https:
 function viewWillUnmount():Void;
 ```
 
-This callback is invoked before the view is unmounted and corresponds to 
-While `viewDidupdate` mostly corresponds to [React's `componentWillUnmount`](https://reactjs.org/docs/react-component.html#componentwillunmount). 
+This callback is invoked before the view is unmounted and corresponds to
+While `viewDidupdate` mostly corresponds to [React's `componentWillUnmount`](https://reactjs.org/docs/react-component.html#componentwillunmount).
 
 Consider using `untilUnmounted`/`beforeUnmounting` instead.
 
-### untilUnmounted or beforeUnmounting 
+### untilUnmounted or beforeUnmounting
 
 ```haxe
 function untilUnmounted(cb:Callback<Noise>):Void;
@@ -349,7 +357,7 @@ class Example extends View {
 }
 ```
 
-An alternative us to use `untilUnmounted`/`beforeUnmounting` (which are fully equivalent and should be picked depending on what reads more naturally) which take a `Callback<Noise>` that is executed before unmounting. So for example the code above would be written like so:
+An alternative is to use `untilUnmounted`/`beforeUnmounting` (which are fully equivalent and should be picked depending on what reads more naturally) which take a `Callback<Noise>` that is executed before unmounting. So for example the code above would be written like so:
 
 ```haxe
 class Example extends View {
@@ -359,20 +367,20 @@ class Example extends View {
     beforeUnmounting(observer.disconnect);
   }
 }
-``` 
+```
 
 That's shorter and avoids having instance fields that clutter completion. Another way to write the same is:
 
 ```haxe
 class Example extends View {
-  function viewDidMount() 
+  function viewDidMount()
     untilUnmounted(() -> {
       var observer = new MutationObserver(...);
       observer.connect(...);
       observer.disconnect;
     });
 }
-```   
+```
 
 This is absolutely equivalent with the previous version. The latter name makes most sense when used a call that returns a `CallbackLink` from `tink_core`. Let's assume we define something like this:
 
@@ -389,7 +397,7 @@ The we can use it like so:
 ```haxe
 class Example extends View {
   @:ref var root:Element;//Need to populate this in `render` of course
-  function viewDidMount() 
+  function viewDidMount()
     untilUnmounted(Observe.mutations(root, () -> {
       //do something
     }));
@@ -412,7 +420,7 @@ class Example extends View {
     </if>
   ';
 
-  function viewDidMount() 
+  function viewDidMount()
     untilNextChange(Observe.mutations(root, () -> {
       //do something
     }));
@@ -448,4 +456,4 @@ class Renderer {
 }
 ```
 
-The above `Renderer.mount` and `Renderer.getNative` are equivalent to `ReactDOM.render` and `ReactDOM.findDOMNode`. 
+The above `Renderer.mount` and `Renderer.getNative` are equivalent to `ReactDOM.render` and `ReactDOM.findDOMNode`.
