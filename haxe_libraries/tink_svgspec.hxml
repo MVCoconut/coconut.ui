@@ -1,0 +1,3 @@
+-D tink_svgspec=0.0.1
+# @install: lix --silent download "gh://github.com/haxetink/tink_svgspec#85ae7591c595848b8de2d55b628db766339b0c6b" into tink_svgspec/0.0.1/github/85ae7591c595848b8de2d55b628db766339b0c6b
+-cp ${HAXE_LIBCACHE}/tink_svgspec/0.0.1/github/85ae7591c595848b8de2d55b628db766339b0c6b/src
