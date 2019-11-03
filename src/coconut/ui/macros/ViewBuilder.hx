@@ -14,6 +14,25 @@ using tink.CoreApi;
 class ViewBuilder {
   static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>> = new Queue();
 
+  static function getComparator(t:MetadataEntry) {
+    var comparator = macro @:pos(t.pos) null;
+
+    for (p in t.params)
+      switch p {
+        case macro comparator = $f:
+          comparator = f;
+        default: p.reject();
+      }
+
+    return { comparator: comparator };
+  }
+
+  static function noArgs(t:MetadataEntry)
+    switch t.params {
+      case []:
+      case v: v[0].reject('no arguments allowed here');
+    }
+
   static function doBuild(c:ClassBuilder) {
 
     var defaultPos = (macro null).pos,//perhaps just use currentPos()
@@ -36,7 +55,7 @@ class ViewBuilder {
     var beforeRender = [],
         tracked = [];
 
-    function scrape(name:String, ?aliases:Array<String>, ?skipCheck:Bool) {
+    function scrape<Meta>(name:String, process:MetadataEntry->Meta, ?aliases:Array<String>, ?skipCheck:Bool) {
       switch c.memberByName('${name}s') {
         case Success(group):
           var m = group.getVar(true).sure();
@@ -75,14 +94,6 @@ class ViewBuilder {
         switch [for (m in m.meta) if (tags[m.name]) m] {
           case []:
           case [t]:
-            var comparator = macro @:pos(t.pos) null;
-            for (p in t.params) {
-              switch p {
-                case macro comparator = $f:
-                  comparator = f;
-                default: p.reject();
-              }
-            }
             if (m.kind.match(FProp(_, _, _, _)))
               m.pos.error('$name cannot be property');
 
@@ -93,8 +104,9 @@ class ViewBuilder {
                 default:
               }
             ret.push({
+              pos: t.pos,
               member: m,
-              comparator: comparator,
+              meta: process(t),
             });
           case a:
             a[1].pos.error('cannot have ${a[1].name} and ${a[0].name}');
@@ -147,10 +159,10 @@ class ViewBuilder {
 
     var attributes:Array<Member> = [];
 
-    for (attr in scrape('attribute', ['attr', 'children', 'child'])) {
+    for (attr in scrape('attribute', getComparator, ['attr', 'children', 'child'])) {
 
       var a = attr.member,
-          comparator = attr.comparator;
+          comparator = attr.meta.comparator;
 
       function add(type:ComplexType, expr:Expr) {
         var optional = a.extractMeta(':optional').isSuccess() || expr != null,
@@ -173,7 +185,7 @@ class ViewBuilder {
 
         initSlots.push(macro @:pos(a.pos) this.__slots.$name.setData($data));
 
-        slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type>(this, ${attr.comparator}) });
+        slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type>(this, ${attr.meta.comparator}) });
         slotFields.push({
           name: a.name,
           pos: a.pos,
@@ -291,7 +303,7 @@ class ViewBuilder {
       case ct: (macro @:pos(rendererPos) ((null:$ct):coconut.ui.RenderResult)).typeof().sure();
     }
 
-    for (ref in scrape('ref', true)) {
+    for (ref in scrape('ref', noArgs, true)) {
       var f = ref.member;
       var type = f.getVar(true).sure().type;
 
@@ -318,7 +330,7 @@ class ViewBuilder {
 
     var states = [];
 
-    for (state in scrape('state')) {
+    for (state in scrape('state', getComparator)) {
       var s = state.member;
       states.push(s);
       var v = s.getVar(true).sure();
@@ -332,7 +344,7 @@ class ViewBuilder {
           set = 'set_${s.name}';
 
       c.addMembers(macro class {
-        @:noCompletion private var $internal:tink.state.State<$t> = @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.comparator});
+        @:noCompletion private var $internal:tink.state.State<$t> = @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.meta.comparator});
         inline function $get():$t return $i{internal}.value;
         inline function $set(param:$t) {
           $i{internal}.set(param);
