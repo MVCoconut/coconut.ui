@@ -241,7 +241,7 @@ class ViewBuilder {
                 expr: {
                   var callArgs = [for (a in args) macro $i{a.name}];
                   var body =
-                    if (optional)
+                    if (#if debug optional #else true #end)
                       macro @:pos(a.pos) return this.__slots.$name.value($a{callArgs});
                     else
                       macro @:pos(a.pos) return switch this.__slots.$name.value {
