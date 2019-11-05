@@ -234,8 +234,14 @@ class Tests extends haxe.unit.TestCase {
       button.onclick();
       assertTrue(false);
     }
+    #if debug
     catch (e:String)
       assertEquals('mandatory attribute onclick of <SimpleButton/> was set to null', e);
+    #else
+    catch (e:Dynamic) {
+
+    }
+    #end
   }
 
   function testSnapshots() {

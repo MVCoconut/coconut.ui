@@ -20,15 +20,17 @@ env:
   - HAXE_VERSION=3.4.7
   - HAXE_VERSION=latest
   - HAXE_VERSION=nightly
-  
+
 install:
   - npm i -g lix
   - lix install haxe $HAXE_VERSION
   - lix download
-  
+
 script:
   - lix run travix js -lib coconut.vdom
   - lix run travix js with-react.hxml
+  - lix run travix js -lib coconut.vdom -debug
+  - lix run travix js with-react.hxml -debug
 
 jobs:
   include:
