@@ -5,6 +5,6 @@
     "test": "lix run travix js -lib coconut.vdom"
   },
   "dependencies": {
-    "lix": "=15.3.4"
+    "lix": "^15.5.4"
   }
 }

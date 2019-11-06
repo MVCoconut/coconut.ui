@@ -8,25 +8,27 @@ using tink.CoreApi;
 @:autoBuild(coconut.ui.macros.ViewBuilder.build())
 @:observable
 class View extends ViewBase {
-    
+
   public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
-  
-  var _coco_revision = new State(0);
+
+  @:noCompletion var _coco_revision = new State(0);
 
   public function new(
-      render:Void->RenderResult, 
-      shouldUpdate:Void->Bool, 
-      track:Void->Void, 
+      render:Void->RenderResult,
+      shouldUpdate:Void->Bool,
+      track:Void->Void,
       beforeRerender:Void->Void,
-      mounted:Void->Void,
-      updated:Void->Void
+      rendered:Bool->Void
     ) {
-    
+
+    var mounted = if (rendered != null) rendered.bind(true) else null,
+        updated = if (rendered != null) rendered.bind(false) else null;
+
     var firstTime = true,
         last = null,
         hasBeforeRerender = beforeRerender != null,
         hasUpdated = updated != null,
-        lastRev = _coco_revision.value; 
+        lastRev = _coco_revision.value;
 
     super(
       Observable.auto(
@@ -36,7 +38,7 @@ class View extends ViewBase {
 
           if (firstTime) firstTime = false;
           else {
-            if (curRev == lastRev && shouldUpdate != null && !shouldUpdate()) 
+            if (curRev == lastRev && shouldUpdate != null && !shouldUpdate())
               return last;
             var hasCallbacks = __bc.length > 0;
             if (hasBeforeRerender || hasCallbacks)
@@ -49,15 +51,15 @@ class View extends ViewBase {
           return last = render();
         }
       ),
-      mounted, 
+      mounted,
       function () {
         var hasCallbacks = __au.length > 0;
-        if (hasUpdated || hasCallbacks) 
+        if (hasUpdated || hasCallbacks)
           Observable.untracked(function () {
             if (hasUpdated) updated();
-            if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);              
+            if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);
           });
-      }, 
+      },
       function () {
         last = null;
         firstTime = true;
@@ -79,7 +81,7 @@ class View extends ViewBase {
 
   @:extern inline function untilNextChange(c:Callback<Bool>):Void __bc.push(c);
   @:extern inline function beforeNextChange(c:Callback<Bool>):Void __bc.push(c);
-  
+
   @:noCompletion var __au:Array<Callback<Noise>> = [];
 
   @:extern inline function afterUpdating(callback:Void->Void) __au.push(callback);
