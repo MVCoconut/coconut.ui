@@ -475,13 +475,25 @@ class ViewBuilder {
             if (!m.isStatic)
               m.pos.error('${m.name} should be static');
 
-            var argType = TAnonymous([
-              for (m in attributes.concat(states)) {
+            var argFields = [];
+            var argType = TAnonymous(argFields);
+
+            for (m in attributes.concat(states))
+              argFields.push({
                 name: m.name,
                 pos: m.pos,
-                kind: FProp('get', 'never', m.getVar().sure().type)
-              }
-            ]);
+                kind: switch c.memberByName(m.name).sure().kind {
+                  case FFun(f): FFun({
+                    expr: null,
+                    ret: f.ret,
+                    args: f.args,
+                    params: f.params
+                  });
+                  case FProp(_, _, t) | FVar(t): FVar(t);
+                }
+              });
+
+            var arg = EObjectDecl([for (f in argFields) { field: f.name, expr: macro @:pos(m.pos) $p{['this', f.name]} }]).at(m.pos);
 
             switch f.args {
               case []: f.args.push({ name: 'previous', type: argType });
@@ -500,7 +512,7 @@ class ViewBuilder {
 
             tracked.unshift(
               macro @:pos(m.pos) tink.state.Observable.untracked(function () {
-                var nu = getDerivedStateFromAttributes(cast this),
+                var nu = getDerivedStateFromAttributes($arg),
                     changed = tink.Anon.existentFields(nu);
 
                 $b{applyChanges}
