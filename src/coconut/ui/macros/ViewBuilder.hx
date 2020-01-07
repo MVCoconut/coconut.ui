@@ -257,7 +257,7 @@ class ViewBuilder {
 
               c.addMembers(macro class {
                 @:noCompletion inline function $getter():$type
-                  return return this.__slots.$name.value;
+                  return this.__slots.$name.value;
               });
               FProp('get', 'never', type, null);
           }
