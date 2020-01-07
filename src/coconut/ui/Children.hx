@@ -4,9 +4,6 @@ package coconut.ui;
 private typedef RenderResult = {}
 #end
 @:pure
-#if !macro
-@:build(coconut.ui.macros.Helper.setup())
-#end
 abstract Children(Array<RenderResult>) from Array<RenderResult> {
   public var length(get, never):Int;
     inline function get_length()
