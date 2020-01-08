@@ -382,7 +382,7 @@ class Tests extends haxe.unit.TestCase {
     Renderer.updateAll();
     assertEquals(before, Example.created.length);
 
-    list.items = models.concat(models);
+    list.items = models.concat([for (m in models) { bar: m.bar, foo: m.foo }]);
     Renderer.updateAll();
     assertEquals(before + 10, Example.created.length);
     assertEquals(redraws + 20, Example.redraws);

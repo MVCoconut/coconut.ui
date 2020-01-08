@@ -1,8 +1,8 @@
 -D tink_cli=0.4.1
-# @install: lix --silent download "haxelib:/tink_cli#0.4.1" into tink_cli/0.4.1/haxelib
+# @install: lix --silent download "gh://github.com/haxetink/tink_cli#e40960a7ddd72bdb3ca723aefb20591c514fae33" into tink_cli/0.4.1/github/e40960a7ddd72bdb3ca723aefb20591c514fae33
 -lib tink_io
--lib tink_macro
 -lib tink_stringly
--cp ${HAXE_LIBCACHE}/tink_cli/0.4.1/haxelib/src
+-lib tink_macro
+-cp ${HAXE_LIBCACHE}/tink_cli/0.4.1/github/e40960a7ddd72bdb3ca723aefb20591c514fae33/src
 # Make sure docs are generated
 -D use-rtti-doc
