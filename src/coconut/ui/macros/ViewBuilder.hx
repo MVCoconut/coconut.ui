@@ -289,7 +289,7 @@ class ViewBuilder {
     var renderer = switch c.memberByName('render') {
       case Success(m):
         rendererPos = m.pos;
-        m.addMeta(':noCompletion');
+        m.addMeta(':noCompletion', (macro null).pos);
         m.getFunction().sure();
       default:
         c.target.pos.error('missing field render');
