@@ -5,9 +5,9 @@ import tink.state.Observable;
 
 using tink.CoreApi;
 
-class Slot<T> implements ObservableObject<T> {
-  
-  var data:Observable<T>;
+class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
+
+  var data:Container;
   var last:Pair<T, FutureTrigger<Noise>>;
   var link:CallbackLink;
   var owner:{};
@@ -27,7 +27,7 @@ class Slot<T> implements ObservableObject<T> {
 
   public function getComparator():Null<T->T->Bool>
     return compare;
-  
+
   public function poll() {
     if (last == null) {
       if (data == null) {
@@ -49,21 +49,21 @@ class Slot<T> implements ObservableObject<T> {
   public inline function observe():Observable<T>
     return this;
 
-  public function setData(data:Observable<T>) {
+  public function setData(data:Container) {
     this.data = data;
     if (last != null) {
       link.dissolve();
       if (data != null) {
         var m = Observable.untracked(data.measure);
-        
+
         if (compare(m.value, last.a))
           link = m.becameInvalid.handle(last.b.trigger);
         else
           last.b.trigger(Noise);
-      }      
+      }
     }
   }
   #if debug @:keep #end
-  function toString() 
+  function toString()
     return 'Slot($owner)';
 }

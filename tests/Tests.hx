@@ -37,23 +37,23 @@ class Tests extends haxe.unit.TestCase {
     coconut.ui.Renderer.mount(wrapper, o);
   }
 
-  // function testNested() {
-  //   var s = new State('foo');
-  //   var foobar = new FooBar();
-  //   mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
+  function testNested() {
+    var s = new State('foo');
+    var foobar = new FooBar();
+    mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
 
-  //   Renderer.updateAll();
+    Renderer.updateAll();
 
-  //   var beforeOuter = Nestor.redraws,
-  //       beforeInner = Example4.redraws;
+    var beforeOuter = Nestor.redraws,
+        beforeInner = Example4.redraws;
 
-  //   s.set('bar');
+    s.set('bar');
 
-  //   Renderer.updateAll();
+    Renderer.updateAll();
 
-  //   assertEquals(beforeOuter, Nestor.redraws);
-  //   assertEquals(beforeInner + 1, Example4.redraws);
-  // }
+    assertEquals(beforeOuter, Nestor.redraws);
+    assertEquals(beforeInner + 1, Example4.redraws);
+  }
 
   function testSlot() {
     var s = new coconut.ui.tools.Slot(this),
@@ -158,6 +158,27 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(id, q('.example4').getAttribute('data-id'));
 
   }
+
+  // function testControlled() {
+  //   mount(hxx('<ControlledCounter id="counter1"/>'));
+  //   assertEquals('0', q('#counter1').innerHTML);
+  //   q('#counter1').click();
+  //   Renderer.updateAll();
+  //   assertEquals('1', q('#counter1').innerHTML);
+
+  //   var f = new Foo({ foo: 42 });
+
+  //   mount(hxx('<ControlledCounter id="counter2" count=${f.foo} />'));
+  //   assertEquals('42', q('#counter2').innerHTML);
+  //   q('#counter2').click();
+  //   Renderer.updateAll();
+  //   assertEquals('43', q('#counter2').innerHTML);
+
+  //   mount(hxx('<KeyPad />'));
+  //   assertEquals(null, q('button.selected[data-id="1"]'));
+  //   q('button[data-id="1"]').click();
+  //   assertEquals('1', q('button.selected[data-id="1"]').innerHTML);
+  // }
 
   function testModel() {
     var model = new Foo({ foo: 4 });

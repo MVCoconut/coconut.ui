@@ -47,6 +47,8 @@ class ViewBuilder {
     if (!c.target.meta.has(':tink'))
       c.target.meta.add(':tink', [], defaultPos);
 
+    c.target.meta.add(':observable', [], defaultPos);
+
     switch c.target.superClass.t.get() {
       case { pack: ['coconut', 'ui'], name: 'View' }:
       default: c.target.pos.error('Subclassing views is currently not supported');
@@ -159,6 +161,51 @@ class ViewBuilder {
 
     var attributes:Array<Member> = [];
 
+    function addAttribute(a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
+      var name = a.name;
+      var data = macro @:pos(a.pos) attributes.$name;
+
+      if (optional) {
+        defaultFields.push({
+          name: name,
+          pos: expr.pos,
+          kind: FProp('default', 'never', publicType)
+        });
+        defaultValues.push({ field: name, expr: expr });//TODO: consider making this readonly ... whatever I meant by that ...
+        data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
+      }
+
+      initSlots.push(macro @:pos(a.pos) this.__slots.$name.setData($data));
+
+      slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator}) });
+      slotFields.push({
+        name: a.name,
+        pos: a.pos,
+        kind: FVar(macro : coconut.ui.tools.Slot<$type, $publicType>)
+      });
+
+      switch a.pos.getOutcome(type.toType()).reduce() {
+        case TDynamic(null):
+          a.pos.error('Attribute `${a.name}` must not be Dynamic');
+        case TAbstract(_.get() => { pack: [], name: 'Any' }, _):
+          a.pos.error('Attribute `${a.name}` must not be Any');
+        default:
+      }
+
+      attributes.push({
+        name: a.name,
+        pos: a.pos,
+        kind: FVar(publicType),
+        meta:
+          (if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else [])
+            .concat(switch meta {
+              case null: [];
+              case v: v;
+            })
+      });
+
+    }
+
     for (attr in scrape('attribute', getComparator, ['attr', 'children', 'child'])) {
 
       var a = attr.member,
@@ -171,44 +218,11 @@ class ViewBuilder {
         if (optional && expr == null)
           expr = macro @:pos(a.pos) null;
 
-        var data = macro @:pos(a.pos) attributes.$name;
-
-        if (optional) {
-          defaultFields.push({
-            name: a.name,
-            pos: expr.pos,
-            kind: FProp('default', 'never', macro : coconut.data.Value<$type>)
-          });
-          defaultValues.push({ field: a.name, expr: expr });//TODO: consider making this readonly
-          data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
-        }
-
-        initSlots.push(macro @:pos(a.pos) this.__slots.$name.setData($data));
-
-        slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type>(this, ${attr.meta.comparator}) });
-        slotFields.push({
-          name: a.name,
-          pos: a.pos,
-          kind: FVar(macro : coconut.ui.tools.Slot<$type>)
-        });
-
-        switch a.pos.getOutcome(type.toType()).reduce() {
-          case TDynamic(null):
-            a.pos.error('Attribute `${a.name}` must not be Dynamic');
-          case TAbstract(_.get() => { pack: [], name: 'Any' }, _):
-            a.pos.error('Attribute `${a.name}` must not be Any');
-          default:
-        }
-
-        attributes.push({
-          name: a.name,
-          pos: a.pos,
-          kind: FVar(macro : coconut.data.Value<$type>),
-          meta:
-            a.metaNamed(':children')
-              .concat(a.metaNamed(':child'))
-              .concat(if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else []),
-        });
+        addAttribute(a, expr, type, macro : coconut.data.Value<$type>, optional,
+          attr.meta.comparator,
+          a.metaNamed(':children')
+            .concat(a.metaNamed(':child'))
+        );
 
         var isNullable =
           if (optional) switch expr {
@@ -284,6 +298,48 @@ class ViewBuilder {
         default: a.pos.error('attributes cannot be properties');
       }
     }
+
+    for (c in scrape('controlled', noArgs))
+      switch c.member.kind {
+        case FVar(null, _):
+          c.pos.error('type required');//TODO: infer if possible
+        case FVar(t, e):
+          c.pos.error('controlled attributes are not yet properly implemented');
+          var optional = switch e {
+            case null:
+              if (c.member.metaNamed(':optional').length > 0) {
+                e = macro @:pos(e.pos) new tink.state.State<$t>(cast null);
+                true;
+              }
+              else false;
+            default:
+              e = macro @:pos(e.pos) new tink.state.State<$t>($e);
+              true;
+          }
+
+          addAttribute(c.member, e, t, macro : coconut.data.Variable<$t>, optional, macro @:pos(c.pos) null);
+
+          c.member.kind = FProp('get', 'set', t);
+
+          var name = c.member.name;
+
+          var getter = 'get_$name',
+              setter = 'set_$name';
+
+          add(macro class {
+            inline function $getter():$t
+              return this.__slots.$name.value;
+            function $setter(param:$t):$t {
+              switch @:privateAccess this.__slots.$name.data {//TODO: this is quite hideous
+                case null: //should probably never happen
+                case v: v.set(param);
+              }
+              return param;
+            }
+          });
+        case _.match(FFun(_)) => isFunc:
+          c.pos.error('controlled attributes cannot be ${if (isFunc) 'functions' else 'properties'}');
+      }
 
     var rendererPos = null;
     var renderer = switch c.memberByName('render') {
