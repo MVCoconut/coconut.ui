@@ -1,8 +1,9 @@
 package ;
 
+import issues.Issue44;
+
 import tink.state.*;
 import js.Browser.*;
-//import vdom.VDom.*;
 import coconut.ui.*;
 import coconut.data.*;
 import coconut.data.Value;
