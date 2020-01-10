@@ -32,12 +32,12 @@ class Issue44 extends coconut.ui.View {
 }
 
 typedef ItemResponse = {
-  final user:SimpleUserResponse;
+  var user(default, never):SimpleUserResponse;
 }
 
 typedef SimpleUserResponse = {
-  final id:String;
-  final name:String;
+  var id(default, never):String;
+  var name(default, never):String;
 }
 
 class ItemData implements coconut.data.Model {
