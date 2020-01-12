@@ -161,9 +161,9 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('43', q('#counter2').innerHTML);
 
     mount(hxx('<KeyPad />'));
-    assertEquals(null, q('button.selected[data-id="1"]'));
-    click('button[data-id="1"]');
-    assertEquals('1', q('button.selected[data-id="1"]').innerHTML);
+    assertEquals(null, q('button.selected[data-value="1"]'));
+    click('button[data-value="1"]');
+    assertEquals('1', q('button.selected[data-value="1"]').innerHTML);
   }
 
   static function click(selector) {
