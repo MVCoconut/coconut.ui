@@ -1,8 +1,8 @@
 -D coconut.data=0.9.0
-# @install: lix --silent download "gh://github.com/MVCoconut/coconut.data#136cd5800f320b2bfd0122fa784b24c4f321173c" into coconut.data/0.9.0/github/136cd5800f320b2bfd0122fa784b24c4f321173c
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.data#e8791c18ca5192121e29aa5ca6c2c5ac1b4030b9" into coconut.data/0.9.0/github/e8791c18ca5192121e29aa5ca6c2c5ac1b4030b9
 -lib tink_anon
 -lib tink_lang
 -lib tink_pure
 -lib tink_state
--cp ${HAXE_LIBCACHE}/coconut.data/0.9.0/github/136cd5800f320b2bfd0122fa784b24c4f321173c/src
+-cp ${HAXE_LIBCACHE}/coconut.data/0.9.0/github/e8791c18ca5192121e29aa5ca6c2c5ac1b4030b9/src
 --macro coconut.data.macros.Setup.run()

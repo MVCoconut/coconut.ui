@@ -100,18 +100,6 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
 
-  // function _testOnlyCache() {
-  //   var s = new State('42');
-  //   var cache = new coconut.ui.tools.ViewCache();
-  //   function make()
-  //     return Example4.forKey(this, Observable.auto(function () return {
-  //       value: Std.string(Math.random())
-  //     }));
-
-  //   assertFalse(make() == make());
-  //   assertTrue(cache.cached(make) == cache.cached(make));
-  // }
-
   function testSlotCache() {
     var s = new State(42);
     mount(hxx('
@@ -159,26 +147,29 @@ class Tests extends haxe.unit.TestCase {
 
   }
 
-  // function testControlled() {
-  //   mount(hxx('<ControlledCounter id="counter1"/>'));
-  //   assertEquals('0', q('#counter1').innerHTML);
-  //   q('#counter1').click();
-  //   Renderer.updateAll();
-  //   assertEquals('1', q('#counter1').innerHTML);
+  function testControlled() {
+    mount(hxx('<ControlledCounter id="counter1"/>'));
+    assertEquals('0', q('#counter1').innerHTML);
+    click('#counter1');
+    assertEquals('1', q('#counter1').innerHTML);
 
-  //   var f = new Foo({ foo: 42 });
+    var f = new Foo({ foo: 42 });
 
-  //   mount(hxx('<ControlledCounter id="counter2" count=${f.foo} />'));
-  //   assertEquals('42', q('#counter2').innerHTML);
-  //   q('#counter2').click();
-  //   Renderer.updateAll();
-  //   assertEquals('43', q('#counter2').innerHTML);
+    mount(hxx('<ControlledCounter id="counter2" count=${f.foo} />'));
+    assertEquals('42', q('#counter2').innerHTML);
+    click('#counter2');
+    assertEquals('43', q('#counter2').innerHTML);
 
-  //   mount(hxx('<KeyPad />'));
-  //   assertEquals(null, q('button.selected[data-id="1"]'));
-  //   q('button[data-id="1"]').click();
-  //   assertEquals('1', q('button.selected[data-id="1"]').innerHTML);
-  // }
+    mount(hxx('<KeyPad />'));
+    assertEquals(null, q('button.selected[data-id="1"]'));
+    click('button[data-id="1"]');
+    assertEquals('1', q('button.selected[data-id="1"]').innerHTML);
+  }
+
+  static function click(selector) {
+    q(selector).click();
+    Renderer.updateAll();
+  }
 
   function testModel() {
     var model = new Foo({ foo: 4 });

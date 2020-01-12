@@ -12,7 +12,7 @@ class KeyPad extends View {
   function render() '
     <div>
       <for ${i in 0...max}>
-        <Key value=$i current=${this.current} />
+        <Key value=$i current=${current} />
       </for>
     </div>
   ';

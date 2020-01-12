@@ -304,7 +304,6 @@ class ViewBuilder {
         case FVar(null, _):
           c.pos.error('type required');//TODO: infer if possible
         case FVar(t, e):
-          c.pos.error('controlled attributes are not yet properly implemented');
           var optional = switch e {
             case null:
               if (c.member.metaNamed(':optional').length > 0) {

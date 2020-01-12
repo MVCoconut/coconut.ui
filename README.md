@@ -91,9 +91,39 @@ The following things mean the same:
   }
 ```
 
+### Controlled Attributes
+
+Sometimes a view reads from and writes to a single property, such as an `@:editable` property of a model, or the `@:state` of a parent. One solution to this is to pass down the data, as well as a callback for when the view wants the property to change. A shorter, and semantically more explicit alternative is to define controlled attributes:
+
+```haxe
+class Key extends View {
+  @:attribute var value:Int;
+  @:controlled var current:Int;
+  function render() '
+    <button class=${{ selected: value == current }} onclick=${current = value}>$value</button>
+  ';
+}
+
+class KeyPad extends View {
+  @:state var value:Int = 0;
+  static var max = 10;
+  function render() '
+    <div>
+      <for ${i in 0...max}>
+        <Key value=$i current=${value} />
+      </for>
+    </div>
+  ';
+}
+```
+
+As you see `Key::current` is passed as an attribute in `KeyPad`, but `Key` can alter it, which will take effect on the parent's state.
+
+Currently, controlled attributes cannot be passed down via spreads.
+
 ### Children
 
-Views may also consume children, which are handled very much like attributes in almost every way, except how they're specified in HXX.
+Views may also consume children, which are handled very much like attributes in almost every way, except in how they're specified in HXX.
 
 The following are all equivalent:
 
