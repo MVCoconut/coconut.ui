@@ -658,7 +658,8 @@ class ViewBuilder {
             inline function $get() return $i{internal}.value;
           });
 
-          Models.checkLater(f.name, classId);
+          if (f.metaNamed(':skipCheck').length == 0)
+            Models.checkLater(f.name, classId);
 
           f.kind = FProp('get', 'never', t);
         default:
