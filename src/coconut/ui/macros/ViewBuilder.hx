@@ -147,23 +147,16 @@ class ViewBuilder {
       pos: defaultPos,
     });
 
-    var slots = [],
-        initSlots = [],
-        slotFields = [];
-
-    c.addMember({
-      name: '__slots',
-      meta: [{ name: ':noCompletion', params: [], pos: defaultPos }],
-      kind: FProp('default', 'never', TAnonymous(slotFields), EObjectDecl(slots).at(defaultPos)),
-      access: [],
-      pos: defaultPos,
-    });
+    var initSlots = [];
 
     var attributes:Array<Member> = [];
 
+    function slotName(name)
+      return '__coco_$name';
     function addAttribute(a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
       var name = a.name;
-      var data = macro @:pos(a.pos) attributes.$name;
+      var data = macro @:pos(a.pos) attributes.$name,
+          slotName = slotName(a.name);
 
       if (optional) {
         defaultFields.push({
@@ -175,13 +168,11 @@ class ViewBuilder {
         data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
       }
 
-      initSlots.push(macro @:pos(a.pos) this.__slots.$name.setData($data));
+      initSlots.push(macro @:pos(a.pos) this.$slotName.setData($data));
 
-      slots.push({ field: a.name, expr: macro new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator}) });
-      slotFields.push({
-        name: a.name,
-        pos: a.pos,
-        kind: FVar(macro : coconut.ui.tools.Slot<$type, $publicType>)
+      add(macro class {
+        private var $slotName(default, never):coconut.ui.tools.Slot<$type, $publicType> =
+          new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator});
       });
 
       switch a.pos.getOutcome(type.toType()).reduce() {
@@ -214,6 +205,8 @@ class ViewBuilder {
       function add(type:ComplexType, expr:Expr) {
         var optional = a.extractMeta(':optional').isSuccess() || expr != null,
             name = a.name;
+
+        var slotName = slotName(name);
 
         if (optional && expr == null)
           expr = macro @:pos(a.pos) null;
@@ -256,9 +249,9 @@ class ViewBuilder {
                   var callArgs = [for (a in args) macro $i{a.name}];
                   var body =
                     if (#if debug optional #else true #end)
-                      macro @:pos(a.pos) return this.__slots.$name.value($a{callArgs});
+                      macro @:pos(a.pos) return this.$slotName.value($a{callArgs});
                     else
-                      macro @:pos(a.pos) return switch this.__slots.$name.value {
+                      macro @:pos(a.pos) return switch this.$slotName.value {
                         case null: throw 'mandatory attribute ' + $v{name} + ' of <' + $v{c.target.name} + '/> was set to null';
                         case __fn: __fn($a{callArgs});
                       }
@@ -271,7 +264,7 @@ class ViewBuilder {
 
               c.addMembers(macro class {
                 @:noCompletion inline function $getter():$type
-                  return this.__slots.$name.value;
+                  return this.$slotName.value;
               });
               FProp('get', 'never', type, null);
           }
@@ -323,13 +316,14 @@ class ViewBuilder {
           var name = c.member.name;
 
           var getter = 'get_$name',
-              setter = 'set_$name';
+              setter = 'set_$name',
+              slotName = slotName(name);
 
           add(macro class {
             inline function $getter():$t
-              return this.__slots.$name.value;
+              return this.$slotName.value;
             function $setter(param:$t):$t {
-              switch @:privateAccess this.__slots.$name.data {//TODO: this is quite hideous
+              switch @:privateAccess this.$slotName.data {//TODO: this is quite hideous
                 case null: //should probably never happen
                 case v: v.set(param);
               }
