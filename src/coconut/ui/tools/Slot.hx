@@ -7,6 +7,7 @@ using tink.CoreApi;
 
 class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
 
+  var defaultData:Container;
   var data:Container;
   var last:Pair<T, FutureTrigger<Noise>>;
   var link:CallbackLink;
@@ -17,12 +18,13 @@ class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
     inline function get_value()
       return observe().value;
 
-  public function new(owner, ?compare) {
+  public function new(owner, ?compare, ?defaultData) {
     this.owner = owner;
     this.compare = switch compare {
       case null: function (a, b) return a == b;
       case v: v;
     }
+    this.defaultData = defaultData;
   }
 
   public function getComparator():Null<T->T->Bool>
@@ -50,6 +52,9 @@ class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
     return this;
 
   public function setData(data:Container) {
+    if (data == null)
+      data = defaultData;
+    if (data == this.data) return;
     this.data = data;
     if (last != null) {
       link.dissolve();

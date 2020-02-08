@@ -133,46 +133,24 @@ class ViewBuilder {
       return ret;
     }
 
-    var defaultValues = [],
-        defaults = MacroApi.tempName('defaults'),
-        defaultFields = [];
-
-    c.addMember({
-      name: defaults,
-      meta: [{ name: ':noCompletion', params: [], pos: defaultPos }],
-      kind: {
-        var ct = TAnonymous(defaultFields);
-        FProp('default', 'never', ct, macro {(${EObjectDecl(defaultValues).at(defaultPos)}:$ct);});
-      },
-      pos: defaultPos,
-    });
-
-    var initSlots = [];
-
-    var attributes:Array<Member> = [];
+    var initSlots = [],
+        attributes:Array<Member> = [];
 
     function slotName(name)
       return '__coco_$name';
+
     function addAttribute(a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
       var name = a.name;
       var data = macro @:pos(a.pos) attributes.$name,
           slotName = slotName(a.name);
 
-      if (optional) {
-        defaultFields.push({
-          name: name,
-          pos: expr.pos,
-          kind: FProp('default', 'never', publicType)
-        });
-        defaultValues.push({ field: name, expr: expr });//TODO: consider making this readonly ... whatever I meant by that ...
-        data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
-      }
-
       initSlots.push(macro @:pos(a.pos) this.$slotName.setData($data));
 
+      if (expr == null)
+        expr = macro @:pos(a.pos) null;
       add(macro class {
         private var $slotName(default, never):coconut.ui.tools.Slot<$type, $publicType> =
-          new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator});
+          new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator}, $expr);
       });
 
       switch a.pos.getOutcome(type.toType()).reduce() {
