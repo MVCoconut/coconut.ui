@@ -171,6 +171,11 @@ class Tests extends haxe.unit.TestCase {
     Renderer.updateAll();
   }
 
+  function testIssue49() {
+    mount(hxx('<issues.Issue49 title="test" click=${trace("yo")} />'));
+    assertEquals('DEFAULT', q('span').innerHTML);
+  }
+
   function testModel() {
     var model = new Foo({ foo: 4 });
 

@@ -24,7 +24,7 @@ class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
       case null: function (a, b) return a == b;
       case v: v;
     }
-    this.defaultData = defaultData;
+    this.data = this.defaultData = defaultData;
   }
 
   public function getComparator():Null<T->T->Bool>
