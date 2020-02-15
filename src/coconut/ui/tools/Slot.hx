@@ -36,9 +36,21 @@ class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
         last = new Pair(null, Future.trigger());
       }
       else {
-        var m = data.measure();
-        last = new Pair(m.value, Future.trigger());
-        link = m.becameInvalid.handle(last.b.trigger);
+        link = null;
+        var m = data.measure(),
+            changed = Future.trigger();
+
+        var dFault = null;
+        last = new Pair(switch m.value {
+          case null if (defaultData != null):
+            dFault = defaultData.measure();
+            dFault.value;
+          case v: v;
+        }, changed);
+
+        link = m.becameInvalid.handle(changed.trigger);
+        if (dFault != null)
+          link &= dFault.becameInvalid.handle(changed.trigger);
       }
       last.b.handle(function () last = null);
     }
