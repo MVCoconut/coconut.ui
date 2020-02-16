@@ -123,30 +123,30 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(id, elt.getAttribute('data-id'));
     assertEquals('17', elt.innerHTML);
   }
-  // Skipped pending https://github.com/haxetink/tink_hxx/issues/33
-  // function testCache() {
 
-  //   var s = new State('42');
+  function testCache() {
 
-  //   function render(value:String):RenderResult
-  //     return hxx('<Example4 key={"42"} value={value} />');
+    var s = new State('42');
 
-  //   mount(hxx('
-  //     <Example5 data={s}>
-  //       <renderData>
-  //         {render(data)}
-  //       </renderData>
-  //     </Example5>
-  //   '));
-  //   var id = q('.example4').getAttribute('data-id');
-  //   assertTrue(id != null);
-  //   assertEquals('42', q('.example4').innerHTML);
-  //   s.set('321');
-  //   Renderer.updateAll();
-  //   assertEquals('321', q('.example4').innerHTML);
-  //   assertEquals(id, q('.example4').getAttribute('data-id'));
+    function render(value:String):RenderResult
+      return hxx('<Example4 key={"42"} value={value} />');
 
-  // }
+    mount(hxx('
+      <Example5 data={s.value}>
+        <renderData>
+          {render(data)}
+        </renderData>
+      </Example5>
+    '));
+    var id = q('.example4').getAttribute('data-id');
+    assertTrue(id != null);
+    assertEquals('42', q('.example4').innerHTML);
+    s.set('321');
+    Renderer.updateAll();
+    assertEquals('321', q('.example4').innerHTML);
+    assertEquals(id, q('.example4').getAttribute('data-id'));
+
+  }
 
   function testControlled() {
     mount(hxx('<ControlledCounter id="counter1"/>'));
