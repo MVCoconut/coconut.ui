@@ -171,7 +171,7 @@ class ViewBuilder {
           pos: expr.pos,
           kind: FProp('default', 'never', publicType)
         });
-        defaultValues.push({ field: name, expr: expr });//TODO: consider making this readonly ... whatever I meant by that ...
+        defaultValues.push({ field: name, expr: macro ($expr:$type) });//TODO: consider making this readonly ... whatever I meant by that ...
         data = macro @:pos(data.pos) $data.or($i{defaults}.$name);
       }
 
