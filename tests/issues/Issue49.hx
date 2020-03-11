@@ -2,7 +2,7 @@ package issues;
 
 class Issue49 {
   static public function buttons() {
-    var data = [{title: "test", click: () -> trace("yo")}];
+    var data = [{title: "test", click: function() trace("yo")}];
     return coconut.Ui.hxx('<Buttons buttons={data} />');
   }
 }
