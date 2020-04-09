@@ -49,9 +49,8 @@ class ViewBuilder {
 
     c.target.meta.add(':observable', [], defaultPos);
 
-    switch c.target.superClass.t.get() {
-      case { pack: ['coconut', 'ui'], name: 'View' }:
-      default: c.target.pos.error('Subclassing views is currently not supported');
+    if (!c.target.superClass.t.get().meta.has(':coconut.viewbase')) {
+      c.target.pos.error('Subclassing views is currently not supported');
     }
 
     var beforeRender = [],

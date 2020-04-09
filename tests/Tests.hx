@@ -8,7 +8,7 @@ import js.Browser.*;
 import coconut.ui.*;
 import coconut.data.*;
 import coconut.data.Value;
-import coconut.Ui.hxx;
+import coconut.ui.Renderer.hxx;
 using tink.CoreApi;
 
 class Tests extends haxe.unit.TestCase {

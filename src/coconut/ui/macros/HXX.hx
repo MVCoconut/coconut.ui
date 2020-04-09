@@ -16,10 +16,10 @@ class HXX {
   static public var generator = new Generator(function ()
     return [for (group in defaults) for (tag in group.get()) tag]
   );
-  static public function parse(e:Expr)
+  static public function parse(e:Expr, fragment:String)
     return switch e.expr {
       case EDisplay(v, k):
-        EDisplay(parse(v), k).at(e.pos);
+        EDisplay(parse(v, fragment), k).at(e.pos);
       default:
         var ctx = generator.createContext();
         return ctx.generateRoot(
@@ -28,7 +28,7 @@ class HXX {
             noControlStructures: false,
             defaultSwitchTarget: macro __data__,
             isVoid: ctx.isVoid,
-            fragment: Context.definedValue('hxx_fragment'),
+            fragment: fragment,
             treatNested: function (children) return ctx.generateRoot.bind(children).bounce(),
           })
         );
