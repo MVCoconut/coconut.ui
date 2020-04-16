@@ -1,4 +1,4 @@
-package ;
+package views;
 
 class Example extends View {
 

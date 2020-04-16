@@ -1,4 +1,4 @@
-import coconut.ui.*;
+package views;
 
 class Example5<T> extends View {
   @:attribute var data:T;

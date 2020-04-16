@@ -1,3 +1,5 @@
+package views;
+
 class ExampleListView extends View {
   @:attr var list:ListModel<{ var foo(default, never):tink.state.Observable<Int>; var bar(default, never):Int; }>;
   #if haxe4
