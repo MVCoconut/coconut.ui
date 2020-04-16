@@ -6,10 +6,8 @@ import issues.Issue44;
 class Tests extends haxe.unit.TestCase {
 
   static var entries = [];
-  static public function log(msg:String, ?pos:haxe.PosInfos) {
-    haxe.Log.trace(msg, pos);
+  static public function log(msg:String, ?pos:haxe.PosInfos)
     entries.push('${pos.className.split('.').pop()}:$msg');
-  }
 
   function expectLog(expected:Array<String>, ?pos:haxe.PosInfos) {
     trace('expect $expected');
@@ -34,7 +32,7 @@ class Tests extends haxe.unit.TestCase {
     coconut.ui.Renderer.mount(wrapper, o);
   }
 
-  function _testNested() {
+  function testNested() {
     var s = new State('foo');
     var foobar = new FooBar();
     mount(hxx('<Nestor plain="yohoho" inner={s.value} {...foobar} />'));
@@ -52,7 +50,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(beforeInner + 1, Example4.redraws);
   }
 
-  function _testSlot() {
+  function testSlot() {
     var s = new coconut.ui.tools.Slot(this),
         s1 = new State(0),
         s2 = new State(1000);
@@ -81,7 +79,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('42,0,1000,1002', log.join(','));
   }
 
-  function _testCustom() {
+  function testCustom() {
     var s = new State(4);
 
     mount(hxx('<Example key={s} foo={s} bar={s} />'));
@@ -97,7 +95,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('5', q('.bar').innerHTML);
   }
 
-  function _testSlotCache() {
+  function testSlotCache() {
     var s = new State(42);
     mount(hxx('
       <Example6>
@@ -120,7 +118,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('17', elt.innerHTML);
   }
 
-  function _testCache() {
+  function testCache() {
 
     var s = new State('42');
 
@@ -144,7 +142,7 @@ class Tests extends haxe.unit.TestCase {
 
   }
 
-  function _testControlled() {
+  function testControlled() {
     mount(hxx('<ControlledCounter id="counter1"/>'));
     assertEquals('0', q('#counter1').innerHTML);
     click('#counter1');
@@ -168,12 +166,12 @@ class Tests extends haxe.unit.TestCase {
     Renderer.updateAll();
   }
 
-  function _testIssue49() {
+  function testIssue49() {
     mount(Issue49.buttons());
     assertEquals('DEFAULT', q('span').innerHTML);
   }
 
-  function _testModel() {
+  function testModel() {
     var model = new Foo({ foo: 4 });
 
     var e = null;
@@ -193,7 +191,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('42', q('.baz').innerHTML);
   }
 
-  function _testModelInCustom() {
+  function testModelInCustom() {
 
     var variants = [
       function (model:Foo) return hxx('<Example foo={model.foo} {...model} />'),
@@ -216,7 +214,7 @@ class Tests extends haxe.unit.TestCase {
 
   }
 
-  function _testIssue31() {
+  function testIssue31() {
     var counter = new State(0),
         btn1 = null,
         btn2 = null;
@@ -259,7 +257,7 @@ class Tests extends haxe.unit.TestCase {
     #end
   }
 
-  function _testSnapshots() {
+  function testSnapshots() {
     var state = new State(123);
     mount(hxx('<Snapshotter value=${state.value} />'));
     state.set(321);
@@ -267,7 +265,7 @@ class Tests extends haxe.unit.TestCase {
     expectLog(['Snapshotter:123']);
   }
 
-  function _testViewDidRender() {
+  function testViewDidRender() {
     var state = new State(123);
     mount(hxx('<DidRender counter=${state.value} />'));
     state.set(321);
@@ -277,16 +275,11 @@ class Tests extends haxe.unit.TestCase {
 
   function testMisc() {//horay for naming!
 
-    var r = new Rec({ foo: 42, bar: 0 });
-    // var r = new Rec({ foo: 42, bar: 0 }),
-    //     inst = new Inst({}),
-    //     instRef:Inst = null,
-    //     blargh:Blargh = null;
+    var r = new Rec({ foo: 42, bar: 0 }),
+        inst = new Inst({}),
+        instRef:Inst = null,
+        blargh:Blargh = null;
 
-    mount(hxx('
-      <Outer>YEAH ${r.bar}</Outer>
-    '));
-    /*
     mount(hxx('
       <Blargh ref={function (v) blargh = v}>
         <blub>
@@ -305,52 +298,51 @@ class Tests extends haxe.unit.TestCase {
         </blub>
       </Blargh>
     '));
-    */
 
     expectLog([
       'Outer:render',
       'Inner:render',
-      // 'Inst:mounted',
-      // 'Inst:mounted',
+      'Inst:mounted',
+      'Inst:mounted',
     ]);
 
-    // assertFalse(blargh.hidden);
-    // assertFalse(instRef == null);
-    // #if !react
-    // assertEquals('I am native!', q('.native-element').innerHTML);
-    // #end
-    // assertEquals(0, inst.count);
-    // assertEquals(0, instRef.count);
+    assertFalse(blargh.hidden);
+    assertFalse(instRef == null);
+    #if !react
+    assertEquals('I am native!', q('.native-element').innerHTML);
+    #end
+    assertEquals(0, inst.count);
+    assertEquals(0, instRef.count);
 
-    // for (btn in qs('.inst>button'))
-    //   btn.click();
+    for (btn in qs('.inst>button'))
+      btn.click();
 
-    // assertEquals(1, inst.count);
-    // assertEquals(1, instRef.count);
+    assertEquals(1, inst.count);
+    assertEquals(1, instRef.count);
 
-    // q('.hide-blargh').click();
-    // Renderer.updateAll();
+    q('.hide-blargh').click();
+    Renderer.updateAll();
 
-    // expectLog([
-    //   'Inst:unmounting',
-    //   'Inst:unmounting',
-    // ]);
+    expectLog([
+      'Inst:unmounting',
+      'Inst:unmounting',
+    ]);
 
-    // assertTrue(instRef == null);
-    // assertTrue(blargh.hidden);
+    assertTrue(instRef == null);
+    assertTrue(blargh.hidden);
 
-    // blargh.hidden = false;
-    // Renderer.updateAll();
+    blargh.hidden = false;
+    Renderer.updateAll();
 
-    // expectLog([
-      // 'Outer:render',
-      // 'Inner:render',
-      // 'Inst:mounted',
-      // 'Inst:mounted',
-    // ]);
+    expectLog([
+      'Outer:render',
+      'Inner:render',
+      'Inst:mounted',
+      'Inst:mounted',
+    ]);
 
-    // assertEquals(1, inst.count);
-    // assertEquals(0, instRef.count);
+    assertEquals(1, inst.count);
+    assertEquals(0, instRef.count);
 
     #if !react
     r.update({ bar: r.bar + 1 });
@@ -364,7 +356,7 @@ class Tests extends haxe.unit.TestCase {
     #end
   }
 
-  function _testTodo() {
+  function testTodo() {
 
     var desc = new State('test'),
         done = new State(false);
@@ -387,7 +379,7 @@ class Tests extends haxe.unit.TestCase {
     #end
   }
 
-  function _testPropViewReuse() {
+  function testPropViewReuse() {
     var states = [for (i in 0...10) new State(i)];
     var models = [for (s in states) { foo: s.observe() , bar: s.value }];
     var list = new ListModel({ items: models });
@@ -419,12 +411,12 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(redraws + 22, Example.redraws);
   }
 
-  function _testRootSwitch() {
+  function testRootSwitch() {
     mount(hxx('<MyView />'));
     assertEquals('One', q('div').innerHTML);
   }
 
-  function _testModelViewReuse() {
+  function testModelViewReuse() {
 
     var models = [for (i in 0...10) new Foo({ foo: i })];
     var list = new ListModel({ items: models });
