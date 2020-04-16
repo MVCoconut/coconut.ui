@@ -2,7 +2,7 @@ package issues;
 
 using tink.CoreApi;
 
-class Issue44 extends coconut.ui.View {
+class Issue44 extends View {
   @:attr var item:ItemData;
   function render() '
     <div>

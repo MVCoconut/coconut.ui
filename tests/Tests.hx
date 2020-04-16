@@ -451,7 +451,7 @@ class Tests extends haxe.unit.TestCase {
   }
 }
 
-class FooListView extends coconut.ui.View {
+class FooListView extends View {
   @:attr var list:ListModel<Foo>;
   function render() '
     <div class="foo-list" style="background: blue">

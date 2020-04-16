@@ -1,4 +1,4 @@
-class Stepper extends coconut.ui.View {
+class Stepper extends View {
   @:attribute var step:Int = 1;
   @:attribute function onconfirm(value:Int):Void;
   @:state var value:Int = 0;

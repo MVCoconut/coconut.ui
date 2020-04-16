@@ -1,4 +1,4 @@
-class Snapshotter extends coconut.ui.View {
+class Snapshotter extends View {
   @:ref var ref:js.html.Element;
   @:attribute var value:Int;
 

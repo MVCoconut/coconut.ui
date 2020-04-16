@@ -4,7 +4,7 @@ class TodoList implements Model {
   @:observable var items:List<TodoItem> = @byDefault new List();
 }
 
-class TodoListView extends coconut.ui.View {
+class TodoListView extends View {
   @:attribute var todos:TodoList;
   function render() '
     <div class="todo-list">
