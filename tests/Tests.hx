@@ -9,10 +9,8 @@ class Tests extends haxe.unit.TestCase {
   static public function log(msg:String, ?pos:haxe.PosInfos)
     entries.push('${pos.className.split('.').pop()}:$msg');
 
-  function expectLog(expected:Array<String>, ?pos:haxe.PosInfos) {
-    trace('expect $expected');
+  function expectLog(expected:Array<String>, ?pos:haxe.PosInfos)
     assertEquals(expected.join('\n'), entries.splice(0, entries.length).join('\n'), pos);
-  }
 
   override function setup() {
     document.body.innerHTML = '';
