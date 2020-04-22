@@ -15,7 +15,7 @@ private typedef PostProcessor = Callback<{ target: ClassBuilder, attributes:Arra
 
 class ViewBuilder {
 
-  final postprocessor:PostProcessor;
+  final config:Config;
   final c:ClassBuilder;
 
   static function getComparator(t:MetadataEntry) {
@@ -31,9 +31,9 @@ class ViewBuilder {
     return { comparator: comparator };
   }
 
-  function new(c, postprocessor) {
+  function new(c, config) {
     this.c = c;
-    this.postprocessor = postprocessor;
+    this.config = config;
   }
 
   static function noArgs(t:MetadataEntry)
@@ -333,9 +333,12 @@ class ViewBuilder {
     if (renderer.args.length > 0)
       rendererPos.error('argument should not be specified');
 
-    switch renderer.ret {
-      case null: renderer.ret = macro : coconut.ui.RenderResult;
-      case ct: (macro @:pos(rendererPos) ((null:$ct):coconut.ui.RenderResult)).typeof().sure();
+    {
+      var renders = config.renders;
+      switch renderer.ret {
+        case null: renderer.ret = macro : $renders;
+        case ct: (macro @:pos(rendererPos) ((null:$ct):$renders)).typeof().sure();
+      }
     }
 
     for (ref in scrape('ref', noArgs, true)) {
@@ -645,38 +648,39 @@ class ViewBuilder {
         default:
       }
 
-    postprocessor.invoke({
+    config.afterBuild.invoke({
       target: c,
       attributes: attributes,
       states: states,
     });
   }
 
-  static function build(postprocessorId:Int)
+  static final configs = new Array<Config>();
+
+  static function build(configId:Int)
     return ClassBuilder.run([
-      c -> new ViewBuilder(c, postprocessors[postprocessorId]).doBuild()
+      c -> new ViewBuilder(c, configs[configId]).doBuild()
     ]);
 
-  static final postprocessors:Array<PostProcessor> = [];
-  static public function init(postprocessor) {
+  static public function init(renders, afterBuild) {
 
     var cls = Context.getLocalClass().get(),
-        id = postprocessors.push(postprocessor) - 1;
+        id = configs.push({ renders: renders, afterBuild: afterBuild }) - 1;
 
     cls.meta.add(':observable', [], (macro null).pos);
     cls.meta.add(':coconut.viewbase', [], (macro null).pos);
     cls.meta.add(':autoBuild', [macro coconut.ui.macros.ViewBuilder.build($v{id})], (macro null).pos);
 
-    return Context.getBuildFields().concat(added.fields);
+    return Context.getBuildFields().concat(base(renders).fields);
   }
 
-  static var added = macro class {
+  static function base(renders) return macro class {
     public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
 
     @:noCompletion var _coco_revision = new tink.state.State(0);
 
     public function new(
-        render:Void->RenderResult,
+        render:Void->$renders,
         shouldUpdate:Void->Bool,
         track:Void->Void,
         beforeRerender:Void->Void,
@@ -753,5 +757,10 @@ class ViewBuilder {
       if (callback != null) afterUpdating(callback);
     }
   }
+}
+
+private typedef Config = {
+  final renders: ComplexType;
+  final afterBuild:PostProcessor;
 }
 #end
