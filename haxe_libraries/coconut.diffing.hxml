@@ -1,6 +1,4 @@
-# @install: lix --silent download "gh://github.com/MVCoconut/coconut.diffing#5c4af52f23116863ff3125bdbe36e5b116fb7dc3" into coconut.diffing/0.1.0/github/5c4af52f23116863ff3125bdbe36e5b116fb7dc3
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.diffing#5762beca66b51a65d53af2e9b7112f57f6bb7507" into coconut.diffing/0.1.0/github/5762beca66b51a65d53af2e9b7112f57f6bb7507
 -lib coconut.ui
--cp ${HAXE_LIBCACHE}/coconut.diffing/0.1.0/github/5c4af52f23116863ff3125bdbe36e5b116fb7dc3/src
+-cp ${HAXE_LIBCACHE}/coconut.diffing/0.1.0/github/5762beca66b51a65d53af2e9b7112f57f6bb7507/src
 -D coconut.diffing=0.1.0
---macro coconut.diffing.macros.Setup.all()
--D hxx_fragment=coconut.diffing.VNode.fragment
