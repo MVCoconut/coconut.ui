@@ -6,7 +6,7 @@ class Example4 extends View {
   function render() {
     redraws++;
     return @hxx '
-      <div class="example4" data-id={""+viewId}>{value}</div>
+      <div class="example4" data-id={viewId}>{value}</div>
     ';
   }
 }
