@@ -8,6 +8,16 @@ import tink.hxx.*;
 using tink.MacroApi;
 
 class Helpers {
+
+  static public function mount(renderer:Expr, target:Expr, markup:Expr, parse:Expr->Expr) {
+    switch markup {
+      case macro $v{(_:String)}, macro @:markup $_:
+        markup = parse(markup);
+      default:
+    }
+    return macro $renderer($target, $markup);
+  }
+
   static public function parse(e:Expr, generator:Generator, fragment:String)
     return switch e.expr {
       case EDisplay(v, k):
