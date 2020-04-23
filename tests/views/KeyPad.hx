@@ -1,3 +1,5 @@
+package views;
+
 class Key extends View {
   @:attribute var value:Int;
   @:controlled var current:Int;

@@ -3,14 +3,14 @@ package issues;
 class Issue49 {
   static public function buttons() {
     var data = [{title: "test", click: function() trace("yo")}];
-    return coconut.Ui.hxx('<Buttons buttons={data} />');
+    return coconut.ui.Renderer.hxx('<Buttons buttons={data} />');
   }
 }
 
 typedef ButtonInfo = {
   title:String,
   click:Void->Void,
-  ? child:Void->RenderResult
+  ?child:Void->RenderResult
 }
 
 class Buttons extends View {

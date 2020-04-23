@@ -1,7 +1,9 @@
-class ExampleListView extends coconut.ui.View {
+package views;
+
+class ExampleListView extends View {
   @:attr var list:ListModel<{ var foo(default, never):tink.state.Observable<Int>; var bar(default, never):Int; }>;
   #if haxe4
-  function render() 
+  function render()
     <div class="foo-list">
       {for (item in list.items) <Example key={item} foo={item.foo} {...item} />}
     </div>

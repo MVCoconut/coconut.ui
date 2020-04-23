@@ -11,8 +11,12 @@ using haxe.macro.Tools;
 using tink.MacroApi;
 using tink.CoreApi;
 
+private typedef PostProcessor = Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>;
+
 class ViewBuilder {
-  static public var afterBuild(default, null):Queue<Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>> = new Queue();
+
+  final config:Config;
+  final c:ClassBuilder;
 
   static function getComparator(t:MetadataEntry) {
     var comparator = macro @:pos(t.pos) null;
@@ -27,13 +31,18 @@ class ViewBuilder {
     return { comparator: comparator };
   }
 
+  function new(c, config) {
+    this.c = c;
+    this.config = config;
+  }
+
   static function noArgs(t:MetadataEntry)
     switch t.params {
       case []:
       case v: v[0].reject('no arguments allowed here');
     }
 
-  static function doBuild(c:ClassBuilder) {
+  function doBuild() {
 
     var defaultPos = (macro null).pos,//perhaps just use currentPos()
         classId = Models.classId(c.target);
@@ -49,9 +58,8 @@ class ViewBuilder {
 
     c.target.meta.add(':observable', [], defaultPos);
 
-    switch c.target.superClass.t.get() {
-      case { pack: ['coconut', 'ui'], name: 'View' }:
-      default: c.target.pos.error('Subclassing views is currently not supported');
+    if (!c.target.superClass.t.get().meta.has(':coconut.viewbase')) {
+      c.target.pos.error('Subclassing views is currently not supported');
     }
 
     var beforeRender = [],
@@ -325,9 +333,12 @@ class ViewBuilder {
     if (renderer.args.length > 0)
       rendererPos.error('argument should not be specified');
 
-    switch renderer.ret {
-      case null: renderer.ret = macro : coconut.ui.RenderResult;
-      case ct: (macro @:pos(rendererPos) ((null:$ct):coconut.ui.RenderResult)).typeof().sure();
+    {
+      var renders = config.renders;
+      switch renderer.ret {
+        case null: renderer.ret = macro : $renders;
+        case ct: (macro @:pos(rendererPos) ((null:$ct):$renders)).typeof().sure();
+      }
     }
 
     for (ref in scrape('ref', noArgs, true)) {
@@ -637,16 +648,119 @@ class ViewBuilder {
         default:
       }
 
-    for (cb in afterBuild)
-      cb.invoke({
-        target: c,
-        attributes: attributes,
-        states: states,
-      });
+    config.afterBuild.invoke({
+      target: c,
+      attributes: attributes,
+      states: states,
+    });
   }
 
-  static function build() {
-    return ClassBuilder.run([doBuild]);
+  static final configs = new Array<Config>();
+
+  static function build(configId:Int)
+    return ClassBuilder.run([
+      c -> new ViewBuilder(c, configs[configId]).doBuild()
+    ]);
+
+  static public function init(renders, afterBuild) {
+
+    var cls = Context.getLocalClass().get(),
+        id = configs.push({ renders: renders, afterBuild: afterBuild }) - 1;
+
+    cls.meta.add(':observable', [], (macro null).pos);
+    cls.meta.add(':coconut.viewbase', [], (macro null).pos);
+    cls.meta.add(':autoBuild', [macro coconut.ui.macros.ViewBuilder.build($v{id})], (macro null).pos);
+
+    return Context.getBuildFields().concat(base(renders).fields);
   }
+
+  static function base(renders) return macro class {
+    public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
+
+    @:noCompletion var _coco_revision = new tink.state.State(0);
+
+    public function new(
+        render:Void->$renders,
+        shouldUpdate:Void->Bool,
+        track:Void->Void,
+        beforeRerender:Void->Void,
+        rendered:Bool->Void
+      ) {
+
+      var mounted = if (rendered != null) rendered.bind(true) else null,
+          updated = if (rendered != null) rendered.bind(false) else null;
+
+      var firstTime = true,
+          last = null,
+          hasBeforeRerender = beforeRerender != null,
+          hasUpdated = updated != null,
+          lastRev = _coco_revision.value;
+
+      super(
+        tink.state.Observable.auto(
+          function renderView() {
+            var curRev = _coco_revision.value;
+            if (track != null) track();
+
+            if (firstTime) firstTime = false;
+            else {
+              if (curRev == lastRev && shouldUpdate != null && !shouldUpdate())
+                return last;
+              var hasCallbacks = __bc.length > 0;
+              if (hasBeforeRerender || hasCallbacks)
+                tink.state.Observable.untracked(function () {
+                  if (hasBeforeRerender) beforeRerender();
+                  if (hasCallbacks) for (c in __bc.splice(0, __bc.length)) c.invoke(false);
+                });
+            }
+            lastRev = curRev;
+            return last = render();
+          }
+        ),
+        mounted,
+        function () {
+          var hasCallbacks = __au.length > 0;
+          if (hasUpdated || hasCallbacks)
+            tink.state.Observable.untracked(function () {
+              if (hasUpdated) updated();
+              if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);
+            });
+        },
+        function () {
+          last = null;
+          firstTime = true;
+          __beforeUnmount();
+        }
+      );
+    }
+
+    @:noCompletion var __bu:Array<tink.core.Callback.CallbackLink> = [];
+    @:noCompletion function __beforeUnmount() {
+      for (c in __bu.splice(0, __bu.length)) c.dissolve();
+      for (c in __bc.splice(0, __bu.length)) c.invoke(true);
+    }
+
+    @:extern inline function untilUnmounted(c:tink.core.Callback.CallbackLink):Void __bu.push(c);
+    @:extern inline function beforeUnmounting(c:tink.core.Callback.CallbackLink):Void __bu.push(c);
+
+    @:noCompletion var __bc:Array<tink.core.Callback<Bool>> = [];
+
+    @:extern inline function untilNextChange(c:tink.core.Callback<Bool>):Void __bc.push(c);
+    @:extern inline function beforeNextChange(c:tink.core.Callback<Bool>):Void __bc.push(c);
+
+    @:noCompletion var __au:Array<tink.core.Callback<tink.core.Noise>> = [];
+
+    @:extern inline function afterUpdating(callback:Void->Void) __au.push(callback);
+
+    function forceUpdate(?callback) {
+      _coco_revision.set(_coco_revision.value + 1);
+      if (callback != null) afterUpdating(callback);
+    }
+  }
+}
+
+private typedef Config = {
+  final renders: ComplexType;
+  final afterBuild:PostProcessor;
 }
 #end

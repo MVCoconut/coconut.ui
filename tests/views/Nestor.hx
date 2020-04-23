@@ -1,3 +1,5 @@
+package views;
+
 class Nestor extends View {
   var attributes:{ plain:String, inner: String, foo:Void->Void, bar:Void->Void };
   static public var redraws(default, null):Int = 0;

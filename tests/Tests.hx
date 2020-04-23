@@ -3,19 +3,11 @@ package ;
 import issues.Issue49;
 import issues.Issue44;
 
-import tink.state.*;
-import js.Browser.*;
-import coconut.ui.*;
-import coconut.data.*;
-import coconut.data.Value;
-import coconut.Ui.hxx;
-using tink.CoreApi;
-
 class Tests extends haxe.unit.TestCase {
 
   static var entries = [];
   static public function log(msg:String, ?pos:haxe.PosInfos)
-    entries.push('${pos.className}:$msg');
+    entries.push('${pos.className.split('.').pop()}:$msg');
 
   function expectLog(expected:Array<String>, ?pos:haxe.PosInfos)
     assertEquals(expected.join('\n'), entries.splice(0, entries.length).join('\n'), pos);
@@ -298,7 +290,7 @@ class Tests extends haxe.unit.TestCase {
             <video>DIV</video>
           </if>
           <hr/>
-          ${inst#if react .reactify()#end}
+          ${inst.lift()}
           <Outer>YEAH ${r.bar}</Outer>
           <Inst ref={function (v) instRef = v} />
         </blub>
@@ -456,143 +448,3 @@ class Tests extends haxe.unit.TestCase {
     );
   }
 }
-
-class FooListView extends coconut.ui.View {
-  @:attr var list:ListModel<Foo>;
-  function render() '
-    <div class="foo-list" style="background: blue">
-      <for {i in list.items}>
-        <Example2 model={i} />
-      </for>
-    </div>
-  ';
-}
-
-class MyView extends View {
-  function render() '
-    <switch ${int()}>
-      <case ${0}>
-        <div>Zero</div>
-      <case ${1}>
-        <div>One</div>
-      <case ${_}>
-        <div>Default</div>
-    </switch>
-  ';
-
-  function int() return 1;
-}
-
-class Issue19 extends View {
-  @:optional @:attribute var foo:String;
-  function render() '<div />';
-  static function check() '<Issue19/>';
-}
-
-
-class Wrapper extends View {
-
-  @:state var key:Int = 0;
-  @:attribute var depth:Int;
-
-	function render() '
-    <if {depth == 0}>
-      <div key=${key} onclick=${key++}>Key: $key</div>
-    <else>
-      <Wrapper depth={depth - 1} />
-    </if>
-  ';
-}
-
-class Btn extends View {
-  @:attribute function onclick();
-  @:ref var dom:js.html.Element;
-  var count = 0;
-  function render() '
-    <button ref={dom} onclick=${onclick}>Rendered ${count++}</button>
-  ';
-
-  function viewDidMount()
-    if (dom.nodeName != 'BUTTON') throw 'assert';
-}
-
-class Inst extends View {
-
-  @:state public var count:Int = 0;
-
-  var elt =
-    #if react
-      null;
-    #else {
-      var div = document.createDivElement();
-      div.className = 'native-element';
-      div.innerHTML = 'I am native!';
-      div;
-    }
-    #end
-
-  function render() '
-    <div class="inst">
-      Inst: ${elt}
-      <button onclick=${count++}>$count</button>
-    </div>
-  ';
-
-  override function viewDidMount()
-    Tests.log('mounted');
-
-  override function viewWillUnmount()
-    Tests.log('unmounting');
-
-}
-
-class Outer extends View {
-  @:attribute var children:Children;
-  function render() {
-    Tests.log('render');
-    return @hxx '<div data-id={viewId}>Outer: {...children} <Inner>{...children}</Inner></div>';
-  }
-  override function viewDidUpdate()
-    Tests.log('updated');
-}
-
-
-class Inner extends View {
-  @:children var content:Children;
-  function render() {
-    Tests.log('render');
-    return @hxx '<div data-id={viewId}>Inner: {...content}</div>';
-  }
-
-  override function viewDidUpdate()
-    Tests.log('updated');
-}
-
-class DidRender extends View {
-  @:attribute var counter:Int;
-  function render() '
-    <div>${counter}</div>
-  ';
-
-  override function viewDidRender(firstTime:Bool) {
-    Tests.log('$firstTime');
-  }
-
-}
-
-class Blargh extends View {
-  @:attribute function blub(attr:{ foo:String }):Children;
-  @:state public var hidden:Bool = false;
-  function render() '
-    <if {!hidden}>
-      <>
-        <div>1</div>
-        <div>2</div>
-        {...blub({ foo: "yeah" })}
-        <button class="hide-blargh" onclick={hidden = true}>Hide</button>
-      </>
-    </if>
-  ';
-}
-
-typedef Rec = Record<{ foo: Int, bar:Int }>;

@@ -1,10 +1,12 @@
-typedef TodoItemData = { 
-  description:String, 
-  completed:Bool, 
-  ontoggle:Bool->Void, 
+package views;
+
+typedef TodoItemData = {
+  description:String,
+  completed:Bool,
+  ontoggle:Bool->Void,
   onedit:String->Void,
 }
-class TodoItemView extends coconut.ui.View {
+class TodoItemView extends View {
   var attributes:TodoItemData;
   function render() '
     <div class="todo-item">
