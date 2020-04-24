@@ -2,7 +2,7 @@
 
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/MVCoconut/Lobby)
 
-This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is its API, which has increasingly converged with React's for higher familiarity, easier porting and better interoperability with react. Furthermore, just like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend, of which there are currently two:
+This library provides the means to create views for [your data](https://github.com/MVCoconut/coconut.data#coconut-data). It shares significant similarities with React. One of them is its API, which has increasingly converged with React's for higher familiarity, easier porting and better interoperability with react. Furthermore, just like React requires e.g. react-dom to render to the DOM, coconut also must be accompanied by a rendering backend:
 
 - [`coconut.vdom`](https://github.com/MVCoconut/coconut.vdom): a hand crafted virtual dom renderer that trumps React in speed and size.
 - [`coconut.react-dom`](https://github.com/MVCoconut/coconut.react-dom): an adapter to render coconut views through ReactDOM allowing you to leverage React's vast ecosystem.
