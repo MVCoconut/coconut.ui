@@ -223,7 +223,7 @@ class ViewBuilder {
                   default:
                     [for (i in 0...args.length) {
                       name: 'a$i',
-                      type: null,
+                      type: args[i].t.toComplex(),
                       opt: args[i].opt
                     }];
                 }
