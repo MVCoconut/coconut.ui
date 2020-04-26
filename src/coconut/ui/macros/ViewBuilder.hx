@@ -655,17 +655,23 @@ class ViewBuilder {
     });
   }
 
-  static final configs = new Array<Config>();
+  @:persistent static final configs:Map<String, Config> = new Map();
 
-  static function build(configId:Int)
+  static function build(configId:String)
     return ClassBuilder.run([
-      c -> new ViewBuilder(c, configs[configId]).doBuild()
+      c -> new ViewBuilder(c, switch configs[configId] {
+        case null: Context.fatalError('please restart the compiler server', Context.currentPos());
+        case v: v;
+      }).doBuild()
     ]);
 
-  static public function init(renders, afterBuild) {
+  static public function init(renders:ComplexType, afterBuild:PostProcessor) {
 
-    var cls = Context.getLocalClass().get(),
-        id = configs.push({ renders: renders, afterBuild: afterBuild }) - 1;
+    var cls = Context.getLocalClass().get();
+
+    var id = '${cls.module}.${cls.name}';
+
+    configs.set(id, { renders: renders, afterBuild: afterBuild });
 
     cls.meta.add(':observable', [], (macro null).pos);
     cls.meta.add(':coconut.viewbase', [], (macro null).pos);
