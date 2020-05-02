@@ -15,7 +15,10 @@ private typedef PostProcessor = Callback<{
   target: ClassBuilder,
   attributes:Array<Member>,
   states:Array<Member>,
-  refs:Array<Member>,
+  refs:Array<{
+    field:Member,
+    setter:Member,
+  }>,
   lifeCycle: Array<Member>,
 }>;
 
@@ -351,7 +354,6 @@ class ViewBuilder {
 
     for (ref in scrape('ref', noArgs, true)) {
       var f = ref.member;
-      refs.push(f);
       var type = f.getVar(true).sure().type;
 
       f.kind = FProp('default', 'never', type);
@@ -365,9 +367,15 @@ class ViewBuilder {
       }).bounce(f.pos);
 
       f.addMeta(':refSetter', [macro $i{setter}]);
-      c.addMembers(macro class {
-        @:noCompletion function $setter(param:$type) $set;
+
+      refs.push({
+        field: f,
+        setter: c.addMembers(macro class {
+          @:noCompletion function $setter(param:$type) $set;
+        })[0],
       });
+
+
     }
 
     renderer.expr = beforeRender.concat([switch renderer.expr {
