@@ -11,8 +11,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"version": "0.11.0",
-	"releasenote": "Support multiple backends in the same build.",
+	"version": "0.11.1",
+	"releasenote": "Pass refs and life cycle hooks to postprocessor.",
 	"tags": [
 		"ui",
 		"coconut",
