@@ -11,7 +11,13 @@ using haxe.macro.Tools;
 using tink.MacroApi;
 using tink.CoreApi;
 
-private typedef PostProcessor = Callback<{ target: ClassBuilder, attributes:Array<Member>, states:Array<Member> }>;
+private typedef PostProcessor = Callback<{
+  target: ClassBuilder,
+  attributes:Array<Member>,
+  states:Array<Member>,
+  refs:Array<Member>,
+  lifeCycle: Array<Member>,
+}>;
 
 class ViewBuilder {
 
@@ -341,8 +347,11 @@ class ViewBuilder {
       }
     }
 
+    var refs = [];
+
     for (ref in scrape('ref', noArgs, true)) {
       var f = ref.member;
+      refs.push(f);
       var type = f.getVar(true).sure().type;
 
       f.kind = FProp('default', 'never', type);
@@ -393,6 +402,8 @@ class ViewBuilder {
       s.kind = FProp('get', 'set', t, null);
     }
 
+    var lifeCycle = [];
+
     {
       if (c.hasConstructor())
         c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
@@ -404,7 +415,7 @@ class ViewBuilder {
           switch c.memberByName(name) {
             case Success(m):
               var f = m.getFunction().sure();
-
+              lifeCycle.push(m);
               m.overrides = false;
               if (m.metaNamed(':noCompletion').length == 0)
                 m.addMeta(':noCompletion');
@@ -652,6 +663,8 @@ class ViewBuilder {
       target: c,
       attributes: attributes,
       states: states,
+      refs: refs,
+      lifeCycle: lifeCycle,
     });
   }
 
