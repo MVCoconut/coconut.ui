@@ -11,8 +11,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"version": "0.11.1",
-	"releasenote": "Pass refs and life cycle hooks to postprocessor.",
+	"version": "0.11.2",
+	"releasenote": "Sidestep diagnostics issues.",
 	"tags": [
 		"ui",
 		"coconut",
