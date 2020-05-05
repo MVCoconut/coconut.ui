@@ -11,7 +11,7 @@ using haxe.macro.Tools;
 using tink.MacroApi;
 using tink.CoreApi;
 
-private typedef PostProcessor = Callback<{
+typedef ViewInfo = {
   target: ClassBuilder,
   attributes:Array<Member>,
   states:Array<Member>,
@@ -20,7 +20,7 @@ private typedef PostProcessor = Callback<{
     setter:Member,
   }>,
   lifeCycle: Array<Member>,
-}>;
+}
 
 class ViewBuilder {
 
@@ -678,28 +678,47 @@ class ViewBuilder {
 
   @:persistent static final configs:Map<String, Config> = new Map();
 
-  static function build(configId:String)
-    return ClassBuilder.run([
-      c -> new ViewBuilder(c, switch configs[configId] {
-        case null: Context.fatalError('please restart the compiler server', Context.currentPos());
-        case v: v;
-      }).doBuild()
-    ]);
+  static public function autoBuild(config:Config)
+    return ClassBuilder.run([c -> new ViewBuilder(c, config).doBuild()]);
 
-  static public function init(renders:ComplexType, afterBuild:PostProcessor) {
+  static function autoBuildWith(configId:String)
+    return autoBuild(switch configs[configId] {
+      case null: Context.fatalError('please restart the compiler server', Context.currentPos());
+      case v: v;
+    });
 
+  static function build(e:Expr)
+    return
+      switch e {
+        case macro ($_:$ct):
+          buildBase(ct);
+        default:
+          e.reject();
+      }
+
+  static function buildBase(renders:ComplexType, ?fn) {
     var cls = Context.getLocalClass().get();
-
-    var id = '${cls.module}.${cls.name}';
-
-    configs.set(id, { renders: renders, afterBuild: afterBuild });
 
     cls.meta.add(':observable', [], (macro null).pos);
     cls.meta.add(':coconut.viewbase', [], (macro null).pos);
-    cls.meta.add(':autoBuild', [macro coconut.ui.macros.ViewBuilder.build($v{id})], (macro null).pos);
+
+    if (fn != null)
+      fn(cls);
 
     return Context.getBuildFields().concat(base(renders).fields);
   }
+
+  static public function init(renders:ComplexType, afterBuild:Callback<ViewInfo>)
+    return buildBase(renders, function (cls) {
+      Context.currentPos().warning('Your coconut backend seems to be out of date');
+
+      var id = '${cls.module}.${cls.name}';
+
+      configs.set(id, { renders: renders, afterBuild: afterBuild });
+
+      cls.meta.add(':autoBuild', [macro coconut.ui.macros.ViewBuilder.autoBuildWith($v{id})], (macro null).pos);
+    });
+
 
   static function base(renders) return macro class {
     public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
@@ -787,7 +806,7 @@ class ViewBuilder {
 }
 
 private typedef Config = {
-  final renders: ComplexType;
-  final afterBuild:PostProcessor;
+  final renders:ComplexType;
+  final afterBuild:Callback<ViewInfo>;
 }
 #end
