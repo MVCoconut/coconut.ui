@@ -757,6 +757,7 @@ class ViewBuilder {
                 tink.state.Observable.untracked(function () {
                   if (hasBeforeRerender) beforeRerender();
                   if (hasCallbacks) for (c in __bc.splice(0, __bc.length)) c.invoke(false);
+                  return null;
                 });
             }
             lastRev = curRev;
@@ -770,6 +771,7 @@ class ViewBuilder {
             tink.state.Observable.untracked(function () {
               if (hasUpdated) updated();
               if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);
+              return null;
             });
         },
         function () {

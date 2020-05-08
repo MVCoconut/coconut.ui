@@ -5,80 +5,53 @@ import tink.state.Observable;
 
 using tink.CoreApi;
 
-class Slot<T, Container:Observable<T>> implements ObservableObject<T> {
+class Slot<T, Container:ObservableObject<T>>
+  extends Invalidator implements Invalidatable implements ObservableObject<T> {
 
   var defaultData:Container;
   var data:Container;
-  var last:Pair<T, FutureTrigger<Noise>>;
   var link:CallbackLink;
   var owner:{};
-  var compare:T->T->Bool;
+  var comparator:Comparator<T>;
 
   public var value(get, never):T;
     inline function get_value()
-      return observe().value;
+      return (this:Observable<T>).value;
 
-  public function new(owner, ?compare, ?defaultData) {
+  public function new(owner, ?comparator, ?defaultData) {
+    super();
     this.owner = owner;
-    this.compare = switch compare {
+    this.comparator = switch comparator {
       case null: function (a, b) return a == b;
       case v: v;
     }
     this.data = this.defaultData = defaultData;
+    if (defaultData != null)
+      defaultData.onInvalidate(this);
   }
 
-  public function getComparator():Null<T->T->Bool>
-    return compare;
+  public function invalidate()
+    fire();
 
-  public function poll() {
-    if (last == null) {
-      if (data == null) {
-        last = new Pair(null, Future.trigger());
-      }
-      else {
-        link = null;
-        var m = data.measure(),
-            changed = Future.trigger();
+  public function getComparator():Comparator<T>
+    return comparator;
 
-        var dFault = null;
-        last = new Pair(switch m.value {
-          case null if (defaultData != null):
-            dFault = defaultData.measure();
-            dFault.value;
-          case v: v;
-        }, changed);
-
-        link = m.becameInvalid.handle(changed.trigger);
-        if (dFault != null)
-          link &= dFault.becameInvalid.handle(changed.trigger);
-      }
-      last.b.handle(function () last = null);
-    }
-    return new Measurement(last.a, last.b);
-  }
-
-  public function isValid()
-    return data == null || (data:ObservableObject<T>).isValid();
-
-  public inline function observe():Observable<T>
-    return this;
+  var last:T;
+  public function getValue()
+    return last = data.getValue();
 
   public function setData(data:Container) {
     if (data == null)
       data = defaultData;
     if (data == this.data) return;
-    this.data = data;
-    if (last != null) {
-      link.dissolve();
-      if (data != null) {
-        var m = Observable.untracked(data.measure);
 
-        if (compare(m.value, last.a))
-          link = m.becameInvalid.handle(last.b.trigger);
-        else
-          last.b.trigger(Noise);
-      }
-    }
+    this.data = data;
+    link.dissolve();
+
+    if (data != defaultData)
+      link = data.onInvalidate(this);
+
+    fire();
   }
   #if debug @:keep #end
   function toString()
