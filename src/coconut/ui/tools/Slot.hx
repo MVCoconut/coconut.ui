@@ -16,7 +16,7 @@ class Slot<T, Container:ObservableObject<T>>
 
   public var value(get, never):T;
     inline function get_value()
-      return (this:Observable<T>).value;
+      return observe().value;
 
   public function new(owner, ?comparator, ?defaultData) {
     super();
@@ -30,6 +30,9 @@ class Slot<T, Container:ObservableObject<T>>
       defaultData.onInvalidate(this);
   }
 
+  public inline function observe():Observable<T>
+    return this;
+
   public function invalidate()
     fire();
 
@@ -38,7 +41,11 @@ class Slot<T, Container:ObservableObject<T>>
 
   var last:T;
   public function getValue()
-    return last = data.getValue();
+    return last = switch data.getValue() {
+      case null if (data != defaultData && defaultData != null):
+        defaultData.getValue();
+      case v: v;
+    }
 
   public function setData(data:Container) {
     if (data == null)

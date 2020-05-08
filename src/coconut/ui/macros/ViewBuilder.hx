@@ -573,6 +573,7 @@ class ViewBuilder {
                     changed = tink.Anon.existentFields(nu);
 
                 $b{applyChanges}
+                return null;
               })
             );
 
