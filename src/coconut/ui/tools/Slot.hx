@@ -41,11 +41,16 @@ class Slot<T, Container:ObservableObject<T>>
 
   var last:T;
   public function getValue()
-    return last = switch data.getValue() {
-      case null if (data != defaultData && defaultData != null):
-        defaultData.getValue();
-      case v: v;
-    }
+    return last =
+      switch data {
+        case null: null;
+        case data:
+          switch data.getValue() {
+            case null if (data != defaultData && defaultData != null):
+              defaultData.getValue();
+            case v: v;
+          }
+      }
 
   public function setData(data:Container) {
     if (data == null)
