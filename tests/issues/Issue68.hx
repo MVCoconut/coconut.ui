@@ -1,6 +1,6 @@
 package issues;
 
-class Issue68 extends coconut.vdom.View {
+class Issue68 extends View {
   @:attr var f:(value:String, ?event:Int)->Void;
   function render() return null;
   static function fail() {
