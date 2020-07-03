@@ -58,7 +58,7 @@ class Slot<T, Container:ObservableObject<T>>
     if (data == this.data) return;
 
     this.data = data;
-    link.dissolve();
+    link.cancel();
 
     if (data != defaultData)
       link = data.onInvalidate(this);

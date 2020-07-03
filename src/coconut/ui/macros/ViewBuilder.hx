@@ -785,7 +785,7 @@ class ViewBuilder {
 
     @:noCompletion var __bu:Array<tink.core.Callback.CallbackLink> = [];
     @:noCompletion function __beforeUnmount() {
-      for (c in __bu.splice(0, __bu.length)) c.dissolve();
+      for (c in __bu.splice(0, __bu.length)) c.cancel();
       for (c in __bc.splice(0, __bu.length)) c.invoke(true);
     }
 
