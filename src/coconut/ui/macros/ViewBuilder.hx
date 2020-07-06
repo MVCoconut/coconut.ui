@@ -680,7 +680,12 @@ class ViewBuilder {
   @:persistent static final configs:Map<String, Config> = new Map();
 
   static public function autoBuild(config:Config)
-    return ClassBuilder.run([c -> new ViewBuilder(c, config).doBuild()]);
+    return ClassBuilder.run([
+      c -> new ViewBuilder(c, config).doBuild(),
+      #if hotswap
+        hotswap.Macro.lazify
+      #end
+    ]);
 
   static function autoBuildWith(configId:String)
     return autoBuild(switch configs[configId] {
