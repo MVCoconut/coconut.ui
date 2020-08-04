@@ -3,6 +3,7 @@ package ;
 import issues.Issue49;
 import issues.Issue47;
 import issues.Issue44;
+import issues.Issue68;
 
 class Tests extends haxe.unit.TestCase {
 
