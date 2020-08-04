@@ -573,6 +573,7 @@ class ViewBuilder {
                     changed = tink.Anon.existentFields(nu);
 
                 $b{applyChanges}
+                return null;
               })
             );
 
@@ -679,7 +680,12 @@ class ViewBuilder {
   @:persistent static final configs:Map<String, Config> = new Map();
 
   static public function autoBuild(config:Config)
-    return ClassBuilder.run([c -> new ViewBuilder(c, config).doBuild()]);
+    return ClassBuilder.run([
+      c -> new ViewBuilder(c, config).doBuild(),
+      #if hotswap
+        hotswap.Macro.lazify
+      #end
+    ]);
 
   static function autoBuildWith(configId:String)
     return autoBuild(switch configs[configId] {
@@ -757,6 +763,7 @@ class ViewBuilder {
                 tink.state.Observable.untracked(function () {
                   if (hasBeforeRerender) beforeRerender();
                   if (hasCallbacks) for (c in __bc.splice(0, __bc.length)) c.invoke(false);
+                  return null;
                 });
             }
             lastRev = curRev;
@@ -770,6 +777,7 @@ class ViewBuilder {
             tink.state.Observable.untracked(function () {
               if (hasUpdated) updated();
               if (hasCallbacks) for (c in __au.splice(0, __au.length)) c.invoke(Noise);
+              return null;
             });
         },
         function () {
@@ -782,7 +790,7 @@ class ViewBuilder {
 
     @:noCompletion var __bu:Array<tink.core.Callback.CallbackLink> = [];
     @:noCompletion function __beforeUnmount() {
-      for (c in __bu.splice(0, __bu.length)) c.dissolve();
+      for (c in __bu.splice(0, __bu.length)) c.cancel();
       for (c in __bc.splice(0, __bu.length)) c.invoke(true);
     }
 
