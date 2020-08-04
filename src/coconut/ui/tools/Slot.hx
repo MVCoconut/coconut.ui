@@ -8,11 +8,11 @@ using tink.CoreApi;
 class Slot<T, Container:ObservableObject<T>>
   extends Invalidator implements Invalidatable implements ObservableObject<T> {
 
-  var defaultData:Container;
+  final defaultData:Container;
   var data:Container;
   var link:CallbackLink;
-  var owner:{};
-  var comparator:Comparator<T>;
+  final owner:{};
+  final comparator:Comparator<T>;
 
   public var value(get, never):T;
     inline function get_value()
@@ -52,6 +52,9 @@ class Slot<T, Container:ObservableObject<T>>
           }
       }
 
+  public function isValid()
+    return this.data == null || this.data.isValid();
+
   public function setData(data:Container) {
     if (data == null)
       data = defaultData;
@@ -63,7 +66,7 @@ class Slot<T, Container:ObservableObject<T>>
     if (data != defaultData)
       link = data.onInvalidate(this);
 
-    fire();
+    fire();// TODO: when isValid, poll the value and skip firing if its the same
   }
   #if debug @:keep #end
   function toString()
