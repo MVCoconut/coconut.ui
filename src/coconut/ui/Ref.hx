@@ -9,7 +9,7 @@ using tink.MacroApi;
 
 @:callable
 abstract Ref<T>(T->Void) from T->Void to T->Void {
-  public function new(f)
+  public inline function new(f)
     this = f;
   #if macro
   static function unwrap(t:TypedExpr)
@@ -28,6 +28,13 @@ abstract Ref<T>(T->Void) from T->Void to T->Void {
       default: throw 'assert';
     }
   #end
+  
+  public inline function merge(other:Ref<T>) {
+    return function(v) {
+      this(v);
+      other(v);
+    }
+  }
 
   @:from static macro function ofExpr(e) {
 
