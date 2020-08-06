@@ -162,6 +162,78 @@ And you would use any of them like so:
 <Button onclick={trace("World!")}>Hello</Button>
 ```
 
+### Implicit attributes
+
+Implict attributes serve the same purpose as react context. Let's take a look first:
+
+```haxe
+@:default(Theme.LIGHT)
+class Theme {
+
+  static public final LIGHT = new Theme('#333', '#f8f8f8');
+  static public final DARK = new Theme('#eee', '#444');
+
+  public final foreground:Color;
+  public final background:Color;
+
+  public function new(foreground, background) {
+    this.foreground = foreground;
+    this.background = background;
+  }
+}
+
+class MyUi extends View {
+  @:implicit var theme:Theme;
+  function render() '
+    <div style=${{ background: theme.background, color: theme.foreground }}>
+      <button style=${{ background: theme.foreground, color: theme.background, border: 'none' }}
+    </div>
+  ';
+}
+```
+
+By default, `MyUi` will render with the light theme, as determined by `@:default(Theme.LIGHT)`. To achieve the opposite effect, you can do the following:
+
+1. `@:implicit var theme:Theme = Theme.DARK;` - this way, the default theme will be dark, no matter what's defined globally for `Theme` via `@:default`.
+2. `<Implicit defaults={[ Theme => Theme.DARK ]}><MyUi /></Implicit>` - this will use the dark theme as a default for all children of that `<Implicit />` (much like a context provider in react)
+3. `<MyUi theme=${Theme.DARK}>` - this will explicitly make `MyUi` use the dark theme. Note that this will not affect the default for child views.
+
+Precedence (decreasing):
+
+- explicitly passed attribute
+- implicit defaults set via `<Implicit />`
+- default value defined in view
+- default value defined via `@:default` on the target type
+
+There are a few restrictions in place:
+
+1. implicit values must be observable (or constant)
+2. implicit values must be instances or enum values. Anonymous objects are (currently) not supported.
+3. any `@:implicit` field requires a default to be declared either in place or via `@:default` on the type. Lack of a default leads to compiler failure. This is to statically ensure a value is available.
+4. implicit values must be defined for the exact type, i.e. you cannot have this:
+
+   ```haxe
+   interface I {}
+   @:default(new A())
+   class A implements I {
+     public function new() {}
+   }
+   class Foo extends View {
+     @:implicit var i:I;// I has no default
+   }
+   ```
+
+   This is not possible, because there could be
+
+   ```haxe
+   @:default(new B())
+   class B implements I {
+     public function new() {}
+   }
+   ```
+
+   In this case it's not possible to know which class should be the default for the interface. You can however define a `@:default` on `I` that uses any suitable implementor.
+
 ## States
 
 States are internal to your view. They allow you to hold data that is only relevant to the view itself, but is still observable from the framework's perspective. In the `Stepper` example, clicking on the `-` button will decrement `value` and this will in turn cause a rerender that is going to update the content of the `span` that shows the current value to the user.
