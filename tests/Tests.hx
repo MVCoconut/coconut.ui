@@ -1,8 +1,10 @@
 package ;
 
-import tink.testadapter.HaxeUnit.HaxeCase;
 import tink.testrunner.*;
 import tink.testadapter.*;
+import tink.unit.*;
+
+import cases.*;
 import issues.Issue49;
 import issues.Issue47;
 import issues.Issue44;
@@ -443,8 +445,10 @@ class Tests extends haxe.unit.TestCase {
   }
 
   static function main() {
-    Runner.run(HaxeUnit.makeBatch([
-      new Tests()
-    ])).handle(Runner.exit);
+    Runner.run(
+      TestBatch.make([
+        new Implicits(),
+      ]).concat(HaxeUnit.makeBatch([new Tests()]))
+    ).handle(Runner.exit);
   }
 }

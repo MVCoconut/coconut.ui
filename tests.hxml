@@ -2,3 +2,4 @@
 -cp tests
 -main Tests
 -lib tink_testadapter
+-lib tink_unittest
