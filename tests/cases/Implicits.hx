@@ -5,6 +5,11 @@ class Implicits extends Base {
   public function test() {
     mount(hxx('<Example ref=${e -> asserts.assert(e.foo.value == 123)}/>'));
     mount(hxx('<Example2 ref=${e -> asserts.assert(e.foo.value == 42)}/>'));
+    mount(hxx('
+      <Implicit defaults=${[ Foo => new Foo(1337) ]}>
+        <Example ref=${e -> asserts.assert(e.foo.value == 1337)}/>
+      </Implicit>
+    '));
     return asserts.done();
   }
 }
