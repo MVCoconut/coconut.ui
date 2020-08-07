@@ -162,7 +162,7 @@ And you would use any of them like so:
 <Button onclick={trace("World!")}>Hello</Button>
 ```
 
-### Implicit attributes
+### Implicit attributes (in progress)
 
 Implict attributes serve the same purpose as react context. Let's take a look first:
 
