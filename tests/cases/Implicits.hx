@@ -17,7 +17,7 @@ private class Example extends View {
 }
 
 private class Example2 extends View {
-  @:implicit public var foo:Foo;
+  @:implicit var foo:Foo;
   function render() '
     <div>${foo.value}</div>
   ';
