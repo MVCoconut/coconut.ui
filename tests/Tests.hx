@@ -1,5 +1,8 @@
 package ;
 
+import tink.testadapter.HaxeUnit.HaxeCase;
+import tink.testrunner.*;
+import tink.testadapter.*;
 import issues.Issue49;
 import issues.Issue47;
 import issues.Issue44;
@@ -440,13 +443,8 @@ class Tests extends haxe.unit.TestCase {
   }
 
   static function main() {
-
-    var runner = new haxe.unit.TestRunner();
-    runner.add(new Tests());
-
-    travix.Logger.exit(
-      if (runner.run()) 0
-      else 500
-    );
+    Runner.run(HaxeUnit.makeBatch([
+      new Tests()
+    ])).handle(Runner.exit);
   }
 }

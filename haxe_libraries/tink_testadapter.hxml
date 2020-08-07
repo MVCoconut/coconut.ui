@@ -1,0 +1,4 @@
+# @install: lix --silent download "gh://github.com/haxetink/tink_testadapter#c1f3864f04162ab4af711795592f109305544a49" into tink_testadapter/0.0.0/github/c1f3864f04162ab4af711795592f109305544a49
+-lib tink_testrunner
+-cp ${HAXE_LIBCACHE}/tink_testadapter/0.0.0/github/c1f3864f04162ab4af711795592f109305544a49/src
+-D tink_testadapter=0.0.0

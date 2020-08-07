@@ -1,4 +1,4 @@
 -dce full
 -cp tests
 -main Tests
--lib hx3compat
+-lib tink_testadapter
