@@ -11,7 +11,7 @@ class Slot<T, Container:ObservableObject<T>>
   var data:Container;
   var link:CallbackLink;
 
-  final defaultData:Container;
+  final defaultData:Container;//TODO: this should be lazy
   final owner:{};
   final comparator:Comparator<T>;
 
