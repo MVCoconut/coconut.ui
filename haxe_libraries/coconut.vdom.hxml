@@ -1,5 +1,5 @@
-# @install: lix --silent download "gh://github.com/MVCoconut/coconut.vdom#ac0e4ebd335aac0ffe56dcc1060eb1f9cc093aed" into coconut.vdom/0.8.1/github/ac0e4ebd335aac0ffe56dcc1060eb1f9cc093aed
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.vdom#72a7d9158c6b130aa2696c94b439b4cb7a53b4cf" into coconut.vdom/0.8.1/github/72a7d9158c6b130aa2696c94b439b4cb7a53b4cf
 -lib coconut.diffing
 -lib xDOM
--cp ${HAXE_LIBCACHE}/coconut.vdom/0.8.1/github/ac0e4ebd335aac0ffe56dcc1060eb1f9cc093aed/src
+-cp ${HAXE_LIBCACHE}/coconut.vdom/0.8.1/github/72a7d9158c6b130aa2696c94b439b4cb7a53b4cf/src
 -D coconut.vdom=0.8.1

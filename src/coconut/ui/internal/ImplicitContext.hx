@@ -27,6 +27,10 @@ class ImplicitContext {
     for (k => v in values)
       this.values.set(k, v);
   }
+
+  static public macro function with(e) {
+    return macro new coconut.ui.internal.ImplicitContext.ImplicitValues([]);
+  }
 }
 
 abstract TypeKey<T>({}) to {} {
@@ -38,6 +42,19 @@ abstract TypeKey<T>({}) to {} {
 
 @:pure
 @:forward(exists, keyValueIterator)
+@:fromHxx(
+  transform = coconut.ui.internal.ImplicitContext.with(_)
+)
 abstract ImplicitValues(Map<TypeKey<Dynamic>, Dynamic>) {
-  inline function new(v) this = v;
+  public function new(a:Array<SingleImplicit>) this = [for (o in a) o.key => o.val];
+}
+
+class SingleImplicit {
+  public final key:TypeKey<Dynamic>;
+  public final val:Dynamic;
+
+  public function new<T>(key:TypeKey<T>, val:T) {
+    this.key = key;
+    this.val = val;
+  }
 }
