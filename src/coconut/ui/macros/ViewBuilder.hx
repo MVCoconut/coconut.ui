@@ -166,8 +166,8 @@ class ViewBuilder {
       if (expr == null)
         expr = macro @:pos(a.pos) null;
       add(macro class {
-        private var $slotName(default, never):coconut.ui.tools.Slot<$type, $publicType> =
-          new coconut.ui.tools.Slot<$type, $publicType>(this, ${comparator}, $expr);
+        private var $slotName(default, never):coconut.ui.internal.Slot<$type, $publicType> =
+          new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr);
       });
 
       switch a.pos.getOutcome(type.toType()).reduce() {

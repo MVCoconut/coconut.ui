@@ -51,7 +51,7 @@ class Tests extends haxe.unit.TestCase {
   }
 
   function testSlot() {
-    var s = new coconut.ui.tools.Slot(this),
+    var s = new coconut.ui.internal.Slot(this),
         s1 = new State(0),
         s2 = new State(1000);
     var log = [];

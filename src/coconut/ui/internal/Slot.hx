@@ -1,4 +1,4 @@
-package coconut.ui.tools;
+package coconut.ui.internal;
 
 import tink.state.*;
 import tink.state.Observable;
@@ -8,9 +8,10 @@ using tink.CoreApi;
 class Slot<T, Container:ObservableObject<T>>
   extends Invalidator implements Invalidatable implements ObservableObject<T> {
 
-  final defaultData:Container;
   var data:Container;
   var link:CallbackLink;
+
+  final defaultData:Container;
   final owner:{};
   final comparator:Comparator<T>;
 
