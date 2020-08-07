@@ -9,7 +9,7 @@ package coconut.ui.internal;
 #end
 
 @:pure
-abstract ChildrenOf<RenderResult>(Array<RenderResult>) from Array<RenderResult> {
+abstract Children<RenderResult>(Array<RenderResult>) from Array<RenderResult> {
   public var length(get, never):Int;
     inline function get_length()
       return if (this == null) 0 else this.length;
@@ -17,13 +17,13 @@ abstract ChildrenOf<RenderResult>(Array<RenderResult>) from Array<RenderResult> 
   @:arrayAccess public inline function get(index:Int)
     return if (this == null) null else this[index];
 
-  @:from static function ofSingle<RenderResult>(r:RenderResult):ChildrenOf<RenderResult>
+  @:from static function ofSingle<RenderResult>(r:RenderResult):Children<RenderResult>
     return [r];
 
-  public function concat(that:Array<RenderResult>):ChildrenOf<RenderResult>
+  public function concat(that:Array<RenderResult>):Children<RenderResult>
     return if (this == null) that else this.concat(that);
 
-  public function prepend(r:RenderResult):ChildrenOf<RenderResult>
+  public function prepend(r:RenderResult):Children<RenderResult>
     return switch [this, r] {
       case [null, null]: null;
       case [v, null]: v;
@@ -31,7 +31,7 @@ abstract ChildrenOf<RenderResult>(Array<RenderResult>) from Array<RenderResult> 
       case [a, b]: [b].concat(a);
     }
 
-  public function append(r:RenderResult):ChildrenOf<RenderResult>
+  public function append(r:RenderResult):Children<RenderResult>
     return switch [this, r] {
       case [null, null]: null;
       case [v, null]: v;
@@ -43,7 +43,7 @@ abstract ChildrenOf<RenderResult>(Array<RenderResult>) from Array<RenderResult> 
 
     function childType(t)
       return switch follow(t) {
-        case TAbstract(_.get() => { pack: ['coconut', 'ui', 'internal'], name: 'ChildrenOf' }, [t]):
+        case TAbstract(_.get() => { pack: ['coconut', 'ui', 'internal'], name: 'Children' }, [t]):
           Some(t);
         default:
           None;
