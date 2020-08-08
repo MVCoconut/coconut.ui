@@ -329,48 +329,65 @@ class ViewBuilder {
           c.pos.error('controlled attributes cannot be ${if (isFunc) 'functions' else 'properties'}');
       }
 
-    for (i in scrape('implicit', noArgs))
-      switch i.member {
-        case m = { kind: FVar(t, e), name: name }:
-          if (t == null)
-            e.pos.error('type required');
-          addAttribute(m, {
-            var fallback = switch e {
-              case null:
-                switch m.pos.getOutcome(t.toType()).reduce() {
-                  case TEnum(_.get().meta => m, _)
-                    | TInst(_.get().meta => m, _):
-                    switch m.extract(':default') {
-                      case []: i.pos.error(t.toString() + ' has no @:default and $name has no default value');
-                      case [{ params: [e] }]: e;
-                      default: i.pos.error(t.toString() + ' must have exactly one @:default with exactly one argument');
+    switch scrape('implicit', noArgs) {
+      case []:
+      case found:
+
+        var implicits =
+          switch config.implicits {
+            case null: found[0].pos.error('The current backend does not support implicit attributes');
+            case v:
+              for (f in v.fields)
+                c.addMember(f);
+              v.name;
+          }
+
+        for (i in found)
+          switch i.member {
+            case m = { kind: FVar(t, e), name: name }:
+              if (t == null)
+                e.pos.error('type required');
+
+              addAttribute(m, {
+                var fallback = switch e {
+                  case null:
+                    switch m.pos.getOutcome(t.toType()).reduce() {
+                      case TEnum(_.get().meta => m, _)
+                        | TInst(_.get().meta => m, _):
+                        switch m.extract(':default') {
+                          case []: i.pos.error(t.toString() + ' has no @:default and $name has no default value');
+                          case [{ params: [e] }]: e;
+                          default: i.pos.error(t.toString() + ' must have exactly one @:default with exactly one argument');
+                        }
+                      default:
+                        i.pos.error('Only enum values and instances can be implicit');
                     }
-                  default:
-                    i.pos.error('Only enum values and instances can be implicit');
+                  default: e;
                 }
-              default: e;
-            }
-            macro {
-              var fallback = tink.core.Lazy.ofFunc(() -> $fallback);
-              tink.state.Observable.auto(() -> switch _coco_implicits.get($p{t.toString().split('.')}) {
-                case null: fallback.get();
-                case v: v;
+
+                macro {
+                  var fallback = tink.core.Lazy.ofFunc(() -> $fallback);
+                  tink.state.Observable.auto(() -> switch $i{implicits}.get($p{t.toString().split('.')}) {
+                    case null: fallback.get();
+                    case v: v;
+                  });
+                }
+              }, t, macro : coconut.data.Value<$t>, true, macro null);
+              m.publish();
+              m.kind = FProp('get', 'never', t);
+
+              var getter = 'get_$name',
+                  slotName = slotName(name);
+
+              c.addMembers(macro class {
+                @:noCompletion inline function $getter():$t
+                  return this.$slotName.value;
               });
-            }
-          }, t, macro : coconut.data.Value<$t>, true, macro null);
-          m.publish();
-          m.kind = FProp('get', 'never', t);
+            default:
+              i.pos.error('@:implicit only allowed on plain fields');
+          }
 
-          var getter = 'get_$name',
-              slotName = slotName(name);
-
-          c.addMembers(macro class {
-            @:noCompletion inline function $getter():$t
-              return this.$slotName.value;
-          });
-        default:
-          i.pos.error('@:implicit only allowed on plain fields');
-      }
+    }
 
     var rendererPos = null;
     var renderer = switch c.memberByName('render') {
@@ -858,6 +875,10 @@ class ViewBuilder {
 
 private typedef Config = {
   final renders:ComplexType;
+  final ?implicits:{
+    final name:String;
+    final fields:Array<Field>;
+  }
   final afterBuild:Callback<ViewInfo>;
 }
 #end
