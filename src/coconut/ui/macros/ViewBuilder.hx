@@ -334,20 +334,29 @@ class ViewBuilder {
         case m = { kind: FVar(t, e), name: name }:
           if (t == null)
             e.pos.error('type required');
-          addAttribute(m, switch e {
-            case null:
-              switch m.pos.getOutcome(t.toType()).reduce() {
-                case TEnum(_.get().meta => m, _)
-                   | TInst(_.get().meta => m, _):
-                  switch m.extract(':default') {
-                    case []: i.pos.error(t.toString() + ' has no @:default and $name has no default value');
-                    case [{ params: [e] }]: e;
-                    default: i.pos.error(t.toString() + ' must have exactly one @:default with exactly one argument');
-                  }
-                default:
-                  i.pos.error('Only enum values and instances can be implicit');
-              }
-            default: e;
+          addAttribute(m, {
+            var fallback = switch e {
+              case null:
+                switch m.pos.getOutcome(t.toType()).reduce() {
+                  case TEnum(_.get().meta => m, _)
+                    | TInst(_.get().meta => m, _):
+                    switch m.extract(':default') {
+                      case []: i.pos.error(t.toString() + ' has no @:default and $name has no default value');
+                      case [{ params: [e] }]: e;
+                      default: i.pos.error(t.toString() + ' must have exactly one @:default with exactly one argument');
+                    }
+                  default:
+                    i.pos.error('Only enum values and instances can be implicit');
+                }
+              default: e;
+            }
+            macro {
+              var fallback = tink.core.Lazy.ofFunc(() -> $fallback);
+              Observable.auto(() -> switch _coco_implicits.get($p{t.toString().split('.')}) {
+                case null: fallback.get();
+                case v: v;
+              });
+            }
           }, t, macro : coconut.data.Value<$t>, true, macro null);
           m.publish();
           m.kind = FProp('get', 'never', t);
