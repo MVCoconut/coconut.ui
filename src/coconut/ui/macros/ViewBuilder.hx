@@ -270,7 +270,10 @@ class ViewBuilder {
         case FVar(null, _):
           a.pos.error('type required');//TODO: infer if possible
         case FVar(t, e):
-          add(t, e);
+          add(t, switch [e, t] {
+            case [null, macro : Bool]: macro false;
+            default: e;
+          });
         case FFun(f):
           add(
             TFunction(
