@@ -352,7 +352,7 @@ class ViewBuilder {
             }
             macro {
               var fallback = tink.core.Lazy.ofFunc(() -> $fallback);
-              Observable.auto(() -> switch _coco_implicits.get($p{t.toString().split('.')}) {
+              tink.state.Observable.auto(() -> switch _coco_implicits.get($p{t.toString().split('.')}) {
                 case null: fallback.get();
                 case v: v;
               });
