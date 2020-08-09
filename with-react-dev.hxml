@@ -1,0 +1,5 @@
+-lib coconut.react-dom
+-lib embed-js
+--macro embed.Js.from('http://cdnjs.cloudflare.com/ajax/libs/react/16.7.0/umd/react.development.js')
+--macro embed.Js.from('http://cdnjs.cloudflare.com/ajax/libs/react-dom/16.7.0/umd/react-dom.development.js')
+-D react_global
