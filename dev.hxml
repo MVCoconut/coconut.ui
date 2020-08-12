@@ -2,4 +2,5 @@ tests.hxml
 -lib coconut.vdom
 # with-react.hxml
 -lib travix
+-D no-deprecation-warnings
 -js bin/js/tests.js

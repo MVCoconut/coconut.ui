@@ -87,7 +87,7 @@ class Tests extends haxe.unit.TestCase {
   function testCustom() {
     var s = new State(4);
 
-    mount(hxx('<Example key={s} foo={s} bar={s} />'));
+    mount(hxx('<Example key={s.value} foo={s} bar={s} />'));
     mount(hxx('<Example foo={s} bar={s} />'));
 
     assertEquals('4', q('.foo').innerHTML);
