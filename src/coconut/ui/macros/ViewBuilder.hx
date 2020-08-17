@@ -51,6 +51,31 @@ class ViewBuilder {
       case v: v[0].reject('no arguments allowed here');
     }
 
+  function attributeType(e:Null<Expr>, p:Position)
+    return
+      if (e == null) p.error('Type or initial value required');
+      else guessType(e, p);
+
+  function guessType(e:Expr, p:Position) {
+    var ret =
+      switch e {
+        case { expr: EConst(c) }:
+          switch c {
+            case CIdent('true' | 'false'): macro : Bool;
+            case CInt(_): macro : Int;
+            case CFloat(_): macro : Float;
+            case CRegexp(_): macro : EReg;
+            case CString(_): macro : String;
+            default: null;
+          }
+        default:
+          null;
+      }
+
+    if (ret == null) e.reject('Cannot infer type, please annotate it explicitly.');
+    return ret;
+  }
+
   function doBuild() {
 
     var defaultPos = (macro null).pos,//perhaps just use currentPos()
@@ -267,8 +292,8 @@ class ViewBuilder {
       }
 
       switch a.kind {
-        case FVar(null, _):
-          a.pos.error('type required');//TODO: infer if possible
+        case FVar(null, e):
+          attributeType(e, a.pos);
         case FVar(t, e):
           add(t, switch [e, t] {
             case [null, macro : Bool]: macro false;
@@ -292,8 +317,8 @@ class ViewBuilder {
 
     for (c in scrape('controlled', noArgs))
       switch c.member.kind {
-        case FVar(null, _):
-          c.pos.error('type required');//TODO: infer if possible
+        case FVar(null, e):
+          attributeType(e, c.pos);
         case FVar(t, e):
           var optional = switch e {
             case null:
@@ -456,7 +481,11 @@ class ViewBuilder {
       if (v.expr == null)
         s.pos.error('@:state requires initial value');
 
-      var t = v.type;
+      var t = switch v.type {
+        case null: guessType(v.expr, s.pos);
+        case v: v;
+      }
+
       var internal = '__coco_${s.name}',
           get = 'get_${s.name}',
           set = 'set_${s.name}';

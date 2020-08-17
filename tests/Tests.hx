@@ -5,6 +5,7 @@ import tink.testadapter.*;
 import tink.unit.*;
 
 import cases.*;
+import issues.Issue70;
 import issues.Issue49;
 import issues.Issue47;
 import issues.Issue44;
