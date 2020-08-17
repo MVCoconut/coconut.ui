@@ -1,6 +1,6 @@
-# @install: lix --silent download "gh://github.com/haxetink/tink_hxx#a1d4f0f32ac598701c8f234d76317385f506e9c4" into tink_hxx/0.24.1/github/a1d4f0f32ac598701c8f234d76317385f506e9c4
+# @install: lix --silent download "haxelib:/tink_hxx#0.24.3" into tink_hxx/0.24.3/haxelib
 -lib html-entities
 -lib tink_anon
 -lib tink_parse
--cp ${HAXE_LIBCACHE}/tink_hxx/0.24.1/github/a1d4f0f32ac598701c8f234d76317385f506e9c4/src
--D tink_hxx=0.24.1
+-cp ${HAXE_LIBCACHE}/tink_hxx/0.24.3/haxelib/src
+-D tink_hxx=0.24.3

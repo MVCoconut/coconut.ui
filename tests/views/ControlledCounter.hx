@@ -6,4 +6,8 @@ class ControlledCounter extends View {
   function render() '
     <button id=$id onclick=${count++}>$count</button>
   ';
+  static function main() {
+    Renderer.mount(document.body, '<ControlledCounter id="123" />');
+    document.getElementById('123').click();
+  }
 }

@@ -492,13 +492,15 @@ class ViewBuilder {
           set = 'set_${s.name}';
 
       c.addMembers(macro class {
-        @:noCompletion private var $internal:tink.state.State<$t> = @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.meta.comparator});
+        @:noCompletion private final $internal:tink.state.State<$t>;
         inline function $get():$t return $i{internal}.value;
         inline function $set(param:$t) {
           $i{internal}.set(param);
           return param;
         }
       });
+
+      initField(internal, macro @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.meta.comparator}));
 
       s.kind = FProp('get', 'set', t, null);
     }
@@ -764,7 +766,30 @@ class ViewBuilder {
 
     var ctor = c.getConstructor();
     for (f in fieldInits)
-      ctor.init(f.name, f.value.pos, Value(f.value));
+      ctor.init(f.name, f.value.pos, Value(hxxExprSugar(f.value)));
+
+    for (f in c)
+      f.kind = switch f.kind {
+        case FFun(f):
+          FFun(
+            switch tink.hxx.Sugar.markupOnlyFunctions(f) {
+              case _ == f => true:
+                {
+                  args: f.args,
+                  ret: f.ret,
+                  params: f.params,
+                  expr: hxxExprSugar(f.expr),
+                }
+              case v: v;
+            }
+          );
+        case FVar(t, e):
+          FVar(t, hxxExprSugar(e));
+        case FProp(get, set, t, e):
+          FProp(get, set, t, hxxExprSugar(e));
+      }
+
+
 
     config.afterBuild.invoke({
       target: c,
@@ -774,6 +799,9 @@ class ViewBuilder {
       lifeCycle: lifeCycle,
     });
   }
+
+  function hxxExprSugar(e:Expr)
+    return e.transform(tink.hxx.Sugar.transformExpr);
 
   @:persistent static final configs:Map<String, Config> = new Map();
 
@@ -827,7 +855,7 @@ class ViewBuilder {
   static function base(renders) return macro class {
     public var viewId(default, null):Int = idCounter++; static var idCounter = 0;
 
-    @:noCompletion var _coco_revision = new tink.state.State(0);
+    @:noCompletion final _coco_revision:tink.state.State<Int>;
 
     public function new(
         render:Void->$renders,
@@ -844,7 +872,9 @@ class ViewBuilder {
           last = null,
           hasBeforeRerender = beforeRerender != null,
           hasUpdated = updated != null,
-          lastRev = _coco_revision.value;
+          _coco_revision = new tink.state.State(0);
+
+      var lastRev = _coco_revision.value;
 
       super(
         tink.state.Observable.auto(
@@ -884,6 +914,8 @@ class ViewBuilder {
           __beforeUnmount();
         }
       );
+
+      this._coco_revision = _coco_revision;
     }
 
     @:noCompletion var __bu:Array<tink.core.Callback.CallbackLink> = [];
