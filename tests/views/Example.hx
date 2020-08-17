@@ -10,7 +10,8 @@ class Example extends View {
   static public var redraws = 0;
   static public var created(default, null):Array<Example> = [];
 
-  var count:Int = Example.created.push(this);
+  function viewDidMount()
+    Example.created.push(this);
 
   @:state public var baz:Int = 0;
   function render() {

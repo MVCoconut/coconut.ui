@@ -3,7 +3,6 @@
 	"classPath": "src",
 	"dependencies": {
 		"tink_anon": "",
-		"tink_lang": "",
 		"tink_hxx": "",
 		"coconut.data": ""
 	},

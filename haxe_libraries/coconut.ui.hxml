@@ -1,6 +1,5 @@
 -lib tink_hxx
 -lib coconut.data
 -lib tink_anon
--lib tink_lang
 -cp src
 -D coconut_ui

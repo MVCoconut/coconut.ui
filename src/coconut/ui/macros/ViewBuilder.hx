@@ -26,6 +26,10 @@ class ViewBuilder {
 
   final config:Config;
   final c:ClassBuilder;
+  final fieldInits:Array<Named<Expr>> = [];
+
+  function initField(name, expr)
+    this.fieldInits.push(new Named(name, expr));
 
   static function getComparator(t:MetadataEntry) {
     var comparator = macro @:pos(t.pos) null;
@@ -86,9 +90,6 @@ class ViewBuilder {
         c.addMember(f);
       return t.fields;
     }
-
-    if (!c.target.meta.has(':tink'))
-      c.target.meta.add(':tink', [], defaultPos);
 
     c.target.meta.add(':observable', [], defaultPos);
 
@@ -191,9 +192,9 @@ class ViewBuilder {
       if (expr == null)
         expr = macro @:pos(a.pos) null;
       add(macro class {
-        private var $slotName(default, never):coconut.ui.internal.Slot<$type, $publicType> =
-          new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr);
+        private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
       });
+      initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr));
 
       switch a.pos.getOutcome(type.toType()).reduce() {
         case TDynamic(null):
@@ -748,10 +749,11 @@ class ViewBuilder {
               get = 'get_${f.name}';
 
           c.addMembers(macro class {
-            @:noCompletion private var $internal:tink.state.Observable<$t> =
-              @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e);
+            @:noCompletion private final $internal:tink.state.Observable<$t>;
             inline function $get() return $i{internal}.value;
           });
+
+          initField(internal, macro @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e));
 
           if (f.metaNamed(':skipCheck').length == 0)
             Models.checkLater(f.name, classId);
@@ -759,6 +761,10 @@ class ViewBuilder {
           f.kind = FProp('get', 'never', t);
         default:
       }
+
+    var ctor = c.getConstructor();
+    for (f in fieldInits)
+      ctor.init(f.name, f.value.pos, Value(f.value));
 
     config.afterBuild.invoke({
       target: c,
