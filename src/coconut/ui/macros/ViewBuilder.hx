@@ -5,7 +5,6 @@ import coconut.data.macros.*;
 import haxe.macro.Context;
 import haxe.macro.Type;
 import haxe.macro.Expr;
-import tink.priority.Queue;
 
 using haxe.macro.Tools;
 using tink.MacroApi;
