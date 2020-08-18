@@ -191,7 +191,7 @@ class ViewBuilder {
       if (expr == null)
         expr = macro @:pos(a.pos) null;
       add(macro class {
-        private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
+        @:noCompletion private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
       });
       initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr));
 
