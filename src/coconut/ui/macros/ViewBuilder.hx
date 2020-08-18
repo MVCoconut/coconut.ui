@@ -26,6 +26,7 @@ class ViewBuilder {
   final config:Config;
   final c:ClassBuilder;
   final fieldInits:Array<Named<Expr>> = [];
+  final beforeRender = [];
 
   function initField(name, expr)
     this.fieldInits.push(new Named(name, expr));
@@ -96,8 +97,7 @@ class ViewBuilder {
       c.target.pos.error('Subclassing views is currently not supported');
     }
 
-    var beforeRender = [],
-        tracked = [];
+    var tracked = [];
 
     function scrape<Meta>(name:String, process:MetadataEntry->Meta, ?aliases:Array<String>, ?skipCheck:Bool) {
       switch c.memberByName('${name}s') {
@@ -466,11 +466,6 @@ class ViewBuilder {
 
     }
 
-    renderer.expr = beforeRender.concat([switch renderer.expr {
-      case e = { expr: EConst(CString(s)), pos: p }: macro @:pos(p) return hxx($e);
-      case e: e;
-    }]).toBlock(renderer.expr.pos);
-
     var states = [];
 
     for (state in scrape('state', getComparator)) {
@@ -548,8 +543,7 @@ class ViewBuilder {
           m.pos.error('${m.name} cannot take arguments');
       });
 
-      var beforeRender = [],
-          afterRender = [];
+      var afterRender = [];
 
       var snapshot = null;
 
@@ -788,7 +782,10 @@ class ViewBuilder {
           FProp(get, set, t, hxxExprSugar(e));
       }
 
-
+    renderer.expr = macro {
+      $b{beforeRender};
+      ${renderer.expr};
+    }
 
     config.afterBuild.invoke({
       target: c,
