@@ -1,8 +1,6 @@
 package coconut.ui.macros;
 
-#if !macro
-  #error
-#end
+#if macro
 import haxe.macro.Expr;
 import tink.hxx.*;
 using tink.MacroApi;
@@ -36,3 +34,4 @@ class Helpers {
         );
     }
 }
+#end
