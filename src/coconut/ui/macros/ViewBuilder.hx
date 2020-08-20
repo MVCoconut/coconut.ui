@@ -185,14 +185,17 @@ class ViewBuilder {
       var data = macro @:pos(a.pos) attributes.$name,
           slotName = slotName(a.name);
 
-      initSlots.push(macro @:pos(a.pos) this.$slotName.setData($data));
+      if (!display) {
+        initSlots.push(macro @:pos(a.pos) this.$slotName.setData($data));
 
-      if (expr == null)
-        expr = macro @:pos(a.pos) null;
-      add(macro class {
-        @:noCompletion private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
-      });
-      initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr));
+        if (expr == null)
+          expr = macro @:pos(a.pos) null;
+
+        add(macro class {
+          @:noCompletion private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
+        });
+        initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr));
+      }
 
       switch a.pos.getOutcome(type.toType()).reduce() {
         case TDynamic(null):
@@ -207,7 +210,7 @@ class ViewBuilder {
         pos: a.pos,
         kind: FVar(publicType),
         meta:
-          (if (optional) [{ name: ':optional', params: [], pos: expr.pos }] else [])
+          (if (optional) [{ name: ':optional', params: [], pos: (macro null).pos }] else [])
             .concat(switch meta {
               case null: [];
               case v: v;
@@ -245,7 +248,10 @@ class ViewBuilder {
             case macro : Null<$_>: true;
             default: false;
           }
+
         a.publish();
+
+        if (display) return;
         a.kind =
           switch a.pos.getOutcome(type.toType()).reduce() {
             case TFun(args, ret) if (!isNullable):
@@ -291,9 +297,9 @@ class ViewBuilder {
       }
 
       switch a.kind {
-        case FVar(null, e):
-          guessType(e, a.pos);
         case FVar(t, e):
+          if (t == null)
+            t = guessType(e, a.pos);
           add(t, switch [e, t] {
             case [null, macro : Bool]: macro false;
             default: e;
@@ -316,9 +322,9 @@ class ViewBuilder {
 
     for (c in scrape('controlled', noArgs))
       switch c.member.kind {
-        case FVar(null, e):
-          guessType(e, c.pos);
         case FVar(t, e):
+          if (t == null)
+            t = guessType(e, c.pos);
           var optional = switch e {
             case null:
               if (c.member.metaNamed(':optional').length > 0) {
