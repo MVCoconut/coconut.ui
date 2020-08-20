@@ -32,6 +32,7 @@ script:
   - lix run travix js -lib coconut.vdom with-react.hxml
   - lix run travix js -lib coconut.vdom -debug
   - lix run travix js with-react.hxml -debug
+  - lix run travix js with-react-dev.hxml
 
 jobs:
   allow_failures:
