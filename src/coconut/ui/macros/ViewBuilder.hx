@@ -75,7 +75,8 @@ class ViewBuilder {
           null;
       }
 
-    if (ret == null) e.reject('Cannot infer type, please annotate it explicitly.');
+    if (ret == null && !display)
+      e.reject('Cannot infer type, please annotate it explicitly.');
     return ret;
   }
 
@@ -476,12 +477,14 @@ class ViewBuilder {
     var states = [];
 
     for (state in scrape('state', getComparator)) {
+      if (display) continue;// this is a bit extreme, but should work
       var s = state.member;
       states.push(s);
       var v = s.getVar(true).sure();
 
-      if (v.expr == null && !display)
-        s.pos.error('@:state requires initial value');
+      if (v.expr == null)
+        if (display) v.expr = macro null;
+        else s.pos.error('@:state requires initial value');
 
       var t = switch v.type {
         case null: guessType(v.expr, s.pos);
@@ -501,7 +504,7 @@ class ViewBuilder {
         }
       });
 
-      initField(internal, macro @:pos(v.expr.pos) new tink.state.State<$t>(${v.expr}, ${state.meta.comparator}));
+      initField(internal, macro new tink.state.State<$t>(${v.expr}, ${state.meta.comparator}));
 
       s.kind = FProp('get', 'set', t, null);
     }
