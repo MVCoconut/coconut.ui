@@ -180,7 +180,7 @@ class ViewBuilder {
     function slotName(name)
       return '__coco_$name';
 
-    function addAttribute(a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
+    function addAttribute(pos, a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
       var name = a.name;
       var data = macro @:pos(a.pos) attributes.$name,
           slotName = slotName(a.name);
@@ -207,7 +207,7 @@ class ViewBuilder {
 
       attributes.push({
         name: a.name,
-        pos: a.pos,
+        pos: pos,
         kind: FVar(publicType),
         meta:
           (if (optional) [{ name: ':optional', params: [], pos: (macro null).pos }] else [])
@@ -233,7 +233,7 @@ class ViewBuilder {
         if (optional && expr == null)
           expr = macro @:pos(a.pos) null;
 
-        addAttribute(a, expr, type, macro : coconut.data.Value<$type>, optional,
+        addAttribute(attr.pos, a, expr, type, macro : coconut.data.Value<$type>, optional,
           attr.meta.comparator,
           a.metaNamed(':children')
             .concat(a.metaNamed(':child'))
@@ -337,7 +337,7 @@ class ViewBuilder {
               true;
           }
 
-          addAttribute(c.member, e, t, macro : coconut.data.Variable<$t>, optional, macro @:pos(c.pos) null);
+          addAttribute(c.pos, c.member, e, t, macro : coconut.data.Variable<$t>, optional, macro @:pos(c.pos) null);
 
           c.member.kind = FProp('get', 'set', t);
 
@@ -381,7 +381,7 @@ class ViewBuilder {
               if (t == null)
                 e.pos.error('type required');
 
-              addAttribute(m, {
+              addAttribute(i.pos, m, {
                 var fallback = switch e {
                   case null:
                     switch m.pos.getOutcome(t.toType()).reduce() {
