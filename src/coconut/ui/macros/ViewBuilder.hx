@@ -27,6 +27,7 @@ class ViewBuilder {
   final c:ClassBuilder;
   final fieldInits:Array<Named<Expr>> = [];
   final beforeRender = [];
+  final display = Context.defined('display');
 
   function initField(name, expr)
     this.fieldInits.push(new Named(name, expr));
@@ -55,14 +56,12 @@ class ViewBuilder {
       case v: v[0].reject('no arguments allowed here');
     }
 
-  function attributeType(e:Null<Expr>, p:Position)
-    return
-      if (e == null) p.error('Type or initial value required');
-      else guessType(e, p);
-
   function guessType(e:Expr, p:Position) {
     var ret =
       switch e {
+        case null:
+          if (display) null;
+          else p.error('Type or initial value required');
         case { expr: EConst(c) }:
           switch c {
             case CIdent('true' | 'false'): macro : Bool;
@@ -81,7 +80,6 @@ class ViewBuilder {
   }
 
   function doBuild() {
-
     var defaultPos = (macro null).pos,//perhaps just use currentPos()
         classId = Models.classId(c.target);
 
@@ -293,7 +291,7 @@ class ViewBuilder {
 
       switch a.kind {
         case FVar(null, e):
-          attributeType(e, a.pos);
+          guessType(e, a.pos);
         case FVar(t, e):
           add(t, switch [e, t] {
             case [null, macro : Bool]: macro false;
@@ -318,7 +316,7 @@ class ViewBuilder {
     for (c in scrape('controlled', noArgs))
       switch c.member.kind {
         case FVar(null, e):
-          attributeType(e, c.pos);
+          guessType(e, c.pos);
         case FVar(t, e):
           var optional = switch e {
             case null:
@@ -424,7 +422,16 @@ class ViewBuilder {
         m.addMeta(':noCompletion', (macro null).pos);
         m.getFunction().sure();
       default:
-        c.target.pos.error('missing field render');
+        if (display) {
+          rendererPos = (macro null).pos;
+          {
+            args: [],
+            ret: config.renders,
+            expr: macro return null,
+          }
+        }
+        else
+          c.target.pos.error('missing field render');
     }
 
     if (renderer.args.length > 0)
@@ -473,7 +480,7 @@ class ViewBuilder {
       states.push(s);
       var v = s.getVar(true).sure();
 
-      if (v.expr == null)
+      if (v.expr == null && !display)
         s.pos.error('@:state requires initial value');
 
       var t = switch v.type {
