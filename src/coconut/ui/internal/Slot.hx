@@ -2,6 +2,7 @@ package coconut.ui.internal;
 
 import tink.state.*;
 import tink.state.Observable;
+import tink.state.Invalidatable;
 
 using tink.CoreApi;
 
@@ -20,7 +21,6 @@ class Slot<T, Container:ObservableObject<T>>
       return observe().value;
 
   public function new(owner, ?comparator, ?defaultData) {
-    super();
     this.owner = owner;
     this.comparator = switch comparator {
       case null: function (a, b) return a == b;
