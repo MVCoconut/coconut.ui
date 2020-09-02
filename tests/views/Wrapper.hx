@@ -1,15 +1,14 @@
 package views;
 
-class Wrapper extends View {
+class Wrapper {
+  static var container = {
+    var e = document.createElement('wrapper-element');
+    document.body.appendChild(e);
+    e;
+  }
+  static public function clear()
+    mount(null);
 
-  @:state var key:Int = 0;
-  @:attribute var depth:Int;
-
-	function render() '
-    <if {depth == 0}>
-      <div key=${key} onclick=${key++}>Key: $key</div>
-    <else>
-      <Wrapper depth={depth - 1} />
-    </if>
-  ';
+  static public function mount(o)
+    coconut.ui.Renderer.mount(container, o);
 }
