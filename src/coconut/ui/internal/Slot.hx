@@ -1,35 +1,39 @@
 package coconut.ui.internal;
 
 import tink.state.*;
-import tink.state.Observable;
-import tink.state.Invalidatable;
+import tink.state.internal.*;
 
 using tink.CoreApi;
 
 class Slot<T, Container:ObservableObject<T>>
-  extends Invalidator implements Invalidatable implements ObservableObject<T> {
+  extends Invalidatable.Invalidator implements Invalidatable implements ObservableObject<T> {
 
   var data:Container;
   var link:CallbackLink;
 
   final defaultData:Container;//TODO: this should be lazy
+  #if tink_state.debug
   final owner:{};
+  #end
   final comparator:Comparator<T>;
 
   public var value(get, never):T;
     inline function get_value()
       return observe().value;
 
-  public function new(owner, ?comparator, ?defaultData) {
-    this.owner = owner;
-    this.comparator = switch comparator {
-      case null: function (a, b) return a == b;
-      case v: v;
-    }
+  public function new(owner:{}, ?comparator, ?defaultData, ?toString) {
+    super(toString);
+    #if tink_state.debug
+      this.owner = owner;
+    #end
+    this.comparator = comparator;
     this.data = this.defaultData = defaultData;
-    if (defaultData != null)
-      defaultData.onInvalidate(this);
+    list.ondrain = () -> link.cancel();
+    list.onfill = heatup;
   }
+
+  function heatup()
+    if (data != null) link = data.onInvalidate(this);
 
   public inline function observe():Observable<T>
     return this;
@@ -40,18 +44,21 @@ class Slot<T, Container:ObservableObject<T>>
   public function getComparator():Comparator<T>
     return comparator;
 
-  var last:T;
+  override public function getRevision() {
+    var ret = revision;
+    if (data != null) ret *= data.getRevision();
+    if (defaultData != null) ret *= defaultData.getRevision();
+    return ret;
+  }
+
   public function getValue()
-    return last =
-      switch data {
-        case null: null;
-        case data:
-          switch data.getValue() {
-            case null if (data != defaultData && defaultData != null):
-              defaultData.getValue();
-            case v: v;
-          }
-      }
+    return switch [data, defaultData] {
+      case [null, null]: null;
+      case [v, null] | [null, v]: v.getValue();
+      case [_.getValue() => ret, v]:
+        if (ret == null) v.getValue();
+        else ret;
+    }
 
   public function isValid()
     return this.data == null || this.data.isValid();
@@ -62,14 +69,21 @@ class Slot<T, Container:ObservableObject<T>>
     if (data == this.data) return;
 
     this.data = data;
-    link.cancel();
-
-    if (data != defaultData)
-      link = data.onInvalidate(this);
-
-    fire();// TODO: when isValid, poll the value and skip firing if its the same
+    if (list.length > 0) {
+      link.cancel();
+      heatup();
+    }
+    fire();
   }
-  #if debug @:keep #end
-  function toString()
-    return 'Slot($owner)';
+
+  #if tink_state.debug
+  public function getDependencies() {
+    var ret = [];
+    if (data != null)
+      ret.push(data);
+    if (defaultData != data && defaultData != null)
+      ret.push(defaultData);
+    return ret;
+  }
+  #end
 }

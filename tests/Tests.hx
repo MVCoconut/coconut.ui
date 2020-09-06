@@ -415,7 +415,6 @@ class Tests extends haxe.unit.TestCase {
 
   function testRootSwitch() {
     mount(hxx('<MyView />'));
-    trace(qs('div').length);
     assertEquals('One', q('div').innerHTML);
   }
 
