@@ -3,8 +3,16 @@ package cases;
 class Implicits extends Base {
 
   public function test() {
-    mount(hxx('<Example ref=${e -> asserts.assert(e.foo.value == 123)}/>'));
-    mount(hxx('<Example2 ref=${e -> asserts.assert(e.foo.value == 42)}/>'));
+    {
+      var e:Example = null;
+      mount(hxx('<Example ref=${e}/>'));
+      asserts.assert(e.foo.value == 123);
+    }
+    {
+      var e:Example2 = null;
+      mount(hxx('<Example2 ref=${e}/>'));
+      asserts.assert(e.foo.value == 42);
+    }
 
     var example:Example = null,
         s1 = new State(new Foo(1337)),

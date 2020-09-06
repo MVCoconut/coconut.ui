@@ -194,7 +194,7 @@ class ViewBuilder {
         add(macro class {
           @:noCompletion private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
         });
-        initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr));
+        initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
       }
 
       switch a.pos.getOutcome(type.toType()).reduce() {
@@ -716,6 +716,7 @@ class ViewBuilder {
             case []: macro null;
             default: macro function (firstTime:Bool) $b{afterRender};
           }}
+          #if tink_state.debug , () -> $v{c.target.name} + '#' + this.viewId #end
         );
 
         switch ($viewWillUnmount) {
@@ -875,6 +876,7 @@ class ViewBuilder {
         track:Void->Void,
         beforeRerender:Void->Void,
         rendered:Bool->Void
+        #if tink_state.debug , toString:() -> String #end
       ) {
 
       var mounted = if (rendered != null) rendered.bind(true) else null,
@@ -908,7 +910,10 @@ class ViewBuilder {
             }
             lastRev = curRev;
             return last = render();
-          }
+          }, null
+          #if tink_state.debug
+            , (_) -> toString() + '.render()'
+          #end
         ),
         mounted,
         function () {
@@ -925,6 +930,7 @@ class ViewBuilder {
           firstTime = true;
           __beforeUnmount();
         }
+        #if tink_state.debug , toString #end
       );
 
       this._coco_revision = _coco_revision;

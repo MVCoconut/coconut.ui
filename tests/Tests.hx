@@ -21,7 +21,7 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(expected.join('\n'), entries.splice(0, entries.length).join('\n'), pos);
 
   override function setup() {
-    document.body.innerHTML = '';
+    Wrapper.clear();
   }
 
   static inline function q(s:String)
@@ -32,11 +32,7 @@ class Tests extends haxe.unit.TestCase {
     return [for (x in ret) x];
   }
 
-  static inline function mount(o) {
-    var wrapper = document.createElement('wrapper-element');
-    document.body.appendChild(wrapper);
-    coconut.ui.Renderer.mount(wrapper, o);
-  }
+  function mount(o) Wrapper.mount(o);
 
   function testNested() {
     var s = new State('foo');
@@ -57,32 +53,32 @@ class Tests extends haxe.unit.TestCase {
   }
 
   function testSlot() {
-    var s = new coconut.ui.internal.Slot(this),
+    var s = new coconut.ui.internal.Slot(this, Observable.const(123)),
         s1 = new State(0),
         s2 = new State(1000);
     var log = [];
     s.observe().bind(log.push);
     s.setData(Observable.const(42));
-    assertEquals('', log.join(','));
+    assertEquals('123', log.join(','));
     Renderer.updateAll();
-    assertEquals('42', log.join(','));
+    assertEquals('123,42', log.join(','));
     s.setData(Observable.const(0));
     Renderer.updateAll();
-    assertEquals('42,0', log.join(','));
+    assertEquals('123,42,0', log.join(','));
     s.setData(s1);
     Renderer.updateAll();
-    assertEquals('42,0', log.join(','));
+    assertEquals('123,42,0', log.join(','));
     s1.set(1000);
     Renderer.updateAll();
-    assertEquals('42,0,1000', log.join(','));
+    assertEquals('123,42,0,1000', log.join(','));
     s.setData(s2);
     Renderer.updateAll();
-    assertEquals('42,0,1000', log.join(','));
+    assertEquals('123,42,0,1000', log.join(','));
 
     s1.set(1001);
     s2.set(1002);
     Renderer.updateAll();
-    assertEquals('42,0,1000,1002', log.join(','));
+    assertEquals('123,42,0,1000,1002', log.join(','));
   }
 
   function testCustom() {
@@ -149,14 +145,14 @@ class Tests extends haxe.unit.TestCase {
   }
 
   function testControlled() {
-    mount(hxx('<ControlledCounter id="counter1"/>'));
+    mount(hxx('<ControlledCounter key="counter1" id="counter1"/>'));
     assertEquals('0', q('#counter1').innerHTML);
     click('#counter1');
     assertEquals('1', q('#counter1').innerHTML);
 
     var f = new Foo({ foo: 42 });
 
-    mount(hxx('<ControlledCounter id="counter2" count=${f.foo} />'));
+    mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
     assertEquals('42', q('#counter2').innerHTML);
     click('#counter2');
     assertEquals('43', q('#counter2').innerHTML);
