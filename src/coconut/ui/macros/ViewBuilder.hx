@@ -705,7 +705,7 @@ class ViewBuilder {
         var snapshot:$snapshot = null;
 
         super(
-          render,
+          () -> render(),
           $shouldUpdate,
           $track,
           ${

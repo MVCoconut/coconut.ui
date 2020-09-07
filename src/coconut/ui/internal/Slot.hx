@@ -29,7 +29,7 @@ class Slot<T, Container:ObservableObject<T>>
     this.comparator = comparator;
     this.data = this.defaultData = defaultData;
     list.ondrain = () -> link.cancel();
-    list.onfill = heatup;
+    list.onfill = () -> heatup();
   }
 
   function heatup()
