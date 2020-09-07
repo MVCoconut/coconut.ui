@@ -240,6 +240,11 @@ States are internal to your view. They allow you to hold data that is only relev
 
 Your views may also hold plain fields for whatever purpose. Note though that updates to those will generally not cause rerendering.
 
+If for whatever reason you want to skip observability checks (to have a constant-like attribute), use `@:skipCheck`. It works on individual fields or whole types. Either:
+
+* `@:skipCheck @:attr var myConstant:SomeClassWithMutableStuff;`
+* or `@:skipcheck class SomeClassWithMutableStuff { ... }`
+
 ## Laziness, granular invalidation and batched rerendering
 
 Unless the particular renderer diverges from the norm, the following can be said about how views update:
