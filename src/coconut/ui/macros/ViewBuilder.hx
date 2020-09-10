@@ -744,35 +744,31 @@ class ViewBuilder {
       });
     }
 
-    for (f in c)
-      switch [f.kind, f.extractMeta(':computed')] {
-        case [FVar(t, e), Success(m)]:
+    for (f in c) switch f.kind {
+      case FVar(t, e):
+        switch [for (m in f.meta) switch m.name { case ':computed' | ':comp' | ':loaded': m; default: continue; }] {
+          case []:
+          case [m]:
 
-          if (m.params.length > 0)
-            m.params[0].reject('@:computed does not support parameters');
+            if (f.metaNamed(':skipCheck').length == 0)
+              Models.checkLater(f.name, classId);
 
-          if (e == null)
-            m.pos.error('@:computed field requires expression');
+            var internal = '__coco_${f.name}',
+                get = 'get_${f.name}';
 
-          if (t == null)
-            m.pos.error('@:computed field requires type');
+            c.addMembers(macro class {
+              @:noCompletion private final $internal:tink.state.Observable<$t>;
+              inline function $get() return $i{internal}.value;
+            });
 
-          var internal = '__coco_${f.name}',
-              get = 'get_${f.name}';
+            initField(internal, ModelBuilder.buildComputed(if (m.name == ':loaded') KLoaded else KComputed, f, m.params, e, t));
 
-          c.addMembers(macro class {
-            @:noCompletion private final $internal:tink.state.Observable<$t>;
-            inline function $get() return $i{internal}.value;
-          });
-
-          initField(internal, macro @:pos(e.pos) tink.state.Observable.auto(function ():$t return $e));
-
-          if (f.metaNamed(':skipCheck').length == 0)
-            Models.checkLater(f.name, classId);
-
-          f.kind = FProp('get', 'never', t);
-        default:
-      }
+            f.kind = FProp('get', 'never', t);
+          case a:
+            a[1].pos.error('only one of @:computed, @:comp or @:loaded allowed per field');
+        }
+      default:
+    }
 
     var ctor = c.getConstructor();
     for (f in fieldInits)
