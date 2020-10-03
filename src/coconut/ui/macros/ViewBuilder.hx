@@ -732,7 +732,7 @@ class ViewBuilder {
         default: throw 'assert';
       }
       c.addMembers(macro class {
-        #if debug
+        #if tink_state.debug
         @:keep function toString() {
           return $v{c.target.name}+'#'+this.viewId;
         }

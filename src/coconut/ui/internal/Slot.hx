@@ -78,12 +78,12 @@ class Slot<T, Container:ObservableObject<T>>
 
   #if tink_state.debug
   public function getDependencies() {
-    var ret = [];
+    var ret = new Array<Observable<Any>>();
     if (data != null)
-      ret.push(data);
+      ret.push(cast data);
     if (defaultData != data && defaultData != null)
-      ret.push(defaultData);
-    return ret;
+      ret.push(cast defaultData);
+    return ret.iterator();
   }
   #end
 }
