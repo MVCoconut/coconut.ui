@@ -754,14 +754,18 @@ class ViewBuilder {
               Models.checkLater(f.name, classId);
 
             var internal = '__coco_${f.name}',
-                get = 'get_${f.name}';
+                get = 'get_${f.name}',
+                loaded = m.name == ':loaded';
+
+            initField(internal, ModelBuilder.buildComputed(if (loaded) KLoaded else KComputed, f, m.params, e, t));
+
+            if (loaded)
+              t = macro : tink.state.Promised<$t>;
 
             c.addMembers(macro class {
               @:noCompletion private final $internal:tink.state.Observable<$t>;
               inline function $get() return $i{internal}.value;
             });
-
-            initField(internal, ModelBuilder.buildComputed(if (m.name == ':loaded') KLoaded else KComputed, f, m.params, e, t));
 
             f.kind = FProp('get', 'never', t);
           case a:
