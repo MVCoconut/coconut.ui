@@ -448,6 +448,7 @@ class Tests extends haxe.unit.TestCase {
         new Implicits(),
         new issues.Issue48(),
         new issues.Issue63(),
+        new issues.Issue80(),
       ]).concat(HaxeUnit.makeBatch([new Tests()]))
     ).handle(Runner.exit);
   }
