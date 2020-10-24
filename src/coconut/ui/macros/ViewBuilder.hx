@@ -30,7 +30,7 @@ class ViewBuilder {
   final display = Context.defined('display');
 
   function initField(name, expr)
-    this.fieldInits.push(new Named(name, expr));
+    this.fieldInits.unshift(new Named(name, expr));
 
   static function getComparator(t:MetadataEntry) {
     var comparator = macro @:pos(t.pos) null;
@@ -733,7 +733,7 @@ class ViewBuilder {
           case v: beforeUnmounting(v);
         }
 
-      });
+      }, true);
 
       var self = Context.getLocalType().toComplexType();
       var params = switch self {
@@ -784,7 +784,7 @@ class ViewBuilder {
     }
 
     for (f in fieldInits)
-      ctor.init(f.name, f.value.pos, Value(hxxExprSugar(f.value)));
+      ctor.init(f.name, f.value.pos, Value(hxxExprSugar(f.value)), { prepend : true });
 
     for (f in c)
       f.kind = switch f.kind {
