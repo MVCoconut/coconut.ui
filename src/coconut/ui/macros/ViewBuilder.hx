@@ -517,10 +517,18 @@ class ViewBuilder {
 
     var lifeCycle = [];
 
-    {
-      if (c.hasConstructor())
-        c.getConstructor().toHaxe().pos.error('custom constructor not allowed');
+    var ctor = c.getConstructor({
+      expr: macro {},
+      args: [],
+      ret: null
+    });
 
+    {
+      if (ctor.getArgList().length > 0)
+        ctor.toHaxe().pos.error('no arguments allowed');
+      ctor.isPublic = true;
+    }
+    {
       var notFound:Array<Member> = [];
 
       function processHook(name:String, ?ret:Lazy<ComplexType>, with:Member->Function->Void)
@@ -699,7 +707,8 @@ class ViewBuilder {
               macro function track() $b{tracked};
             else macro null;
 
-      c.getConstructor((macro @:pos(c.target.pos) function (__coco_data_:$attributes) {
+      ctor.addArg('__coco_data_', attributes);
+      ctor.addStatement(macro {
         this.$init(__coco_data_);
 
         var snapshot:$snapshot = null;
@@ -724,7 +733,7 @@ class ViewBuilder {
           case v: beforeUnmounting(v);
         }
 
-      }).getFunction().sure()).isPublic = true;
+      });
 
       var self = Context.getLocalType().toComplexType();
       var params = switch self {
@@ -774,7 +783,6 @@ class ViewBuilder {
       default:
     }
 
-    var ctor = c.getConstructor();
     for (f in fieldInits)
       ctor.init(f.name, f.value.pos, Value(hxxExprSugar(f.value)));
 
