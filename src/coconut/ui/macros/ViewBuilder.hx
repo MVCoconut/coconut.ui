@@ -305,16 +305,30 @@ class ViewBuilder {
             default: e;
           });
         case FFun(f):
+          var expr = switch f.expr {
+            case null: null;
+            case e:
+              if (e.expr.match(EConst(CString(_))))
+                f = {
+                  args: f.args,
+                  ret: f.ret,
+                  expr: macro @:pos(e.pos) return hxx($e),
+                  params: f.params
+                }
+              f.asExpr();
+          }
+
           add(
             TFunction(
               [for (a in f.args) if (a.opt) TOptional(a.type) else a.type], //TODO: apparently how optional arguments are dealt with doesn't work properly
               switch f.ret {
-                case null: macro : Void;
+                case null:
+                  if (expr == null) macro : Void;
+                  else (macro null).pos.makeBlankType();
                 case v: v;
               }
             ),//TODO: rewrite this to be Callback when suitable
-            if (f.expr == null) null
-            else f.asExpr(a.pos)
+            expr
           );
         default: a.pos.error('attributes cannot be properties');
       }
