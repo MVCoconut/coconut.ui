@@ -7,5 +7,3 @@ import coconut.ui.*;
 import coconut.data.*;
 import views.*;
 import models.*;
-
-using Lift;

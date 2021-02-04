@@ -151,7 +151,6 @@ class Tests extends haxe.unit.TestCase {
     assertEquals('0', q('#counter1').innerHTML);
     click('#counter1');
     assertEquals('1', q('#counter1').innerHTML);
-
     var f = new Foo({ foo: 42 });
 
     mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
@@ -280,7 +279,6 @@ class Tests extends haxe.unit.TestCase {
   function testMisc() {//horay for naming!
 
     var r = new Rec({ foo: 42, bar: 0 }),
-        inst = new Inst({}),
         instRef:Inst = null,
         blargh:Blargh = null;
 
@@ -288,7 +286,7 @@ class Tests extends haxe.unit.TestCase {
       <Blargh ref={function (v) blargh = v}>
         <blub>
           Foo: {foo}
-          <button onclick={r.update({ foo: r.foo + 1})}>{r.foo}</button>
+          <button onclick=${r.update({ foo: r.foo + 1})}>{r.foo}</button>
           <Btn onclick={{ var x = 1 + Std.random(10); function () r.update({ foo: r.foo + x}); }} />
           <if {r.foo == 42}>
             <video muted></video>
@@ -296,7 +294,6 @@ class Tests extends haxe.unit.TestCase {
             <video>DIV</video>
           </if>
           <hr/>
-          ${inst.lift()}
           <Outer>YEAH ${r.bar}</Outer>
           <Inst ref={function (v) instRef = v} />
         </blub>
@@ -307,7 +304,6 @@ class Tests extends haxe.unit.TestCase {
       'Outer:render',
       'Inner:render',
       'Inst:mounted',
-      'Inst:mounted',
     ]);
 
     assertFalse(blargh.hidden);
@@ -315,20 +311,17 @@ class Tests extends haxe.unit.TestCase {
     #if !react
     assertEquals('I am native!', q('.native-element').innerHTML);
     #end
-    assertEquals(0, inst.count);
     assertEquals(0, instRef.count);
 
     for (btn in qs('.inst>button'))
       btn.click();
 
-    assertEquals(1, inst.count);
     assertEquals(1, instRef.count);
 
     q('.hide-blargh').click();
     Renderer.updateAll();
 
     expectLog([
-      'Inst:unmounting',
       'Inst:unmounting',
     ]);
 
@@ -342,10 +335,8 @@ class Tests extends haxe.unit.TestCase {
       'Outer:render',
       'Inner:render',
       'Inst:mounted',
-      'Inst:mounted',
     ]);
 
-    assertEquals(1, inst.count);
     assertEquals(0, instRef.count);
 
     #if !react
@@ -421,7 +412,6 @@ class Tests extends haxe.unit.TestCase {
   }
 
   function testModelViewReuse() {
-
     var models = [for (i in 0...10) new Foo({ foo: i })];
     var list = new ListModel({ items: models });
 
@@ -440,7 +430,6 @@ class Tests extends haxe.unit.TestCase {
     Renderer.updateAll();
     assertEquals(before + 10, Example2.created.length);
     assertEquals(redraws + 20, Example2.redraws);
-
   }
 
   static function main() {
