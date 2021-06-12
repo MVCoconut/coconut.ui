@@ -10,8 +10,8 @@
 	"contributors": [
 		"back2dos"
 	],
-	"version": "0.11.2",
-	"releasenote": "Sidestep diagnostics issues.",
+	"version": "0.12.0",
+	"releasenote": "Support latest version of tink_state and fixed various bugs",
 	"tags": [
 		"ui",
 		"coconut",
