@@ -26,7 +26,7 @@ abstract Ref<T>({}) {
 
     var expected = getRef(getExpectedType());
 
-    var ct = expected.toComplexType(),
+    var ct = expected.toComplex(),
         te = unwrap(typeExpr(e));
 
     var setter =
