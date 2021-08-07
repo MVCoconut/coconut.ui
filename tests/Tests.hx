@@ -54,35 +54,6 @@ class Tests extends haxe.unit.TestCase {
     assertEquals(beforeInner + 1, Example4.redraws);
   }
 
-  function testSlot() {
-    var s = new coconut.ui.internal.Slot(this, Observable.const(123)),
-        s1 = new State(0),
-        s2 = new State(1000);
-    var log = [];
-    s.observe().bind(log.push);
-    s.setData(Observable.const(42));
-    assertEquals('123', log.join(','));
-    Renderer.updateAll();
-    assertEquals('123,42', log.join(','));
-    s.setData(Observable.const(0));
-    Renderer.updateAll();
-    assertEquals('123,42,0', log.join(','));
-    s.setData(s1);
-    Renderer.updateAll();
-    assertEquals('123,42,0', log.join(','));
-    s1.set(1000);
-    Renderer.updateAll();
-    assertEquals('123,42,0,1000', log.join(','));
-    s.setData(s2);
-    Renderer.updateAll();
-    assertEquals('123,42,0,1000', log.join(','));
-
-    s1.set(1001);
-    s2.set(1002);
-    Renderer.updateAll();
-    assertEquals('123,42,0,1000,1002', log.join(','));
-  }
-
   function testCustom() {
     var s = new State(4);
 
@@ -146,23 +117,23 @@ class Tests extends haxe.unit.TestCase {
 
   }
 
-  function testControlled() {
-    mount(hxx('<ControlledCounter key="counter1" id="counter1"/>'));
-    assertEquals('0', q('#counter1').innerHTML);
-    click('#counter1');
-    assertEquals('1', q('#counter1').innerHTML);
-    var f = new Foo({ foo: 42 });
+  // function testControlled() {
+  //   mount(hxx('<ControlledCounter key="counter1" id="counter1"/>'));
+  //   assertEquals('0', q('#counter1').innerHTML);
+  //   click('#counter1');
+  //   assertEquals('1', q('#counter1').innerHTML);
+  //   var f = new Foo({ foo: 42 });
 
-    mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
-    assertEquals('42', q('#counter2').innerHTML);
-    click('#counter2');
-    assertEquals('43', q('#counter2').innerHTML);
+  //   mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
+  //   assertEquals('42', q('#counter2').innerHTML);
+  //   click('#counter2');
+  //   assertEquals('43', q('#counter2').innerHTML);
 
-    mount(hxx('<KeyPad />'));
-    assertEquals(null, q('button.selected[data-value="1"]'));
-    click('button[data-value="1"]');
-    assertEquals('1', q('button.selected[data-value="1"]').innerHTML);
-  }
+  //   mount(hxx('<KeyPad />'));
+  //   assertEquals(null, q('button.selected[data-value="1"]'));
+  //   click('button[data-value="1"]');
+  //   assertEquals('1', q('button.selected[data-value="1"]').innerHTML);
+  // }
 
   static function click(selector) {
     q(selector).click();
@@ -435,7 +406,7 @@ class Tests extends haxe.unit.TestCase {
   static function main() {
     Runner.run(
       TestBatch.make([
-        new Implicits(),
+        // new Implicits(),
         new issues.Issue48(),
         new issues.Issue63(),
         new issues.Issue80(),

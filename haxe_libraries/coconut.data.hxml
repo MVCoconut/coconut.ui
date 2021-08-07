@@ -1,8 +1,7 @@
-# @install: lix --silent download "gh://github.com/MVCoconut/coconut.data#587d2c2dbc57cc24ecb52303c5e22eb97fed12cd" into coconut.data/0.12.1/github/587d2c2dbc57cc24ecb52303c5e22eb97fed12cd
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.data#ca17dc7efb408b8032116493fb2e02f362382956" into coconut.data/0.12.1/github/ca17dc7efb408b8032116493fb2e02f362382956
 -lib tink_anon
 -lib tink_priority
 -lib tink_pure
 -lib tink_state
--cp ${HAXE_LIBCACHE}/coconut.data/0.12.1/github/587d2c2dbc57cc24ecb52303c5e22eb97fed12cd/src
+-cp ${HAXE_LIBCACHE}/coconut.data/0.12.1/github/ca17dc7efb408b8032116493fb2e02f362382956/src
 -D coconut.data=0.12.1
---macro coconut.data.macros.Setup.run()

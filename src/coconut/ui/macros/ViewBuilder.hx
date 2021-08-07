@@ -186,15 +186,15 @@ class ViewBuilder {
           slotName = slotName(a.name);
 
       if (!display) {
-        initSlots.push(macro @:pos(a.pos) this.$slotName.setData($data));
+        initSlots.push(macro @:pos(a.pos) this.$slotName.assign($data));
 
         if (expr == null)
           expr = macro @:pos(a.pos) null;
 
         add(macro class {
-          @:noCompletion private final $slotName:coconut.ui.internal.Slot<$type, $publicType>;
+          @:noCompletion private final $slotName:coconut.ui.internal.Attribute<$type>;
         });
-        initField(slotName, macro new coconut.ui.internal.Slot<$type, $publicType>(this, ${comparator}, $expr #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
+        initField(slotName, macro new coconut.ui.internal.Attribute<$type>($expr, ${comparator} #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
       }
 
       switch a.pos.getOutcome(type.toType()).reduce() {
@@ -230,10 +230,10 @@ class ViewBuilder {
 
         var slotName = slotName(name);
 
-        if (optional && expr == null)
+        if (expr == null)
           expr = macro @:pos(a.pos) null;
 
-        addAttribute(attr.pos, a, expr, type, macro : coconut.data.Value<$type>, optional,
+        addAttribute(attr.pos, a, macro @:pos(expr.pos) function ():$type return $expr, type, macro : tink.hxx.Expression<$type>, optional,
           attr.meta.comparator,
           a.metaNamed(':children')
             .concat(a.metaNamed(':child'))
@@ -337,6 +337,7 @@ class ViewBuilder {
     for (c in scrape('controlled', noArgs))
       switch c.member.kind {
         case FVar(t, e):
+          c.pos.error('currently not implemented yet');
           if (t == null)
             t = guessType(e, c.pos);
           var optional = switch e {
