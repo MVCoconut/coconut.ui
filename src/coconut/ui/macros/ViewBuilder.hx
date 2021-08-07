@@ -415,12 +415,12 @@ class ViewBuilder {
 
                 macro {
                   var fallback = tink.core.Lazy.ofFunc(() -> $fallback);
-                  tink.state.Observable.auto(() -> switch $i{implicits}.get($p{t.toString().split('.')}) {
+                  () -> switch $i{implicits}.get($p{t.toString().split('.')}) {
                     case null: fallback.get();
                     case v: v;
-                  });
+                  };
                 }
-              }, t, macro : coconut.data.Value<$t>, true, macro null);
+              }, t, macro : tink.hxx.Expression<$t>, true, macro null);
               m.publish();
               m.kind = FProp('get', 'never', t);
 

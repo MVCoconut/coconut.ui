@@ -406,7 +406,7 @@ class Tests extends haxe.unit.TestCase {
   static function main() {
     Runner.run(
       TestBatch.make([
-        // new Implicits(),
+        new Implicits(),
         new issues.Issue48(),
         new issues.Issue63(),
         new issues.Issue80(),
