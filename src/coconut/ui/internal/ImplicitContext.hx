@@ -20,7 +20,6 @@ class ImplicitContext {
   }
 
   static final ORPHAN:Lazy<Null<ImplicitContext>> = (null:ImplicitContext);
-  static final NONE = Observable.const(new ImplicitValues([]));
 
   public function get<T>(key:TypeKey<T>):Null<T>
     return switch [getSlot(key).value, parent.get()] {
