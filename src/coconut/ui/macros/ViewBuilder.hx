@@ -180,7 +180,9 @@ class ViewBuilder {
     function slotName(name)
       return '__coco_$name';
 
-    function addAttribute(pos, a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta) {
+    function addAttribute(pos, a, expr:Expr, type:ComplexType, publicType:ComplexType, optional:Bool, comparator, ?meta, ?container = 'Attribute') {
+      var container = 'coconut.ui.internal.$container'.asTypePath([TPType(type)]);
+
       var name = a.name;
       var data = macro @:pos(a.pos) attributes.$name,
           slotName = slotName(a.name);
@@ -191,10 +193,11 @@ class ViewBuilder {
         if (expr == null)
           expr = macro @:pos(a.pos) null;
 
+        initField(slotName, macro new $container($expr, ${comparator} #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
+        var container = TPath(container);
         add(macro class {
-          @:noCompletion private final $slotName:coconut.ui.internal.Attribute<$type>;
+          @:noCompletion private final $slotName:$container;
         });
-        initField(slotName, macro new coconut.ui.internal.Attribute<$type>($expr, ${comparator} #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
       }
 
       switch a.pos.getOutcome(type.toType()).reduce() {
@@ -337,7 +340,6 @@ class ViewBuilder {
     for (c in scrape('controlled', noArgs))
       switch c.member.kind {
         case FVar(t, e):
-          c.pos.error('currently not implemented yet');
           if (t == null)
             t = guessType(e, c.pos);
           var optional = switch e {
@@ -352,7 +354,7 @@ class ViewBuilder {
               true;
           }
 
-          addAttribute(c.pos, c.member, e, t, macro : coconut.data.Variable<$t>, optional, macro @:pos(c.pos) null);
+          addAttribute(c.pos, c.member, e, t, macro : coconut.ui.internal.Variable<$t>, optional, macro @:pos(c.pos) null, 'Controlled');
 
           c.member.kind = FProp('get', 'set', t);
 
@@ -365,13 +367,8 @@ class ViewBuilder {
           add(macro class {
             inline function $getter():$t
               return this.$slotName.value;
-            function $setter(param:$t):$t {
-              switch @:privateAccess this.$slotName.data {//TODO: this is quite hideous
-                case null: //should probably never happen
-                case v: v.set(param);
-              }
-              return param;
-            }
+            inline function $setter(param:$t):$t
+              return this.$slotName.value = param;
           });
         case _.match(FFun(_)) => isFunc:
           c.pos.error('controlled attributes cannot be ${if (isFunc) 'functions' else 'properties'}');

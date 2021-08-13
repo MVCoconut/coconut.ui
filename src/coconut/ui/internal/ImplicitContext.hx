@@ -1,7 +1,6 @@
 package coconut.ui.internal;
 
 import tink.state.*;
-import tink.state.internal.*;
 using tink.CoreApi;
 #if macro
   using tink.MacroApi;
@@ -10,7 +9,7 @@ using tink.CoreApi;
 class ImplicitContext {
 
   final parent:Lazy<Null<ImplicitContext>>;
-  final slots = new Map<TypeKey<Dynamic>, AutoObservable<Dynamic>>();
+  final slots = new Map<TypeKey<Dynamic>, Attribute<Dynamic>>();
 
   public function new(?parent) {
     this.parent = switch parent {
@@ -30,17 +29,17 @@ class ImplicitContext {
 
   function getSlot(key)
     return switch slots[key] {
-      case null: slots[key] = new AutoObservable(() -> Noise);// in theory, creating slots and never destroying them leaks ... in practice, the key set for every context should always be small and well-bound, and typically constant
+      case null: slots[key] = new Attribute(() -> Noise);// in theory, creating slots and never destroying them leaks ... in practice, the key set for every context should always be small and well-bound, and typically constant
       case v: v;
     }
 
   public function update(values:ImplicitValues) {
 
     for (k => slot in slots)
-      if (!values.exists(k)) slot.swapComputation(null);
+      if (!values.exists(k)) slot.assign(null);
 
     for (k => v in values)
-      getSlot(k).swapComputation(v);
+      getSlot(k).assign(v);
   }
 
   static public macro function with(e);
@@ -58,13 +57,13 @@ abstract TypeKey<T>({}) to {} {
 @:fromHxx(
   transform = coconut.ui.internal.ImplicitContext.with(_)
 )
-abstract ImplicitValues(Map<TypeKey<Dynamic>, Computation<Dynamic>>) {
+abstract ImplicitValues(Map<TypeKey<Dynamic>, tink.hxx.Expression<Dynamic>>) {
   public function new(a:Array<SingleImplicit>) this = [for (o in a) o.key => o.val];
 }
 
 class SingleImplicit {
   public final key:TypeKey<Dynamic>;
-  public final val:Computation<Dynamic>;
+  public final val:tink.hxx.Expression<Dynamic>;
 
   public function new<T>(key:TypeKey<T>, val:tink.hxx.Expression<T>) {
     this.key = key;

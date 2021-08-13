@@ -117,23 +117,23 @@ class Tests extends haxe.unit.TestCase {
 
   }
 
-  // function testControlled() {
-  //   mount(hxx('<ControlledCounter key="counter1" id="counter1"/>'));
-  //   assertEquals('0', q('#counter1').innerHTML);
-  //   click('#counter1');
-  //   assertEquals('1', q('#counter1').innerHTML);
-  //   var f = new Foo({ foo: 42 });
+  function testControlled() {
+    mount(hxx('<ControlledCounter key="counter1" id="counter1"/>'));
+    assertEquals('0', q('#counter1').innerHTML);
+    click('#counter1');
+    assertEquals('1', q('#counter1').innerHTML);
+    var f = new Foo({ foo: 42 });
 
-  //   mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
-  //   assertEquals('42', q('#counter2').innerHTML);
-  //   click('#counter2');
-  //   assertEquals('43', q('#counter2').innerHTML);
+    mount(hxx('<ControlledCounter key="counter2" id="counter2" count=${f.foo} />'));
+    assertEquals('42', q('#counter2').innerHTML);
+    click('#counter2');
+    assertEquals('43', q('#counter2').innerHTML);
 
-  //   mount(hxx('<KeyPad />'));
-  //   assertEquals(null, q('button.selected[data-value="1"]'));
-  //   click('button[data-value="1"]');
-  //   assertEquals('1', q('button.selected[data-value="1"]').innerHTML);
-  // }
+    mount(hxx('<KeyPad />'));
+    assertEquals(null, q('button.selected[data-value="1"]'));
+    click('button[data-value="1"]');
+    assertEquals('1', q('button.selected[data-value="1"]').innerHTML);
+  }
 
   static function click(selector) {
     q(selector).click();

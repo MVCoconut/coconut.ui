@@ -8,7 +8,8 @@ class Base {
     Wrapper.mount(o);
   }
 
-  @:after function teardown() {
+  @:after public function teardown() {
     Wrapper.clear();
+    return Promise.NOISE;
   }
 }

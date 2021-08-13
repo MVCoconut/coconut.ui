@@ -4,7 +4,7 @@ import tink.state.*;
 import tink.state.internal.*;
 
 @:forward(value, assign)
-abstract Attribute<T>(Impl<T>) {
+abstract Controlled<T>(Impl<T>) {
 
   public inline function new(compute, ?comparator)
     this = new Impl(compute, comparator);
@@ -12,34 +12,37 @@ abstract Attribute<T>(Impl<T>) {
 
 private class Impl<T> implements ObservableObject<T> extends Dispatcher {
 
-  final dFault:()->T;
-  var cur:Null<()->T>;
+  final fallback:tink.core.Lazy<State<T>>;
+  var cur:Null<State<T>>;
   final comparator:Comparator<T>;
 
-  public var value(get, never):T;
+  public var value(get, set):T;
     inline function get_value():T
-      return (this:Observable<T>).value;
+      return state().value;
 
-  public function new(compute:()->T, ?comparator) {
+    inline function set_value(param):T
+      return state().value = param;
+
+  inline function state()
+    return switch cur {
+      case null: fallback.get();
+      case v: v;
+    }
+
+  public function new(fallback, ?comparator) {
     super();
     this.comparator = comparator;
-    this.dFault = compute;
+    this.fallback = fallback;
   }
 
-  public function assign(c:Null<()->T>)
+  public function assign(c:Null<State<T>>)
     if (c != cur) {
       cur = c;
       fire(this);
     }
 
   public function getValue():T
-    return switch cur {
-      case null: dFault();
-      case f: switch f() {
-        case null: dFault();
-        case v: v;
-      }
-    }
+    return state().value;
 
   public function isValid():Bool
     return false;//TODO: implement
