@@ -22,9 +22,11 @@ class Slot<T, Container:ObservableObject<T>>
       return observe().value;
 
   public function new(owner:{}, ?comparator, ?defaultData, ?toString) {
-    super(toString);
     #if tink_state.debug
+      super(toString);
       this.owner = owner;
+    #else
+      super();
     #end
     this.comparator = comparator;
     this.data = this.defaultData = defaultData;
