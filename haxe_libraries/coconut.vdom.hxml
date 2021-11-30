@@ -1,5 +1,5 @@
--lib xDOM
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.vdom#710301040bf6da83530a182e25e24af4d4c31884" into coconut.vdom/0.10.0/github/710301040bf6da83530a182e25e24af4d4c31884
 -lib coconut.diffing
--cp ${SCOPE_DIR}/../coconut.vdom/src
+-lib xDOM
+-cp ${HAXE_LIBCACHE}/coconut.vdom/0.10.0/github/710301040bf6da83530a182e25e24af4d4c31884/src
 -D coconut.vdom=0.10.0
---macro Sys.println("haxe_libraries/coconut.vdom.hxml:4: [Warning] Using dev version of library coconut.vdom")

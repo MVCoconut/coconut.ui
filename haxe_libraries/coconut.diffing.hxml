@@ -1,4 +1,4 @@
+# @install: lix --silent download "gh://github.com/MVCoconut/coconut.diffing#499d62647c2ff68ad1336a311005f9f9d8cdf332" into coconut.diffing/0.5.0/github/499d62647c2ff68ad1336a311005f9f9d8cdf332
 -lib coconut.ui
--cp ${SCOPE_DIR}/../coconut.diffing/src
+-cp ${HAXE_LIBCACHE}/coconut.diffing/0.5.0/github/499d62647c2ff68ad1336a311005f9f9d8cdf332/src
 -D coconut.diffing=0.5.0
---macro Sys.println("haxe_libraries/coconut.diffing.hxml:3: [Warning] Using dev version of library coconut.diffing")
