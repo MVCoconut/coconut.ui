@@ -21,10 +21,13 @@ class ImplicitContext {
   static final ORPHAN:Lazy<Null<ImplicitContext>> = (null:ImplicitContext);
 
   public function get<T>(key:TypeKey<T>):Null<T>
-    return switch [getSlot(key).value, parent.get()] {
-      case [null, null]: null;
-      case [null, p]: p.get(key);
-      case [v, _]: v;
+    return switch getSlot(key).value {
+      case null:
+        switch parent.get() {
+          case null: null;
+          case ctx: ctx.get(key);
+        }
+      case v: v;
     }
 
   function getSlot(key)
