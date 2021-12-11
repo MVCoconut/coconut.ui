@@ -19,13 +19,18 @@ abstract Variable<T>(Dynamic) {
       case done = followWithAbstracts(_.t) => TInst(_.get() => { module: 'tink.state.State', name: 'StateObject' }, _):
         storeTypedExpr(done);
       case te:
+        while (true)
+          switch e {
+            case macro (${v}): e = v;
+            default: break;
+          }
         switch e {
           case macro $i{name}:
             e = macro @:pos(e.pos) this.$name;
           default:
         }
         switch e {
-          case macro ${owner}.$name: // TODO: consider checking if the target is valid
+          case macro ${owner}.$name:
 
             var v = typeExpr(owner);
             if (v.hasThis())
