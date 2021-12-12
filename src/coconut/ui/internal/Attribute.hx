@@ -6,7 +6,7 @@ import tink.state.internal.*;
 @:forward(value, assign)
 abstract Attribute<T>(Impl<T>) {
 
-  public inline function new(compute, ?comparator)
+  public inline function new(compute, ?comparator #if tink_state.debug , toString #end)
     this = new Impl(compute, comparator);
 }
 
