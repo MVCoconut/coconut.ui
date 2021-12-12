@@ -193,7 +193,20 @@ class ViewBuilder {
         if (expr == null)
           expr = macro @:pos(a.pos) null;
 
-        initField(slotName, macro new $container($expr, ${comparator} #if tink_state.debug , (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end));
+        var args = [
+          expr,
+          comparator,
+          #if tink_state.debug (_) -> $v{c.target.name} + '#' + this.viewId + '.' + $v{a.name} #end
+        ];
+
+        #if !tink.state.debug
+        switch comparator {
+          case macro null: args.pop();
+          default:
+        }
+        #end
+
+        initField(slotName, macro new $container($a{args}));
         var container = TPath(container);
         add(macro class {
           @:noCompletion private final $slotName:$container;
@@ -522,7 +535,12 @@ class ViewBuilder {
         }
       });
 
-      initField(internal, macro new tink.state.State<$t>(${v.expr}, ${state.meta.comparator}));
+      var args = [v.expr];
+      switch state.meta.comparator {
+        case macro null:
+        case v: args.push(v);
+      }
+      initField(internal, macro new tink.state.State<$t>($a{args}));
 
       s.kind = FProp('get', 'set', t, null);
     }
