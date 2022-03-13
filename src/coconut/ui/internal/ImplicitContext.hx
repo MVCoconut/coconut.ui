@@ -5,11 +5,10 @@ using tink.CoreApi;
 #if macro
   using tink.MacroApi;
 #end
-
 class ImplicitContext {
 
   final parent:Lazy<Null<ImplicitContext>>;
-  final slots = new Map<TypeKey<Dynamic>, Attribute<Dynamic>>();
+  final slots = new Mapping<Attribute<Dynamic>>();
 
   public function new(?parent) {
     this.parent = switch parent {
@@ -37,17 +36,14 @@ class ImplicitContext {
     }
 
   public function update(values:ImplicitValues) {
-
-    for (k => slot in slots)
-      if (!values.exists(k)) slot.assign(null);
-
-    for (k => v in values)
-      getSlot(k).assign(v);
+    slots.forEach((slot, k, _) -> if (!values.exists(k)) slot.assign(null));
+    values.forEach((v, k, _) -> getSlot(k).assign(v));
   }
 
   static public macro function with(e);
 }
 
+private typedef Mapping<T> = tink.state.internal.ObjectMap<TypeKey<Dynamic>, T>;
 abstract TypeKey<T>({}) to {} {
   @:from static function ofClass<T>(t:Class<T>):TypeKey<T>
     return cast t;
@@ -56,12 +52,15 @@ abstract TypeKey<T>({}) to {} {
 }
 
 @:pure
-@:forward(exists, get, keyValueIterator)
+@:forward(exists, get, forEach)
 @:fromHxx(
   transform = coconut.ui.internal.ImplicitContext.with(_)
 )
-abstract ImplicitValues(Map<TypeKey<Dynamic>, tink.hxx.Expression<Dynamic>>) {
-  public function new(a:Array<SingleImplicit>) this = [for (o in a) o.key => o.val];
+abstract ImplicitValues(Mapping<tink.hxx.Expression<Dynamic>>) {
+  public function new(a:Array<SingleImplicit>) {
+    this = new Mapping();
+    for (o in a) this[o.key] = o.val;
+  }
 }
 
 class SingleImplicit {
