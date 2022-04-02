@@ -10,40 +10,22 @@ abstract Attribute<T>(Impl<T>) {
     this = new Impl(compute, comparator);
 }
 
-private class Impl<T> implements ObservableObject<T> extends Dispatcher {
-
+private class Impl<T> extends AutoObservable<T> {
   final dFault:()->T;
-  var cur:Null<()->T>;
-  final comparator:Comparator<T>;
-
-  public var value(get, never):T;
-    inline function get_value():T
-      return (this:Observable<T>).value;
+  final state:State<()->T>;
 
   public function new(compute:()->T, ?comparator) {
-    super();
-    this.comparator = comparator;
-    this.dFault = compute;
-  }
-
-  public function assign(c:Null<()->T>)
-    if (c != cur) {
-      cur = c;
-      fire(this);
-    }
-
-  public function getValue():T
-    return switch cur {
+    this.state = new State(this.dFault = compute);
+    super(() -> switch state.value {
       case null: dFault();
       case f: switch f() {
         case null: dFault();
         case v: v;
       }
-    }
+    }, comparator);
+  }
 
-  public function isValid():Bool
-    return false;//TODO: implement
+  public function assign(c:Null<()->T>)
+    state.set(c);
 
-  public function getComparator():Comparator<T>
-    return comparator;
 }
