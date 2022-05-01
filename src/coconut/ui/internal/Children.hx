@@ -32,4 +32,9 @@ abstract Children<RenderResult>(Array<RenderResult>) from Array<RenderResult> {
     }
 
   @:from macro static function ofOther(e:haxe.macro.Expr);
+
+  static final EMPTY = new Array<Dynamic>();
+
+  public inline function keyValueIterator()
+    return (if (this != null) this else EMPTY).keyValueIterator();
 }
