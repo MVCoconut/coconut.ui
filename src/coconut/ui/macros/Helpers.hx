@@ -27,7 +27,6 @@ class Helpers {
             defaultExtension: 'hxx',
             noControlStructures: false,
             defaultSwitchTarget: macro __data__,
-            isVoid: ctx.isVoid,
             fragment: fragment,
             treatNested: function (children) return ctx.generateRoot.bind(children).bounce(),
           })
