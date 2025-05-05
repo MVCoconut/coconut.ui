@@ -301,7 +301,7 @@ class ViewBuilder {
           if (t == null)
             t = guessType(e, a.pos);
           add(t, switch [e, t] {
-            case [null, macro : Bool]: macro false;
+            case [null, macro : Bool]: #if coconut_ui_require_bool_attrs e #else macro false #end;
             default: e;
           });
         case FFun(f):
