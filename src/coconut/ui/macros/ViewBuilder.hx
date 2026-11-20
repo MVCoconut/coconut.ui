@@ -96,6 +96,8 @@ class ViewBuilder {
       c.target.pos.error('Subclassing views is currently not supported');
     }
 
+    var lateInit = c.target.superClass.t.get().meta.has(':coconut.view.lateInit');
+
     var tracked = [];
 
     function scrape<Meta>(name:String, process:MetadataEntry->Meta, ?aliases:Array<String>, ?skipCheck:Bool) {
@@ -301,7 +303,7 @@ class ViewBuilder {
           if (t == null)
             t = guessType(e, a.pos);
           add(t, switch [e, t] {
-            case [null, macro : Bool]: macro false;
+            case [null, macro : Bool]: #if coconut_ui_require_bool_attrs e #else macro false #end;
             default: e;
           });
         case FFun(f):
@@ -722,12 +724,14 @@ class ViewBuilder {
             else macro null;
 
       ctor.addArg('__coco_data_', attributes);
+      // (a backend that constructs late: `super()` first, see buildBase)
+      var construct = if (lateInit) macro this.__initView else macro super;
       ctor.addStatement(macro {
         this.$init(__coco_data_);
 
         var snapshot:$snapshot = null;
 
-        super(
+        $construct(
           () -> render(),
           $shouldUpdate,
           $track,
@@ -799,6 +803,9 @@ class ViewBuilder {
 
     for (f in fieldInits)
       ctor.init(f.name, f.value.pos, Value(hxxExprSugar(f.value)), { prepend : true });
+
+    if (lateInit)
+      ctor.addStatement(macro super(), true);
 
     for (f in c)
       f.kind = switch f.kind {
@@ -872,7 +879,45 @@ class ViewBuilder {
     if (fn != null)
       fn(cls);
 
-    return Context.getBuildFields().concat(base(renders).fields);
+    var fields = base(renders).fields;
+
+    // A backend whose view base has `new()` and `__initViewBase` (`@:coconut.viewbase.lateInit`): a view's
+    // constructor calls `super()` first and the rest (`__initView`) after it, rather than ending with `super(...)`,
+    // which ES6 and TypeScript want before any `this`. The same steps, in the same order: the base's constructor
+    // only stores what it is given.
+    if (cls.superClass != null && cls.superClass.t.get().meta.has(':coconut.viewbase.lateInit')) {
+      cls.meta.add(':coconut.view.lateInit', [], (macro null).pos);
+      fields = [for (f in fields) switch f {
+        case { name: 'new', kind: FFun(fun) }:
+          function late(e:Expr):Expr return switch e {
+            case macro super($a{args}): macro @:pos(e.pos) this.__initViewBase($a{args});
+            default: e.map(late);
+          }
+          ({
+            name: '__initView',
+            pos: f.pos,
+            meta: [{ name: ':noCompletion', pos: f.pos }],
+            kind: FFun({
+              args: fun.args,
+              ret: fun.ret,
+              expr: macro @:pos(fun.expr.pos) {
+                this.viewId = idCounter++;
+                ${late(fun.expr)};
+              }
+            }),
+          }:Field);
+        case { name: 'viewId', kind: FProp(get, set, t, _) }:
+          ({ name: f.name, pos: f.pos, access: f.access, meta: f.meta, doc: f.doc, kind: FProp(get, set, t, null) }:Field);
+        case { name: '_coco_revision' }:
+          ({ name: f.name, pos: f.pos, access: [for (a in f.access) if (a != AFinal) a], meta: f.meta, kind: f.kind }:Field);
+        default: f;
+      }];
+      fields.push((macro class {
+        public function new() super();
+      }).fields[0]);
+    }
+
+    return Context.getBuildFields().concat(fields);
   }
 
   static public function init(renders:ComplexType, afterBuild:Callback<ViewInfo>)
